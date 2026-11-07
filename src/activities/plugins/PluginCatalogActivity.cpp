@@ -176,6 +176,16 @@ bool PluginCatalogActivity::loadManifest() {
   manifest.authorPath = browse["fields"]["author"] | "";
   manifest.idPath = browse["fields"]["id"] | "";
   manifest.urlPath = browse["fields"]["url"] | "";
+  manifest.typePath = browse["fields"]["type"] | "";
+  manifest.isDirMatch = browse["is_dir_match"] | "";
+  manifest.rootFolderId = browse["root_folder_id"] | "";
+  manifest.cursorPath = browse["cursor_path"] | "";
+  manifest.continueUrl = browse["continue_url"] | "";
+  manifest.continueBody = browse["continue_body"] | "";
+  manifest.jsonExtensions.reserve(browse["extensions"].size());
+  for (JsonVariantConst ext : browse["extensions"].as<JsonArrayConst>()) {
+    if (ext.is<const char*>()) manifest.jsonExtensions.emplace_back(ext.as<const char*>());
+  }
   manifest.versionPath = browse["fields"]["version"] | "";
   manifest.pageSize = browse["page_size"] | 8;
   // Documented bounds: each row costs an Item (strings) and a screen slot.
@@ -229,17 +239,35 @@ bool PluginCatalogActivity::loadManifest() {
   manifest.authIntervalPath = auth["interval_path"] | "interval";
   manifest.authExpiresPath = auth["expires_path"] | "expires_in";
   manifest.authTokenPath = auth["token_path"] | "access_token";
+  manifest.authRefreshTokenPath = auth["refresh_token_path"] | "refresh_token";
   manifest.authErrorPath = auth["error_path"] | "error";
+  manifest.refreshTokenFile = pluginhttp::inPluginDir(pluginDir, doc["token"]["refresh_file"] | doc["token"]["file"] | "");
+  manifest.refreshTokenPath = doc["token"]["refresh_path"] | "refresh_token";
+  pluginhttp::readRequest(auth["refresh"], "POST", manifest.refreshReq);
 
   return !manifest.browseReq.url.empty();
 }
 
 bool PluginCatalogActivity::saveToken(const std::string& value) {
+  token = value;
   return pluginhttp::saveTokenToFile(manifest.tokenFile, manifest.tokenPath, value);
 }
 
 bool PluginCatalogActivity::loadToken() {
+  loadRefreshToken();
   return pluginhttp::loadTokenFromFile(manifest.tokenFile, manifest.tokenPath, token);
+}
+
+bool PluginCatalogActivity::loadRefreshToken() {
+  refreshToken.clear();
+  if (manifest.refreshTokenFile.empty()) return false;
+  return pluginhttp::loadTokenFromFile(manifest.refreshTokenFile, manifest.refreshTokenPath, refreshToken);
+}
+
+bool PluginCatalogActivity::saveRefreshToken(const std::string& value) {
+  refreshToken = value;
+  if (manifest.refreshTokenFile.empty()) return false;
+  return pluginhttp::saveTokenToFile(manifest.refreshTokenFile, manifest.refreshTokenPath, value);
 }
 
 void PluginCatalogActivity::loadConfig() { pluginhttp::loadConfigFile(manifest.configFile, config); }
@@ -259,6 +287,9 @@ pluginhttp::RequestSpec PluginCatalogActivity::substitutedRequest(const pluginht
 
 std::string PluginCatalogActivity::substituted(std::string tpl, const Item* item) const {
   substituteAll(tpl, "{token}", token);
+  substituteAll(tpl, "{refresh_token}", refreshToken);
+  substituteAll(tpl, "{folder_id}", currentFolderId.empty() ? manifest.rootFolderId : currentFolderId);
+  substituteAll(tpl, "{cursor}", currentCursor);
   for (const auto& kv : config) substituteAll(tpl, ("{cfg." + kv.first + "}").c_str(), kv.second);
   char num[16];
   snprintf(num, sizeof(num), "%d", page);
@@ -290,7 +321,9 @@ std::string PluginCatalogActivity::downloadDir() const {
 
 PluginCatalogActivity::PluginCatalogActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                                              const bool showOpds, const bool rootMode)
-    : CatalogActivity("PluginCatalog", renderer, mappedInput), showOpds(showOpds), rootMode(rootMode) {}
+    : CatalogActivity("PluginCatalog", renderer, mappedInput, /*wantsTouchLongPress=*/false, /*pixelChrome=*/true),
+      showOpds(showOpds),
+      rootMode(rootMode) {}
 
 PluginCatalogActivity::~PluginCatalogActivity() = default;
 
@@ -374,6 +407,11 @@ void PluginCatalogActivity::resetBrowse() {
   currentList = -1;
   searchActive = false;
   searchQuery.clear();
+  currentFolderId = manifest.rootFolderId;
+  folderHistory.clear();
+  currentCursor.clear();
+  nextCursorToken.clear();
+  cursorHistory.clear();
   releaseRows();
   nav.reset();
 }
@@ -396,7 +434,7 @@ void PluginCatalogActivity::startBrowse() {
     // list picker and only hits the sign-in screen after picking a list.
     // loadToken() returns true for token-less catalogs, which skip the gate.
     loadConfig();
-    if (!loadToken() && !(manifest.hasPasswordGrant() && refreshCredentialToken())) {
+    if (!loadToken() && !((manifest.hasRefresh() || manifest.hasPasswordGrant()) && refreshCredentialToken())) {
       if (manifest.hasDeviceCode()) {
         beginAuth();  // straight to the QR/code sign-in, no interstitial
       } else {
@@ -434,23 +472,41 @@ void PluginCatalogActivity::performSearch(const std::string& query) {
 
 bool PluginCatalogActivity::refreshCredentialToken() {
   loadConfig();
-  std::string minted;
-  if (!pluginhttp::mintPasswordToken(session.get(), substituted(manifest.authReq.url, nullptr), manifest.authReq.method,
-                                     substituted(manifest.authReq.body, nullptr),
-                                     substitutedHeaders(manifest.authReq.headers, nullptr), manifest.authTokenPath,
-                                     minted)) {
-    return false;
+  if (manifest.hasRefresh()) {
+    std::string minted;
+    auto req = substitutedRequest(manifest.refreshReq);
+    if (!pluginhttp::mintPasswordToken(session.get(), req.url, req.method, req.body, req.headers,
+                                       manifest.authTokenPath, minted)) {
+      return false;
+    }
+    if (!saveToken(minted)) return false;
+    token = minted;
+    return true;
   }
-  if (!saveToken(minted)) return false;
-  token = minted;  // usable immediately, without re-reading the file
-  return true;
+  if (manifest.hasPasswordGrant()) {
+    std::string minted;
+    if (!pluginhttp::mintPasswordToken(session.get(), substituted(manifest.authReq.url, nullptr), manifest.authReq.method,
+                                       substituted(manifest.authReq.body, nullptr),
+                                       substitutedHeaders(manifest.authReq.headers, nullptr), manifest.authTokenPath,
+                                       minted)) {
+      return false;
+    }
+    if (!saveToken(minted)) return false;
+    token = minted;  // usable immediately, without re-reading the file
+    return true;
+  }
+  return false;
 }
 
 bool PluginCatalogActivity::fetchBrowseResponse() {
   loadConfig();
-  if (!loadToken() && !(manifest.hasPasswordGrant() && refreshCredentialToken())) {
-    state = State::NO_TOKEN;
-    requestUpdate();
+  if (!loadToken() && !((manifest.hasRefresh() || manifest.hasPasswordGrant()) && refreshCredentialToken())) {
+    if (manifest.hasDeviceCode()) {
+      beginAuth();
+    } else {
+      state = State::NO_TOKEN;
+      requestUpdate();
+    }
     return false;
   }
   if (manifest.isXmlList()) {
@@ -470,7 +526,8 @@ bool PluginCatalogActivity::fetchBrowseResponse() {
   };
   int status = run();
   // Rebuild templates with the refreshed token; retry only once.
-  if ((status == 401 || status == 403) && manifest.hasPasswordGrant() && refreshCredentialToken()) status = run();
+  if ((status == 401 || status == 403) && (manifest.hasRefresh() || manifest.hasPasswordGrant()) &&
+      refreshCredentialToken()) status = run();
   if (status >= 200 && status < 300) return true;  // includes WebDAV's 207 Multi-Status
   Storage.remove(BROWSE_TMP_PATH);
   if (status == 401 || status == 403) {
@@ -525,7 +582,9 @@ bool PluginCatalogActivity::parseXmlList() {
 }
 
 bool PluginCatalogActivity::prevRowVisible() const {
-  return state == State::BROWSING && !manifest.isXmlList() && page > 1;
+  if (state != State::BROWSING || manifest.isXmlList()) return false;
+  if (!manifest.cursorPath.empty()) return !cursorHistory.empty();
+  return page > 1;
 }
 
 bool PluginCatalogActivity::nextRowVisible() const {
@@ -542,12 +601,14 @@ int PluginCatalogActivity::rowCount() const {
 const std::string& PluginCatalogActivity::activeBrowseUrl() const {
   // Search overrides the list view, reusing the browse url when unspecified.
   if (searchActive) return pick(manifest.searchUrl, manifest.browseReq.url);
+  if (!currentCursor.empty() && !manifest.continueUrl.empty()) return manifest.continueUrl;
   if (currentList < 0 || currentList >= static_cast<int>(manifest.browseLists.size())) return manifest.browseReq.url;
   return pick(manifest.browseLists[currentList].url, manifest.browseReq.url);
 }
 
 const std::string& PluginCatalogActivity::activeBrowseBody() const {
   if (searchActive) return pick(manifest.searchBody, manifest.browseReq.body);
+  if (!currentCursor.empty() && !manifest.continueBody.empty()) return manifest.continueBody;
   if (currentList < 0 || currentList >= static_cast<int>(manifest.browseLists.size())) return manifest.browseReq.body;
   return pick(manifest.browseLists[currentList].body, manifest.browseReq.body);
 }
@@ -568,7 +629,7 @@ bool PluginCatalogActivity::parseBrowseResponse() {
   items.reserve(manifest.pageSize + 1);
   // One extra row reveals whether a next page exists.
   auto append = [&](JsonListParser::Row& row) {
-    if (row.field[JsonListParser::F_TITLE].empty() || static_cast<int>(items.size()) > manifest.pageSize) return;
+    if (row.field[JsonListParser::F_TITLE].empty()) return;
     Item item;
     item.title = std::move(row.field[JsonListParser::F_TITLE]);
     item.author = std::move(row.field[JsonListParser::F_AUTHOR]);
@@ -577,12 +638,36 @@ bool PluginCatalogActivity::parseBrowseResponse() {
     item.version = std::move(row.field[JsonListParser::F_VERSION]);
     item.base = std::move(row.field[JsonListParser::F_BASE]);
     item.files = std::move(row.files);
+
+    const std::string& typeVal = row.field[JsonListParser::F_TYPE];
+    if (!manifest.isDirMatch.empty() && typeVal == manifest.isDirMatch) {
+      item.isDir = true;
+    } else if (manifest.isDirMatch.empty() &&
+               (typeVal == "folder" || typeVal == "dir" || typeVal == "collection")) {
+      item.isDir = true;
+    }
+
+    if (!item.isDir && !manifest.jsonExtensions.empty()) {
+      bool matched = false;
+      const std::string& name = item.title;
+      for (const auto& ext : manifest.jsonExtensions) {
+        if (name.size() >= ext.size() &&
+            strcasecmp(name.c_str() + (name.size() - ext.size()), ext.c_str()) == 0) {
+          matched = true;
+          break;
+        }
+      }
+      if (!matched) return;
+    }
+
+    if (static_cast<int>(items.size()) > manifest.pageSize) return;
     items.push_back(std::move(item));
   };
   // Streamed straight from the SD temp file: neither the raw response nor a
   // parsed document occupies DRAM, only the rows kept.
-  const std::string* const fields[] = {&manifest.titlePath, &manifest.authorPath,  &manifest.idPath,
-                                       &manifest.urlPath,   &manifest.versionPath, &manifest.bundleBasePath};
+  const std::string* const fields[] = {&manifest.titlePath,   &manifest.authorPath, &manifest.idPath,
+                                       &manifest.urlPath,     &manifest.versionPath, &manifest.bundleBasePath,
+                                       &manifest.typePath};
   auto parser = makeUniqueNoThrow<JsonListParser>(
       manifest.itemsPath, fields, manifest.bundleFilesPath,
       [](void* context, JsonListParser::Row& row) { (*static_cast<decltype(append)*>(context))(row); }, &append);
@@ -590,8 +675,31 @@ bool PluginCatalogActivity::parseBrowseResponse() {
     fail(StrId::STR_PARSE_FEED_FAILED);
     return false;
   }
-  hasMore = static_cast<int>(items.size()) > manifest.pageSize;
-  if (hasMore) items.resize(manifest.pageSize);
+
+  if (!manifest.cursorPath.empty()) {
+    nextCursorToken.clear();
+    std::string raw;
+    if (Storage.readFileToString("PCAT", BROWSE_TMP_PATH, 4096, raw)) {
+      JsonDocument doc;
+      if (deserializeJson(doc, raw) == DeserializationError::Ok) {
+        nextCursorToken = variantToString(resolvePath(doc.as<JsonVariantConst>(), manifest.cursorPath));
+        if (doc["has_more"].is<bool>() && !doc["has_more"].as<bool>()) {
+          nextCursorToken.clear();
+        }
+      }
+    }
+    hasMore = !nextCursorToken.empty() && !items.empty();
+    if (items.size() > static_cast<size_t>(manifest.pageSize)) items.resize(manifest.pageSize);
+  } else {
+    hasMore = static_cast<int>(items.size()) > manifest.pageSize;
+    if (hasMore) items.resize(manifest.pageSize);
+  }
+
+  std::sort(items.begin(), items.end(), [](const Item& a, const Item& b) {
+    if (a.isDir != b.isDir) return a.isDir;
+    return strcasecmp(a.title.c_str(), b.title.c_str()) < 0;
+  });
+
   computeInstallStatus();
   return true;
 }
@@ -674,11 +782,16 @@ void PluginCatalogActivity::pollAuth() {
   if (deserializeJson(doc, response) == DeserializationError::Ok) {
     const JsonVariantConst root = doc.as<JsonVariantConst>();
     const std::string newToken = variantToString(resolvePath(root, manifest.authTokenPath));
+    const std::string newRefreshToken = variantToString(resolvePath(root, manifest.authRefreshTokenPath));
+    if (!newRefreshToken.empty()) {
+      saveRefreshToken(newRefreshToken);
+    }
     if (!newToken.empty()) {
       if (!saveToken(newToken)) {
         fail(StrId::STR_PLUGIN_AUTH_FAILED);
         return;
       }
+      token = newToken;
       startBrowse();
       return;
     }
@@ -852,8 +965,8 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& it
   auto result = fetchFile();
   // The direct GET carries the catalog's token templates (never a pre-signed
   // url_path target): an expired password-grant token gets one mint-and-retry.
-  if (result == HttpDownloader::UNAUTHORIZED && manifest.dlUrlPath.empty() && manifest.hasPasswordGrant() &&
-      refreshCredentialToken()) {
+  if (result == HttpDownloader::UNAUTHORIZED && manifest.dlUrlPath.empty() &&
+      (manifest.hasRefresh() || manifest.hasPasswordGrant()) && refreshCredentialToken()) {
     result = fetchFile();
   }
   if (result != HttpDownloader::OK) return result;
@@ -970,6 +1083,14 @@ void PluginCatalogActivity::onBackButton() {
     browseHistory.pop_back();
     beginLoading();
     fetchPage(page);
+  } else if (!manifest.isXmlList() && !folderHistory.empty()) {
+    currentFolderId = folderHistory.back().first;
+    folderHistory.pop_back();
+    currentCursor.clear();
+    cursorHistory.clear();
+    page = 1;
+    beginLoading();
+    fetchPage(page);
   } else if (state == State::BROWSING && currentList >= 0) {
     // Browsing a picked list: Back returns to the list picker, not out.
     currentList = -1;
@@ -1028,10 +1149,32 @@ void PluginCatalogActivity::activateIndex(const int index) {
   // The pager rows bracket the items: "Previous page" ahead of them past
   // page 1, "Next page" after them while more pages exist.
   const int itemIndex = index - (prevRowVisible() ? 1 : 0);
-  if (itemIndex == -1 || (nextRowVisible() && itemIndex == static_cast<int>(items.size()))) {
+  if (itemIndex == -1) {
     app.clearTapFlash();
     beginLoading();
-    fetchPage(itemIndex == -1 ? page - 1 : page + 1);
+    if (!manifest.isXmlList() && !manifest.cursorPath.empty()) {
+      if (!cursorHistory.empty()) {
+        currentCursor = cursorHistory.back();
+        cursorHistory.pop_back();
+      } else {
+        currentCursor.clear();
+      }
+      fetchPage(page > 1 ? page - 1 : 1);
+    } else {
+      fetchPage(page - 1);
+    }
+    return;
+  }
+  if (nextRowVisible() && itemIndex == static_cast<int>(items.size())) {
+    app.clearTapFlash();
+    beginLoading();
+    if (!manifest.isXmlList() && !manifest.cursorPath.empty()) {
+      cursorHistory.push_back(currentCursor);
+      currentCursor = nextCursorToken;
+      fetchPage(page + 1);
+    } else {
+      fetchPage(page + 1);
+    }
     return;
   }
   app.clearTapFlash();  // the row leaves this screen (folder, download view)
@@ -1041,9 +1184,17 @@ void PluginCatalogActivity::activateIndex(const int index) {
 void PluginCatalogActivity::activateItem(const int itemIndex) {
   if (itemIndex < 0 || itemIndex >= static_cast<int>(items.size())) return;
   const Item& item = items[itemIndex];
-  if (manifest.isXmlList() && item.isDir) {
-    browseHistory.push_back(browseCurrentUrl);
-    browseCurrentUrl = item.url;
+  if (item.isDir) {
+    if (manifest.isXmlList()) {
+      browseHistory.push_back(browseCurrentUrl);
+      browseCurrentUrl = item.url;
+    } else {
+      folderHistory.push_back({currentFolderId, item.title});
+      currentFolderId = item.id.empty() ? item.url : item.id;
+      currentCursor.clear();
+      cursorHistory.clear();
+      page = 1;
+    }
     beginLoading();
     fetchPage(page);
     return;
@@ -1057,6 +1208,7 @@ void PluginCatalogActivity::drawFooter() {
   if (state == State::AUTH && authQrRect.width > 0) {
     QrUtils::drawQrCode(renderer, Rect{authQrRect.x, authQrRect.y, authQrRect.width, authQrRect.height}, authVerifyUrl);
   }
+  if (mappedInput.hasTouch()) return;
   MappedInputManager::Labels labels;
   switch (state) {
     case State::BROWSING:
@@ -1071,7 +1223,7 @@ void PluginCatalogActivity::drawFooter() {
       } else {
         // Folders open; items and the pager rows both fetch from the server.
         const bool onDir =
-            manifest.isXmlList() && itemSel >= 0 && itemSel < static_cast<int>(items.size()) && items[itemSel].isDir;
+            itemSel >= 0 && itemSel < static_cast<int>(items.size()) && items[itemSel].isDir;
         confirmLabel = count == 0 ? "" : (onDir ? tr(STR_OPEN) : tr(STR_FETCH));
       }
       // On the top row of a searchable catalog the previous-nav slot becomes
@@ -1098,11 +1250,22 @@ void PluginCatalogActivity::drawFooter() {
   GUI.drawButtonHints(renderer, labels.btn1, labels.btn2, labels.btn3, labels.btn4);
 }
 
-void PluginCatalogActivity::buildScreen(UiScreen& screen) {
-  if (chrome::lightHeader) pixelui::bindFonts(uiTarget, renderer);
+const char* PluginCatalogActivity::headerTitle() const {
+  if (state == State::PLUGIN_PICKER || catalogTitle.empty()) {
+    return tr(STR_PLUGINS);
+  }
   const bool listState = state == State::BROWSING || state == State::LIST_PICKER;
-  const std::string title = listState ? browsingHeaderLabel() : catalogTitle;
-  screenHeader(screen, title.c_str());
+  if (listState) {
+    cachedHeaderTitle = browsingHeaderLabel();
+    return cachedHeaderTitle.c_str();
+  }
+  return catalogTitle.c_str();
+}
+
+void PluginCatalogActivity::buildScreen(UiScreen& screen) {
+  pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
+  const auto& metrics = UITheme::getInstance().getMetrics();
+  pixelui::begin(screen, mappedInput.hasTouch() ? 0 : metrics.buttonHintsHeight);
   if (buildStatusScreen(screen)) return;
 
   switch (state) {
@@ -1149,7 +1312,9 @@ void PluginCatalogActivity::buildAuthScreen(UiScreen& screen) {
 
 std::string PluginCatalogActivity::browsingHeaderLabel() const {
   std::string label = catalogTitle;
-  if (searchActive) {
+  if (!manifest.isXmlList() && !folderHistory.empty()) {
+    label = folderHistory.back().second;
+  } else if (searchActive) {
     label = std::string(tr(STR_SEARCH)) + ": " + searchQuery;
   } else if (state == State::BROWSING && currentList >= 0 &&
              currentList < static_cast<int>(manifest.browseLists.size())) {
@@ -1194,7 +1359,7 @@ void PluginCatalogActivity::buildBrowsingScreen(UiScreen& screen) {
     props.subtitleText.maxLines = 2;
   }
   syncListViewport(screen, props);
-  screen.list(props);
+  pixelui::list(screen, props);
 }
 
 // Derives rowItems from the current state's row source: the browse lists

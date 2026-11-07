@@ -1,0 +1,6 @@
+{
+  "title": "Wallabag",
+  "description": "Duyệt và tải bài viết Read-It-Later từ Wallabag dưới dạng sách EPUB.",
+  "version": "1.0.0",
+  "mount": "settings"
+}

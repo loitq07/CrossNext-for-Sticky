@@ -1,0 +1,6 @@
+{
+  "title": "Google Drive",
+  "description": "Tải sách và tài liệu trực tiếp từ Google Drive của bạn.",
+  "version": "1.0.0",
+  "mount": "settings"
+}

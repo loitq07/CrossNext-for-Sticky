@@ -42,6 +42,10 @@ bool JsonListParser::parse(const ReadFn read, void* readCtx) {
 
 void JsonListParser::split(const std::string& dotted, Path& out) {
   size_t start = 0;
+  if (!dotted.empty() && dotted[0] == '.' && dotted.find('.', 1) == std::string::npos) {
+    out.push_back(dotted);
+    return;
+  }
   while (start < dotted.size()) {
     const size_t dot = dotted.find('.', start);
     const size_t end = dot == std::string::npos ? dotted.size() : dot;
@@ -51,7 +55,12 @@ void JsonListParser::split(const std::string& dotted, Path& out) {
 }
 
 bool JsonListParser::segEquals(const Frame& frame, const std::string& seg) {
-  if (!frame.isArray) return frame.key == seg;
+  if (!frame.isArray) {
+    if (frame.key == seg) return true;
+    if (!frame.key.empty() && frame.key[0] == '.' && frame.key.substr(1) == seg) return true;
+    if (!seg.empty() && seg[0] == '.' && seg.substr(1) == frame.key) return true;
+    return false;
+  }
   return !seg.empty() && isdigit(static_cast<unsigned char>(seg[0])) && atoi(seg.c_str()) == frame.index;
 }
 

@@ -1,0 +1,76 @@
+{
+  "title": "Google Drive",
+  "token": {
+    "file": "token.json",
+    "path": "access_token",
+    "refresh_file": "token.json",
+    "refresh_path": "refresh_token"
+  },
+  "config": {
+    "file": "config.json"
+  },
+  "browse": {
+    "format": "json",
+    "url": "https://www.googleapis.com/drive/v3/files?q=trashed%3Dfalse+and+%27{folder_id}%27+in+parents+and+(mimeType%3D%27application%2Fvnd.google-apps.folder%27+or+mimeType%3D%27application%2Fepub%2Bzip%27+or+mimeType%3D%27application%2Fpdf%27+or+mimeType%3D%27text%2Fplain%27+or+name+contains+%27.epub%27+or+name+contains+%27.pdf%27+or+name+contains+%27.txt%27+or+name+contains+%27.mobi%27+or+name+contains+%27.cbz%27)&orderBy=folder%2Cname&fields=nextPageToken%2Cfiles(id%2Cname%2CmimeType%2Csize)&pageSize={limit}&pageToken={cursor}",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {token}"
+    },
+    "items": "files",
+    "fields": {
+      "title": "name",
+      "id": "id",
+      "type": "mimeType"
+    },
+    "is_dir_match": "application/vnd.google-apps.folder",
+    "root_folder_id": "root",
+    "cursor_path": "nextPageToken",
+    "extensions": [".epub", ".pdf", ".txt", ".mobi", ".cbz"],
+    "page_size": 8
+  },
+  "download": {
+    "url": "https://www.googleapis.com/drive/v3/files/{id}?alt=media",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {token}"
+    },
+    "dest_dir": "/books/GoogleDrive",
+    "filename": "{title}"
+  },
+  "auth": {
+    "type": "device_code",
+    "request": {
+      "url": "https://oauth2.googleapis.com/device/code",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "client_id={cfg.client_id}&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fdrive.readonly"
+    },
+    "poll": {
+      "url": "https://oauth2.googleapis.com/token",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "client_id={cfg.client_id}&client_secret={cfg.client_secret}&device_code={device_code}&grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code"
+    },
+    "refresh": {
+      "url": "https://oauth2.googleapis.com/token",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "client_id={cfg.client_id}&client_secret={cfg.client_secret}&refresh_token={refresh_token}&grant_type=refresh_token",
+      "token_path": "access_token"
+    },
+    "code_path": "user_code",
+    "verify_url_path": "verification_url",
+    "device_code_path": "device_code",
+    "interval_path": "interval",
+    "expires_path": "expires_in",
+    "token_path": "access_token",
+    "refresh_token_path": "refresh_token",
+    "error_path": "error"
+  }
+}

@@ -15,7 +15,7 @@
 // to the sink as soon as its item object closes.
 class JsonListParser {
  public:
-  enum Field { F_TITLE, F_AUTHOR, F_ID, F_URL, F_VERSION, F_BASE, F_COUNT };
+  enum Field { F_TITLE, F_AUTHOR, F_ID, F_URL, F_VERSION, F_BASE, F_TYPE, F_COUNT };
   struct Row {
     std::string field[F_COUNT];
     std::vector<std::string> files;

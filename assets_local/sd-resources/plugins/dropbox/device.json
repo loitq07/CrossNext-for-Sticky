@@ -1,0 +1,58 @@
+{
+  "title": "Dropbox",
+  "token": {
+    "file": "token.json",
+    "path": "access_token",
+    "refresh_file": "token.json",
+    "refresh_path": "refresh_token"
+  },
+  "config": {
+    "file": "config.json"
+  },
+  "browse": {
+    "format": "json",
+    "url": "https://api.dropboxapi.com/2/files/list_folder",
+    "method": "POST",
+    "headers": {
+      "Authorization": "Bearer {token}",
+      "Content-Type": "application/json"
+    },
+    "body": "{\"path\":\"{folder_id}\",\"recursive\":false,\"limit\":{limit},\"include_non_downloadable_files\":false}",
+    "continue_url": "https://api.dropboxapi.com/2/files/list_folder/continue",
+    "continue_body": "{\"cursor\":\"{cursor}\"}",
+    "items": "entries",
+    "fields": {
+      "title": "name",
+      "id": "id",
+      "type": ".tag"
+    },
+    "is_dir_match": "folder",
+    "root_folder_id": "",
+    "cursor_path": "cursor",
+    "extensions": [".epub", ".pdf", ".txt", ".mobi", ".cbz"],
+    "page_size": 8
+  },
+  "download": {
+    "url": "https://content.dropboxapi.com/2/files/download",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {token}",
+      "Dropbox-API-Arg": "{\"path\":\"{id}\"}"
+    },
+    "dest_dir": "/books/Dropbox",
+    "filename": "{title}"
+  },
+  "auth": {
+    "type": "refresh",
+    "refresh": {
+      "url": "https://api.dropboxapi.com/oauth2/token",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "grant_type=refresh_token&refresh_token={refresh_token}&client_id={cfg.client_id}&client_secret={cfg.client_secret}",
+      "token_path": "access_token"
+    },
+    "token_path": "access_token"
+  }
+}

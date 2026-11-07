@@ -1,0 +1,74 @@
+{
+  "title": "Wallabag",
+  "token": {
+    "file": "token.json",
+    "path": "access_token",
+    "refresh_file": "token.json",
+    "refresh_path": "refresh_token"
+  },
+  "config": {
+    "file": "config.json"
+  },
+  "browse": {
+    "format": "json",
+    "url": "{cfg.url}/api/entries.json?page={page}&perPage={limit}&archive=0",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {token}"
+    },
+    "items": "_embedded.items",
+    "fields": {
+      "title": "title",
+      "author": "published_by.0",
+      "id": "id"
+    },
+    "page_size": 8,
+    "lists": [
+      {
+        "title": "Chưa đọc (Unread)",
+        "url": "{cfg.url}/api/entries.json?page={page}&perPage={limit}&archive=0"
+      },
+      {
+        "title": "Yêu thích (Starred)",
+        "url": "{cfg.url}/api/entries.json?page={page}&perPage={limit}&starred=1"
+      },
+      {
+        "title": "Lưu trữ (Archive)",
+        "url": "{cfg.url}/api/entries.json?page={page}&perPage={limit}&archive=1"
+      }
+    ],
+    "search": {
+      "url": "{cfg.url}/api/entries.json?page={page}&perPage={limit}&term={query}"
+    }
+  },
+  "download": {
+    "url": "{cfg.url}/api/entries/{id}/export.epub",
+    "method": "GET",
+    "headers": {
+      "Authorization": "Bearer {token}"
+    },
+    "dest_dir": "/books/Wallabag",
+    "filename": "{title}.epub"
+  },
+  "auth": {
+    "type": "password",
+    "request": {
+      "url": "{cfg.url}/oauth/v2/token",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "grant_type=password&client_id={cfg.client_id}&client_secret={cfg.client_secret}&username={cfg.username}&password={cfg.password}"
+    },
+    "refresh": {
+      "url": "{cfg.url}/oauth/v2/token",
+      "method": "POST",
+      "headers": {
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      "body": "grant_type=refresh_token&client_id={cfg.client_id}&client_secret={cfg.client_secret}&refresh_token={refresh_token}"
+    },
+    "token_path": "access_token",
+    "refresh_token_path": "refresh_token"
+  }
+}

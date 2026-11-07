@@ -57,6 +57,12 @@ class PluginCatalogActivity final : public CatalogActivity {
     std::string itemsPath;  // JSON: dotted path to the item array; "" = response root
     // JSON field paths (dotted); XML field selectors ("elem", "elem@attr", "@attr").
     std::string titlePath, authorPath, idPath, urlPath;
+    std::string typePath;                    // JSON field for item type (e.g. "mimeType" or ".tag")
+    std::string isDirMatch;                  // Match value for directory items
+    std::string rootFolderId;                // Initial root folder id
+    std::string cursorPath;                  // Path to pagination cursor/token
+    std::string continueUrl, continueBody;   // Optional alternate URL/body for cursor paging
+    std::vector<std::string> jsonExtensions; // Allowed file extensions for JSON items
     // Compare this item field against the installed manifest version for badges.
     std::string versionPath;
     bool tracksInstalls() const { return !versionPath.empty(); }
@@ -90,13 +96,15 @@ class PluginCatalogActivity final : public CatalogActivity {
     // {id}, {title}, {md5} (MD5 of the destination path).
     std::string sidecarPath, sidecarBody;
     // Both grants write the shared token file; device_code also shows a QR/code.
-    std::string authType;  // "device_code" (default) or "password"
-    pluginhttp::RequestSpec authReq, pollReq;
+    std::string authType;  // "device_code" (default), "password", or "refresh"
+    pluginhttp::RequestSpec authReq, pollReq, refreshReq;
     std::string authCodePath, authVerifyPath, authDeviceCodePath;
-    std::string authIntervalPath, authExpiresPath, authTokenPath, authErrorPath;
+    std::string authIntervalPath, authExpiresPath, authTokenPath, authRefreshTokenPath, authErrorPath;
+    std::string refreshTokenFile, refreshTokenPath;
 
     bool hasDeviceCode() const { return authType == "device_code" && !authReq.url.empty() && !pollReq.url.empty(); }
     bool hasPasswordGrant() const { return authType == "password" && !authReq.url.empty(); }
+    bool hasRefresh() const { return !refreshReq.url.empty(); }
   };
 
   struct Item {
@@ -122,6 +130,7 @@ class PluginCatalogActivity final : public CatalogActivity {
   std::vector<freeink::ui::ListItem> rowItems;
   bool rowsDirty = true;
   std::string token;
+  std::string refreshToken;
   pluginhttp::Headers config;  // {cfg.KEY} values
   int page = 1;
   bool hasMore = false;
@@ -133,6 +142,13 @@ class PluginCatalogActivity final : public CatalogActivity {
   // XML-list folder navigation: current container URL and the trail back out.
   std::string browseCurrentUrl;
   std::vector<std::string> browseHistory;
+  // JSON folder navigation: current folder ID and navigation history
+  std::string currentFolderId;
+  std::vector<std::pair<std::string, std::string>> folderHistory;
+  // Cursor-based pagination state
+  std::string currentCursor;
+  std::string nextCursorToken;
+  std::vector<std::string> cursorHistory;
   // Device-code sign-in state
   std::string authUserCode, authVerifyUrl, authDeviceCode;
   unsigned long authIntervalMs = 5000;
@@ -151,8 +167,10 @@ class PluginCatalogActivity final : public CatalogActivity {
   bool wantsListPicker() const;
   bool loadManifest();
   bool loadToken();
+  bool loadRefreshToken();
   void loadConfig();
   bool saveToken(const std::string& value);
+  bool saveRefreshToken(const std::string& value);
   // Show named lists when present, otherwise fetch the first page.
   void startBrowse() override;
   void retryBrowse() override;
@@ -161,6 +179,8 @@ class PluginCatalogActivity final : public CatalogActivity {
   void downloadFinished(bool cancelled) override;
   // Header label for the browsing screen (list title / search / page suffix).
   std::string browsingHeaderLabel() const;
+  const char* headerTitle() const override;
+  mutable std::string cachedHeaderTitle;
   // JSON pagination adds rows before/after the current items.
   bool prevRowVisible() const;
   bool nextRowVisible() const;

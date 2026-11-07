@@ -29,7 +29,7 @@ int read5(void* c, char* b, size_t n) {
 bool run(const char* doc, const std::string& items, std::initializer_list<const char*> paths, const char* filesPath) {
   std::vector<std::string> p(paths.begin(), paths.end());
   p.resize(JsonListParser::F_COUNT);
-  const std::string* const fields[] = {&p[0], &p[1], &p[2], &p[3], &p[4], &p[5]};
+  const std::string* const fields[] = {&p[0], &p[1], &p[2], &p[3], &p[4], &p[5], &p[6]};
   rows.clear();
   auto* parser = new JsonListParser(
       items, fields, filesPath, [](void*, Row& r) { rows.push_back(r); }, nullptr);
@@ -54,6 +54,13 @@ int main() {
   assert(run(R"({"page":1,"_embedded":{"items":[{"id":"x","title":"T"}],"other":[{"title":"skip"}]}})",
              "_embedded.items", {"title", "", "id"}, ""));
   assert(rows.size() == 1 && rows[0].field[JsonListParser::F_ID] == "x");
+
+  // dropbox: entries with .tag for type
+  assert(run(R"({"entries":[{"id":"id:1","name":"Folder1",".tag":"folder"},{"id":"id:2","name":"Book.epub",".tag":"file"}],"cursor":"c1","has_more":false})",
+             "entries", {"name", "", "id", "", "", "", ".tag"}, ""));
+  assert(rows.size() == 2);
+  assert(rows[0].field[JsonListParser::F_TITLE] == "Folder1" && rows[0].field[JsonListParser::F_TYPE] == "folder");
+  assert(rows[1].field[JsonListParser::F_TITLE] == "Book.epub" && rows[1].field[JsonListParser::F_TYPE] == "file");
 
   // plugin-store / dictionaries: version, bundle base and files array.
   assert(run(R"({"plugins":[{"name":"p","title":"P","version":"1.2","base":"https://h/p","files":["a.js","b/c.bin"]}]})",

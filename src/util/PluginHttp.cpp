@@ -146,12 +146,23 @@ bool saveTokenToFile(const std::string& file, const std::string& path, const std
   if (file.empty()) return false;
   if (!allowedFile(file)) return false;
   JsonDocument doc;
+  std::string raw;
+  if (Storage.readFileToString("PHTP", file, MAX_TOKEN_FILE_SIZE, raw)) {
+    deserializeJson(doc, raw);
+  }
   // Build the nesting the read path expects (numeric segments unsupported).
   std::vector<std::string> segs;
   splitPath(path, segs);
   if (segs.empty()) return false;
-  JsonVariant node = doc.to<JsonObject>();
-  for (size_t i = 0; i + 1 < segs.size(); i++) node = node[segs[i]].to<JsonObject>();
+  JsonVariant node = doc.as<JsonVariant>();
+  if (!node.is<JsonObject>()) node = doc.to<JsonObject>();
+  for (size_t i = 0; i + 1 < segs.size(); i++) {
+    if (!node[segs[i]].is<JsonObject>()) {
+      node = node[segs[i]].to<JsonObject>();
+    } else {
+      node = node[segs[i]];
+    }
+  }
   node[segs.back()] = value;
   std::string out;
   serializeJson(doc, out);
