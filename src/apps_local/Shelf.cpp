@@ -364,6 +364,7 @@ const char* label(const char* stableTitle) {
   if (std::strcmp(stableTitle, "NOTES") == 0) return tr(STR_UI_NOTES_E69FC1);
   if (std::strcmp(stableTitle, "HABITS") == 0) return tr(STR_UI_HABITS_630758);
   if (std::strcmp(stableTitle, "Games") == 0) return tr(STR_SHORT_GAMES);
+  if (std::strcmp(stableTitle, "Apps") == 0) return tr(STR_SHORT_APPS);
   return stableTitle;
 }
 

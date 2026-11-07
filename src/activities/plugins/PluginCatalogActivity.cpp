@@ -24,8 +24,10 @@
 #include "apps_local/ui/PixelMenuTheme.h"
 #include "components/CatalogScreens.h"
 #include "components/UITheme.h"
+#include "components/icons/listIcons.h"
 #include "network/HttpDownloader.h"
 #include "network/ProtectedPaths.h"
+#include <LibraryBuilder.h>
 #include "util/BookCacheUtils.h"
 #include "util/PluginEvents.h"
 #include "util/PluginHttp.h"
@@ -743,8 +745,41 @@ bool PluginCatalogActivity::parseBrowseResponse() {
 // manifest (located by folder id across the plugin roots). Only a newer
 // catalog version is an update, so an older catalog never offers a downgrade.
 // Runs once per page.
+std::string PluginCatalogActivity::itemDestinationPath(const Item& item) const {
+  if (item.isDir) return "";
+  const std::string filename =
+      StringUtils::sanitizeFilenamePreservingExtension(substituted(manifest.filenameTpl, &item));
+  if (filename.empty() || filename.find("..") != std::string::npos || filename.find('/') != std::string::npos) {
+    return "";
+  }
+  const std::string folderDir = downloadDir();
+  std::string dest;
+  dest.reserve(folderDir.size() + 1 + filename.size());
+  if (!folderDir.empty()) dest += folderDir;
+  dest += '/';
+  dest += filename;
+  if (!protectedpaths::isPluginPath(dest)) return "";
+  return dest;
+}
+
+bool PluginCatalogActivity::isItemDownloaded(const Item& item) const {
+  const std::string dest = itemDestinationPath(item);
+  return !dest.empty() && Storage.exists(dest.c_str());
+}
+
 void PluginCatalogActivity::computeInstallStatus() {
-  if (!manifest.tracksInstalls()) return;
+  if (!manifest.tracksInstalls()) {
+    for (auto& item : items) {
+      if (item.isDir) {
+        item.status.clear();
+      } else if (isItemDownloaded(item)) {
+        item.status = tr(STR_DOWNLOADED);
+      } else {
+        item.status.clear();
+      }
+    }
+    return;
+  }
   JsonDocument filter;
   filter["version"] = true;
   for (auto& item : items) {
@@ -1006,6 +1041,7 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBook(const Item& it
   }
   if (result != HttpDownloader::OK) return result;
   clearBookCache(dest);
+  library::markLibraryIndexDirty();
 
   // Optional per-book sidecar (e.g. a service book id keyed by the file's
   // path hash) so a later sync stage can associate the file with the service.
@@ -1234,6 +1270,13 @@ void PluginCatalogActivity::activateItem(const int itemIndex) {
     fetchPage(page);
     return;
   }
+  if (!manifest.tracksInstalls()) {
+    const std::string dest = itemDestinationPath(item);
+    if (!dest.empty() && Storage.exists(dest.c_str())) {
+      onSelectBook(dest);
+      return;
+    }
+  }
   downloadItem(itemIndex);
 }
 
@@ -1259,7 +1302,9 @@ void PluginCatalogActivity::drawFooter() {
         // Folders open; items and the pager rows both fetch from the server.
         const bool onDir =
             itemSel >= 0 && itemSel < static_cast<int>(items.size()) && items[itemSel].isDir;
-        confirmLabel = count == 0 ? "" : (onDir ? tr(STR_OPEN) : tr(STR_FETCH));
+        const bool isDownloaded =
+            !onDir && itemSel >= 0 && itemSel < static_cast<int>(items.size()) && !items[itemSel].status.empty();
+        confirmLabel = count == 0 ? "" : (onDir ? tr(STR_OPEN) : (isDownloaded ? tr(STR_OPEN) : tr(STR_FETCH)));
       }
       // On the top row of a searchable catalog the previous-nav slot becomes
       // Search (front Left), mirroring the OPDS browser's side-button search.
@@ -1397,36 +1442,80 @@ void PluginCatalogActivity::buildBrowsingScreen(UiScreen& screen) {
   pixelui::list(screen, props);
 }
 
+// 32x32 1-bpp monochrome icons for cloud plugins (Mask1 format: 0=ink/drawn, 1=paper/transparent)
+static const uint8_t icon_dropbox_32_bits[] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0x7F, 0xFE, 0xFF, 0xFE, 0x3F, 0xFC, 0x7F, 0xF8, 0x0F, 0xF0, 0x1F, 0xF0, 0x07, 0xE0, 0x0F,
+    0xC0, 0x01, 0x80, 0x03, 0x80, 0x00, 0x00, 0x01, 0xC0, 0x01, 0x80, 0x03, 0xF0, 0x07, 0xE0, 0x0F,
+    0xF8, 0x0F, 0xF0, 0x1F, 0xFE, 0x3F, 0xFC, 0x7F, 0xFF, 0x7F, 0xFE, 0xFF, 0xFE, 0x3F, 0xFC, 0x7F,
+    0xF8, 0x0F, 0xF0, 0x1F, 0xF0, 0x07, 0xE0, 0x0F, 0xC0, 0x01, 0x80, 0x03, 0x80, 0x00, 0x00, 0x01,
+    0xC0, 0x01, 0x00, 0x03, 0xF0, 0x06, 0x20, 0x0F, 0xF8, 0x08, 0x00, 0x1F, 0xFE, 0x30, 0x04, 0x7F,
+    0xFF, 0x40, 0x00, 0xFF, 0xFF, 0xF0, 0x07, 0xFF, 0xFF, 0xF8, 0x0F, 0xFF, 0xFF, 0xFE, 0x3F, 0xFF,
+    0xFF, 0xFF, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+static const freeink::Icon icon_dropbox_32 = {32, 32, 16, icon_dropbox_32_bits};
+
+static const uint8_t icon_google_drive_32_bits[] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+    0xFF, 0xC0, 0x01, 0xFF, 0xFF, 0x80, 0x80, 0xFF, 0xFF, 0x80, 0x80, 0xFF, 0xFF, 0x01, 0xC0, 0x7F,
+    0xFF, 0x01, 0xC0, 0x7F, 0xFE, 0x03, 0xE0, 0x3F, 0xFE, 0x03, 0xE0, 0x3F, 0xFC, 0x07, 0xF0, 0x1F,
+    0xFC, 0x0F, 0x78, 0x1F, 0xF8, 0x0E, 0xB8, 0x0F, 0xF0, 0x1D, 0xDC, 0x07, 0xF0, 0x1D, 0xDC, 0x07,
+    0xE0, 0x3B, 0xEE, 0x03, 0xE0, 0x37, 0xF6, 0x03, 0xC0, 0x6F, 0xFB, 0x01, 0xC0, 0xEF, 0xFB, 0x01,
+    0x80, 0x00, 0x00, 0x00, 0x80, 0x00, 0x00, 0x0E, 0xC0, 0x00, 0x00, 0x0D, 0xE0, 0x00, 0x00, 0x1B,
+    0xE0, 0x00, 0x00, 0x17, 0xE0, 0x00, 0x00, 0x37, 0xFB, 0xFF, 0xFF, 0xEF, 0xFC, 0x00, 0x00, 0x1F,
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+static const freeink::Icon icon_google_drive_32 = {32, 32, 16, icon_google_drive_32_bits};
+
+static const uint8_t icon_wallabag_32_bits[] = {
+    0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC, 0x3F, 0xFF,
+    0xFF, 0xF0, 0x0F, 0xFF, 0xFF, 0xE3, 0xC7, 0xFF, 0xFF, 0xC7, 0xE3, 0xFF, 0xFF, 0xCF, 0xF3, 0xFF,
+    0xFF, 0xCF, 0xF3, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE, 0x00, 0x00, 0x7F, 0xFC, 0x00, 0x00, 0x3F,
+    0xF8, 0x00, 0x00, 0x1F, 0xF8, 0x00, 0x00, 0x1F, 0xF8, 0x60, 0x03, 0x1F, 0xF8, 0x60, 0x03, 0x1F,
+    0xF8, 0x30, 0x06, 0x1F, 0xF8, 0x31, 0xC6, 0x1F, 0xF8, 0x33, 0x66, 0x1F, 0xF8, 0x13, 0x64, 0x1F,
+    0xF8, 0x1E, 0x3C, 0x1F, 0xF8, 0x1E, 0x3C, 0x1F, 0xF8, 0x1C, 0x1C, 0x1F, 0xF8, 0x0C, 0x18, 0x1F,
+    0xF8, 0x1C, 0x1C, 0x1F, 0xF8, 0x00, 0x00, 0x1F, 0xF8, 0x00, 0x00, 0x1F, 0xFC, 0x00, 0x00, 0x3F,
+    0xFE, 0x00, 0x00, 0x7F, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF,
+};
+static const freeink::Icon icon_wallabag_32 = {32, 32, 16, icon_wallabag_32_bits};
+
 // Derives rowItems from the current state's row source: the browse lists
 // (LIST_PICKER) or the pager rows bracketing the items (BROWSING). Labels
 // point into `manifest`/`items` strings, which outlive the buffer.
 void PluginCatalogActivity::rebuildRowItems() {
   rowItems.clear();
   rowItems.reserve(rowCount());
-  const auto addRow = [&](const char* label, const char* subtitle = nullptr, const char* value = nullptr) {
+  const auto addRow = [&](const char* label, const char* subtitle = nullptr, const char* value = nullptr,
+                          fui::BitmapRef icon = {}) {
     fui::ListItem row;
     row.label = label;
     row.subtitle = subtitle && subtitle[0] ? subtitle : nullptr;
     row.value = value && value[0] ? value : nullptr;
+    row.icon = icon;
     row.actionValue = static_cast<int16_t>(rowItems.size());
     rowItems.push_back(row);
   };
   if (state == State::PLUGIN_PICKER) {
-    if (showOpds) addRow(tr(STR_OPDS_BROWSER), tr(STR_OPDS_SERVERS));
+    if (showOpds) addRow(tr(STR_OPDS_BROWSER), tr(STR_OPDS_SERVERS), nullptr, freeink::ui::bitmapFromIcon(icon_radio_tower_32));
     for (const auto& plugin : installedPlugins) {
-      //   None       -> web-only hint; chevron only with a readme
-      //   Catalog    -> browsable, own description, chevron
-      //   Background -> events-only, own description, chevron only with a readme
       const char* subtitle = plugin.description.empty() ? nullptr : plugin.description.c_str();
+      fui::BitmapRef icon = {};
+      if (plugin.name == "dropbox") {
+        icon = freeink::ui::bitmapFromIcon(icon_dropbox_32);
+      } else if (plugin.name == "google-drive") {
+        icon = freeink::ui::bitmapFromIcon(icon_google_drive_32);
+      } else if (plugin.name == "wallabag") {
+        icon = freeink::ui::bitmapFromIcon(icon_wallabag_32);
+      }
       switch (plugin.deviceKind) {
         case PluginLocations::DeviceKind::None:
-          addRow(plugin.title.c_str(), tr(STR_PLUGIN_WEB_ONLY), plugin.readmePath.empty() ? nullptr : ">");
+          addRow(plugin.title.c_str(), tr(STR_PLUGIN_WEB_ONLY), plugin.readmePath.empty() ? nullptr : ">", icon);
           break;
         case PluginLocations::DeviceKind::Catalog:
-          addRow(plugin.title.c_str(), subtitle, ">");
+          addRow(plugin.title.c_str(), subtitle, ">", icon);
           break;
         case PluginLocations::DeviceKind::Background:
-          addRow(plugin.title.c_str(), subtitle, plugin.readmePath.empty() ? nullptr : ">");
+          addRow(plugin.title.c_str(), subtitle, plugin.readmePath.empty() ? nullptr : ">", icon);
           break;
       }
     }
@@ -1435,7 +1524,8 @@ void PluginCatalogActivity::rebuildRowItems() {
   } else {
     if (prevRowVisible()) addRow(tr(STR_PREV_PAGE), nullptr, ">");
     for (const auto& entry : items) {
-      addRow(entry.title.c_str(), entry.author.c_str(), entry.isDir ? ">" : entry.status.c_str());
+      addRow(entry.title.c_str(), entry.author.c_str(), entry.isDir ? ">" : entry.status.c_str(),
+             freeink::ui::bitmapFromIcon(entry.isDir ? icon_folder_32 : icon_book_32));
     }
     if (nextRowVisible()) addRow(tr(STR_NEXT_PAGE), nullptr, ">");
   }

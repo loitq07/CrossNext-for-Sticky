@@ -207,6 +207,8 @@ class PluginCatalogActivity final : public CatalogActivity {
   void fetchPage(int newPage);
   // Read installed versions once per page, outside the render path.
   void computeInstallStatus();
+  std::string itemDestinationPath(const Item& item) const;
+  bool isItemDownloaded(const Item& item) const;
   bool parseXmlList();
   bool parseBrowseResponse();
   void activateItem(int itemIndex);  // XML list: navigate into a folder, else download

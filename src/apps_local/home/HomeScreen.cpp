@@ -116,14 +116,18 @@ void drawIcon(fui::DrawTarget& target, fui::Rect rect, Icon kind, bool inverted)
 bool copyLabel(char* out, const size_t size, const char* text) { return pixelui::copyNatural(out, size, text); }
 
 void formatDate(char* out, size_t size, int year, int month, int day) {
-  static constexpr UiLabel months[] = {
-      trLabel(STR_UI_JAN_521AD2), trLabel(STR_UI_FEB_F719E9), trLabel(STR_UI_MAR_A8D9B8), trLabel(STR_UI_APR_72402E),
-      trLabel(STR_UI_MAY_18AE53), trLabel(STR_UI_JUN_F998A6), trLabel(STR_UI_JUL_7DA032), trLabel(STR_UI_AUG_FE905B),
-      trLabel(STR_UI_SEP_492C5F), trLabel(STR_UI_OCT_AA5816), trLabel(STR_UI_NOV_F62CE2), trLabel(STR_UI_DEC_CA3A45)};
   if (year < 2020 || year > 2099 || month < 1 || month > 12 || day < 1 || day > 31) {
     std::snprintf(out, size, "-- ---");
     return;
   }
+  if (I18N.getLanguage() == Language::VI) {
+    std::snprintf(out, size, "%02d/%02d", day, month);
+    return;
+  }
+  static constexpr UiLabel months[] = {
+      trLabel(STR_UI_JAN_521AD2), trLabel(STR_UI_FEB_F719E9), trLabel(STR_UI_MAR_A8D9B8), trLabel(STR_UI_APR_72402E),
+      trLabel(STR_UI_MAY_18AE53), trLabel(STR_UI_JUN_F998A6), trLabel(STR_UI_JUL_7DA032), trLabel(STR_UI_AUG_FE905B),
+      trLabel(STR_UI_SEP_492C5F), trLabel(STR_UI_OCT_AA5816), trLabel(STR_UI_NOV_F62CE2), trLabel(STR_UI_DEC_CA3A45)};
   std::snprintf(out, size, "%02d %s", day, months[month - 1].get());
 }
 
