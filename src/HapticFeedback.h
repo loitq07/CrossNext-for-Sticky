@@ -1,5 +1,6 @@
 #pragma once
 
+#include <HalBuzzer.h>
 #include <HalHaptics.h>
 
 #include "CrossPointSettings.h"
@@ -11,6 +12,9 @@ inline void touchAction(bool longPress = false) {
   const bool enabled = SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF;
   if (longPress) {
     HalHaptics::longPress(enabled, SETTINGS.hapticIntensity);
+    if (SETTINGS.keySound) {
+      HalBuzzer::beep(2500, 30);
+    }
   } else {
     HalHaptics::feedback(enabled, true, SETTINGS.hapticIntensity);
   }

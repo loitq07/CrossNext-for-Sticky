@@ -76,7 +76,7 @@ int settingsGroup(const SettingInfo& s, int category) {
         s.valuePtr == &CrossPointSettings::previousPageGesture ||
         s.valuePtr == &CrossPointSettings::xtcInvertPageDirection)
       return 1;
-    if (s.valuePtr == &CrossPointSettings::vibration || s.valuePtr == &CrossPointSettings::hapticIntensity) return 2;
+    if (s.valuePtr == &CrossPointSettings::vibration || s.valuePtr == &CrossPointSettings::hapticIntensity || s.valuePtr == &CrossPointSettings::keySound) return 2;
     return 0;
   }
   if (s.action == SettingAction::HomeMenu || s.action == SettingAction::Language) return 0;

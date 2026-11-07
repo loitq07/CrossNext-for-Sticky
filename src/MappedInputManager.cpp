@@ -3,6 +3,7 @@
 #include <BoardConfig.h>
 #include <FreeInkUICore.h>
 #include <GfxRenderer.h>
+#include <HalBuzzer.h>
 #include <HalFrontlight.h>
 #include <HalHaptics.h>
 #include <Logging.h>
@@ -21,6 +22,15 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
   const bool pagePressed =
       SETTINGS.vibration == CrossPointSettings::VIBRATION_TOUCH_PAGE && gpio.wasCapacitivePagePressed();
   HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, pagePressed, SETTINGS.hapticIntensity);
+  if (SETTINGS.keySound) {
+    float nx = 0.0f;
+    float ny = 0.0f;
+    const bool touchDown = !isTouchscreenLocked() && gpio.wasTouchDown(nx, ny);
+    const bool anyBtnPressed = gpio.wasAnyPressed();
+    if (touchDown || anyBtnPressed) {
+      HalBuzzer::click();
+    }
+  }
   homeAction = HomeButtonAction::Ignore;
   if (gpio.hasHomeKey()) {
     homeButtonInput.setWindow(SETTINGS.homeButtonDoubleTapTiming);

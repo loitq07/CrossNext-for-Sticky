@@ -1,4 +1,5 @@
 #include "HalPowerManager.h"
+#include "HalBuzzer.h"
 
 #include <BoardConfig.h>
 #include <HalFrontlight.h>
@@ -73,6 +74,7 @@ void HalPowerManager::setPowerSaving(bool enabled) {
 
 [[noreturn]] void HalPowerManager::startDeepSleep(HalGPIO& gpio, const uint64_t timerWakeMicros) const {
   Frontlight.prepareForDeepSleep();
+  HalBuzzer::prepareForDeepSleep();
 #if FREEINK_DEVICE_EEGO_A4
   // LM3630A and GSL share I2C; turn the light off before touch releases the bus.
   gpio.prepareForDeepSleep();
