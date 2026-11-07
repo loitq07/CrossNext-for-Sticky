@@ -236,20 +236,42 @@ void build(Screen& screen, const Model& model, Work& work) {
                 chrome::lightHeader ? (compactLandscape ? 8 : 12)
                 : compactLandscape  ? 8
                                     : 10);
-  const auto done = screen.takeBottom(chrome::lightHeader || compactLandscape          ? 44
-                                      : screen.device().width > screen.device().height ? 48
-                                                                                       : 56,
-                                      sectionGap);
+  const auto bottomBand = screen.takeBottom(chrome::lightHeader || compactLandscape          ? 44
+                                            : screen.device().width > screen.device().height ? 48
+                                                                                             : 56,
+                                            sectionGap);
+  const int gap = sectionGap;
+  const int btnW = (bottomBand.width - gap) / 2;
+  const auto homeRect = fui::makeRect(bottomBand.x, bottomBand.y, btnW, bottomBand.height);
+  const auto doneRect =
+      fui::makeRect(bottomBand.x + btnW + gap, bottomBand.y, bottomBand.width - btnW - gap, bottomBand.height);
+
+  // Home button
   work.button = {};
-  auto& p = work.button;
-  p.styles = pixelui::buttonStyles();
-  p.action = 1;
-  panelLabel(work.label, sizeof(work.label), tr(STR_DONE));
-  p.label = work.label;
-  p.text.font = chrome::lightHeader || compactLandscape ? pixelui::kSmall : pixelui::kBody;
-  p.text.align = fui::TextAlign::Center;
-  p.minTouchSize = 0;
-  screen.button(p, done);
+  auto& homeBtn = work.button;
+  homeBtn.styles = pixelui::buttonStyles();
+  homeBtn.action = 7;
+  homeBtn.value = readertext::GoHome;
+  char homeLabel[64]{};
+  panelLabel(homeLabel, sizeof(homeLabel), tr(STR_GO_HOME_BUTTON));
+  homeBtn.label = homeLabel;
+  homeBtn.text.font = chrome::lightHeader || compactLandscape ? pixelui::kSmall : pixelui::kBody;
+  homeBtn.text.align = fui::TextAlign::Center;
+  homeBtn.minTouchSize = 0;
+  screen.button(homeBtn, homeRect);
+
+  // Done button
+  work.button = {};
+  auto& doneBtn = work.button;
+  doneBtn.styles = pixelui::buttonStyles();
+  doneBtn.action = 1;
+  char doneLabel[64]{};
+  panelLabel(doneLabel, sizeof(doneLabel), tr(STR_DONE));
+  doneBtn.label = doneLabel;
+  doneBtn.text.font = chrome::lightHeader || compactLandscape ? pixelui::kSmall : pixelui::kBody;
+  doneBtn.text.align = fui::TextAlign::Center;
+  doneBtn.minTouchSize = 0;
+  screen.button(doneBtn, doneRect);
   if (!model.fixed && model.tab == 3 && model.view == SheetView::Style) {
     const auto heading = screen.takeTop(44, kSectionGap);
     button(screen, work, fui::makeRect(heading.x, heading.y, 48, heading.height), "", StyleBack);

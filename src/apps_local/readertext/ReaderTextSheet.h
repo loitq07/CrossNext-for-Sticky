@@ -35,6 +35,7 @@ enum Control : int {
   AlignmentLeft = 50,
   AlignmentCenter,
   AlignmentJustify,
+  GoHome = 60,
   ChapterPick = 2000,
   MorePick = 4000,
   FontPick = 100

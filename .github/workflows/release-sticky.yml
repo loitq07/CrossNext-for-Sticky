@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+      - '[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
     inputs:
       tag:
@@ -59,7 +60,10 @@ jobs:
             TAG="${{ github.event.inputs.tag }}"
           fi
           if [ -z "$TAG" ]; then
-            TAG=$(grep -E '^\s*version\s*=' platformio.ini | head -n1 | sed -E 's/.*=\s*([0-9\.]+)/v\1/')
+            TAG="v$(grep -A 2 '[crossplay]' platformio.ini | grep -E '^\s*version\s*=' | head -n1 | sed -E 's/.*=\s*([0-9\.]+)/\1/')"
+          fi
+          if [[ ! "$TAG" =~ ^v ]]; then
+            TAG="v$TAG" 
           fi
           echo "TAG=$TAG" >> "$GITHUB_OUTPUT"
 

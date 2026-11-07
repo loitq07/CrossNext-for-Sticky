@@ -324,43 +324,7 @@ int EpubReaderActivity::bookPercentFor(const ChapterPosition& position) const {
 }
 
 void EpubReaderActivity::openReaderMenu() {
-  pendingManualTurn = 0;
-  if (usesToolbarMenu()) {
-    // Reached from a child activity's result handler (footnotes, bookmarks,
-    // go-to-percent... cancelled back to the menu), so the framebuffer holds
-    // that screen, not the page: re-render the page and let renderBook() put
-    // the toolbar on top. The in-reader fast path is openOverlay().
-    overlay = Overlay::Toolbar;
-    focusedTool = 0;
-    panelHoldJumped = false;
-    panelCursorShown = !mappedInput.hasTouch();
-    if (!toolbarUi) toolbarUi = std::make_unique<ReaderToolbarUi>(renderer);
-    toolbarUi->begin();
-    discardOverlayPage();
-    requestUpdate();
-    return;
-  }
-  // Child screens (chapter list, text settings) release the section to free its
-  // pagination buffers; chapterPosition() covers that with the cached position.
-  const ChapterPosition position = chapterPosition();
-  const int bookProgressPercent = bookPercentFor(position);
-
-  startActivityForResult(std::make_unique<EpubReaderMenuActivity>(
-                             renderer, mappedInput, epub->getTitle(), position.displayPage(), position.totalPages,
-                             bookProgressPercent, SETTINGS.orientation, !currentPageFootnotes.empty(),
-                             !cachedBookmarks.empty(), CLIPPINGS.hasClippings(), completionMenuLabelId()),
-                         [this](const ActivityResult& result) {
-                           const auto& menu = std::get<MenuResult>(result.data);
-
-                           if (SETTINGS.orientation != menu.orientation) {
-                             applyOrientation(menu.orientation);
-                           }
-
-                           toggleAutoPageTurn(menu.pageTurnOption);
-                           if (!result.isCancelled) {
-                             onReaderMenuConfirm(static_cast<EpubReaderMenuActivity::MenuAction>(menu.action));
-                           }
-                         });
+  openTextSettings();
 }
 
 bool EpubReaderActivity::buildTickHeapGate() {
@@ -868,14 +832,7 @@ void EpubReaderActivity::loop() {
   const bool touchMenu = ReaderUtils::isTouchMenuGesture(renderer, mappedInput);
   if (confirmReleased || touchMenu) {
     if (touchMenu) haptic_feedback::touchAction();
-    // Toolbar style: the page is on screen and in the framebuffer, so paint the
-    // toolbar over it (one refresh) instead of pushing a full-screen menu.
-    if (usesToolbarMenu() && section) {
-      pendingManualTurn = 0;
-      openOverlay(Overlay::Toolbar);
-    } else {
-      openReaderMenu();
-    }
+    openTextSettings();
   }
 
   if (footnoteDepth > 0 && mappedInput.wasReleased(MappedInputManager::Button::Back) &&
@@ -2573,9 +2530,7 @@ static_assert(std::size(kAlignIds) == CrossPointSettings::PARAGRAPH_ALIGNMENT_CO
 }  // namespace
 
 bool EpubReaderActivity::usesToolbarMenu() const {
-  // Both board classes drive the same chrome: touch through the FreeInkUI tap
-  // targets, buttons through the focused-tool pill and the panel cursor.
-  return SETTINGS.readerMenuStyle == CrossPointSettings::READER_MENU_TOOLBAR;
+  return true;
 }
 
 std::string EpubReaderActivity::currentChapterTitle() const {
@@ -2905,6 +2860,15 @@ void EpubReaderActivity::handleTextSheetInput(const ReaderToolbarUi::Routed& rou
     pushOverlayRefresh();
     return;
   }
+  if (routed.event == Event::Home || (routed.event == Event::Row && routed.value == readertext::GoHome)) {
+    if (routed.routed) haptic_feedback::touchAction();
+    RenderLock lock;
+    overlay = Overlay::None;
+    discardOverlayPage();
+    toolbarUi.reset();
+    onGoHome();
+    return;
+  }
   if (routed.event == Event::Dismiss || (!swipeStep && mappedInput.wasReleased(MappedInputManager::Button::Back)) ||
       mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
       mappedInput.wasSwipe() == MappedInputManager::SwipeDir::Down) {
@@ -3192,6 +3156,14 @@ void EpubReaderActivity::handleOverlayInput() {
   // --- Toolbar ---
   if (overlay == Overlay::Toolbar) {
     switch (routed.event) {
+      case ReaderToolbarUi::Event::Home: {
+        RenderLock lock;
+        overlay = Overlay::None;
+        discardOverlayPage();
+        toolbarUi.reset();
+        onGoHome();
+        return;
+      }
       case ReaderToolbarUi::Event::Dismiss:
         closeOverlayToPage();
         return;
@@ -3308,6 +3280,14 @@ void EpubReaderActivity::handleOverlayInput() {
   };
 
   switch (routed.event) {
+    case ReaderToolbarUi::Event::Home: {
+      RenderLock lock;
+      overlay = Overlay::None;
+      discardOverlayPage();
+      toolbarUi.reset();
+      onGoHome();
+      return;
+    }
     case ReaderToolbarUi::Event::Dismiss:
       dismissPanel();
       return;

@@ -23,6 +23,7 @@ constexpr fui::ActionId ACTION_PREV = 3;     // scrub row: previous chapter
 constexpr fui::ActionId ACTION_NEXT = 4;     // scrub row: next chapter
 constexpr fui::ActionId ACTION_SCRUB = 5;    // progress track: dragPermille along the book
 constexpr fui::ActionId ACTION_ROW = 6;      // panel list row, value = row index
+constexpr fui::ActionId ACTION_HOME = 7;     // home button
 
 // Scrub row: two small round-cornered chapter buttons flanking a thin progress
 // track with a round knob -- the reading page's chrome is light, so the
@@ -50,7 +51,7 @@ void ReaderToolbarUi::begin() {
   resetUi();
   pending_ = Routed{};
   nav_.reset();
-  for (fui::ActionId id = ACTION_DISMISS; id <= ACTION_ROW; ++id) {
+  for (fui::ActionId id = ACTION_DISMISS; id <= ACTION_HOME; ++id) {
     app.on(id, &ReaderToolbarUi::onAction, this);
   }
   app.setScreen(&ReaderToolbarUi::screenFn, this);
@@ -83,7 +84,7 @@ void ReaderToolbarUi::onAction(const fui::ActionEvent& event, void* user) {
   Routed& out = self->pending_;
   out.value = event.value;
   out.permille = event.dragPermille;
-  if (event.action >= ACTION_DISMISS && event.action <= ACTION_ROW) out.event = static_cast<Event>(event.action);
+  if (event.action >= ACTION_DISMISS && event.action <= ACTION_HOME) out.event = static_cast<Event>(event.action);
   if (out.event == Event::Scrub && event.dragPermille < 0) out.event = Event::None;
   // A handled action repaints through the reader's own fast path, not through
   // app.invalidate(): the page underneath is the reader's to draw.

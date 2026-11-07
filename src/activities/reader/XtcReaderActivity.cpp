@@ -126,6 +126,14 @@ bool XtcReaderActivity::handleFormatInput() {
           break;
       }
     }
+    if (routed.event == ReaderToolbarUi::Event::Home || (routed.event == ReaderToolbarUi::Event::Row && routed.value == readertext::GoHome)) {
+      if (routed.routed) haptic_feedback::touchAction();
+      RenderLock lock;
+      pageSettings.reset();
+      saveProgress();
+      onGoHome();
+      return true;
+    }
     if (routed.event == ReaderToolbarUi::Event::Dismiss ||
         (!swipeStep && mappedInput.wasReleased(MappedInputManager::Button::Back)) ||
         mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
@@ -209,11 +217,11 @@ bool XtcReaderActivity::handleFormatInput() {
     return true;
   }
 
-  // Enter chapter selection activity on Confirm release or touch menu gesture
+  // Enter text settings (CrossNext menu) on Confirm release or touch menu gesture
   const bool touchMenu = ReaderUtils::isTouchMenuGesture(renderer, mappedInput);
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) || touchMenu) {
     if (touchMenu && xtc->hasChapters() && !xtc->getChapters().empty()) haptic_feedback::touchAction();
-    openChapterSelection();
+    openTextSettings();
     return true;
   }
   return false;
