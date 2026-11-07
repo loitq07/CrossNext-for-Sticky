@@ -1,6 +1,7 @@
 {
   "title": "Dropbox",
-  "description": "Tải sách và tài liệu trực tiếp từ Dropbox của bạn.",
+  "description": "Download books and documents directly from your Dropbox.",
+  "description_vi": "Tải sách và tài liệu trực tiếp từ Dropbox của bạn.",
   "version": "1.0.0",
   "mount": "settings"
 }

@@ -108,17 +108,52 @@ namespace {
 void readPluginMetadata(const std::string& path, PluginRef& ref, const bool classifyDevice = false) {
   std::string raw;
   if (!Storage.readFileToString("PCAT", path, MAX_MANIFEST_SIZE, raw)) return;
+
+  const auto currentLang = I18N.getLanguage();
+  const char* langCode = (static_cast<size_t>(currentLang) < getLanguageCount())
+                             ? LANGUAGE_CODES[static_cast<size_t>(currentLang)]
+                             : "EN";
+  char langLower[8] = {0};
+  for (size_t i = 0; langCode[i] && i < 7; ++i) {
+    langLower[i] = static_cast<char>(tolower(langCode[i]));
+  }
+
   JsonDocument filter;
   filter["title"] = true;
+  filter[std::string("title_") + langLower] = true;
+  filter[std::string("title_") + langCode] = true;
   filter["description"] = true;
+  filter[std::string("description_") + langLower] = true;
+  filter[std::string("description_") + langCode] = true;
   if (classifyDevice) {
     filter["browse"]["url"] = true;
     filter["events"] = true;
   }
   JsonDocument doc;
   if (deserializeJson(doc, raw, DeserializationOption::Filter(filter)) != DeserializationError::Ok) return;
-  if (doc["title"].is<const char*>()) ref.title = doc["title"].as<const char*>();
-  if (doc["description"].is<const char*>()) ref.description = doc["description"].as<const char*>();
+
+  auto getLocalized = [&](const char* baseKey) -> const char* {
+    std::string keyLower = std::string(baseKey) + "_" + langLower;
+    if (doc[keyLower].is<const char*>()) return doc[keyLower].as<const char*>();
+    std::string keyUpper = std::string(baseKey) + "_" + langCode;
+    if (doc[keyUpper].is<const char*>()) return doc[keyUpper].as<const char*>();
+    if (doc[baseKey].is<JsonObjectConst>()) {
+      auto obj = doc[baseKey].as<JsonObjectConst>();
+      if (obj[langLower].is<const char*>()) return obj[langLower].as<const char*>();
+      if (obj[langCode].is<const char*>()) return obj[langCode].as<const char*>();
+      if (obj["en"].is<const char*>()) return obj["en"].as<const char*>();
+      if (obj["EN"].is<const char*>()) return obj["EN"].as<const char*>();
+    }
+    if (doc[baseKey].is<const char*>()) return doc[baseKey].as<const char*>();
+    return nullptr;
+  };
+
+  const char* titleVal = getLocalized("title");
+  if (titleVal && titleVal[0] != '\0') ref.title = titleVal;
+
+  const char* descVal = getLocalized("description");
+  if (descVal && descVal[0] != '\0') ref.description = descVal;
+
   if (classifyDevice) {
     const char* browseUrl = doc["browse"]["url"] | "";
     const bool hasEvents = !doc["events"].as<JsonObjectConst>().isNull() && doc["events"].size() > 0;
