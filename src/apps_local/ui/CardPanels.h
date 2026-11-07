@@ -11,7 +11,7 @@ inline fui::Rect begin(toybox::Screen& s, const char* title, int actionReserve =
   const int h = safe.y + 56;
   chrome::headerHeight = h;
   s.target().fill(fui::makeRect(0, 0, s.device().width, h), dashboard::ink);
-  const auto back = fui::makeRect(safe.x + 6, safe.y + 6, 44, 44);
+  const auto back = fui::makeRect(safe.x, safe.y, backui::kWidth, h);
   backui::paint(s.target(), back);
   backui::publish(s.device().hasTouch, back);
   const auto battery = fui::makeRect(safe.right() - 39, safe.y + 20, 28, 17);

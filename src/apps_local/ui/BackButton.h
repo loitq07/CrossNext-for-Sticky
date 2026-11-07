@@ -6,19 +6,19 @@
 
 namespace backui {
 namespace fui = freeink::ui;
+constexpr int kWidth = 76;
 constexpr int kSize = 44;
-constexpr int kReserve = 52;
+constexpr int kReserve = 76;
 
 inline fui::Rect rect(const fui::DeviceContext& device, fui::Rect band) {
   const auto safe = device.safeRect();
   const int top = band.y > safe.y ? band.y : safe.y;
   const int height = band.bottom() - top;
-  const int size = height < kSize ? height : kSize;
-  return fui::makeRect(safe.x + 6, top + (height - size) / 2, kSize, size);
+  return fui::makeRect(safe.x, top, kWidth, height);
 }
 
 inline void paint(fui::DrawTarget& target, fui::Rect box) {
-  const int x = box.x + 6, y = box.y + box.height / 2;
+  const int x = box.x + 12, y = box.y + box.height / 2;
   const auto ink = fui::Paint::solid(fui::Color::White);
   target.line({int16_t(x + 18), int16_t(y - 16)}, {int16_t(x), int16_t(y)}, 4, ink);
   target.line({int16_t(x), int16_t(y)}, {int16_t(x + 18), int16_t(y + 16)}, 4, ink);

@@ -34,8 +34,8 @@ void catalogScreenHeader(UiAppHost::UiScreen& screen, const GfxRenderer& rendere
     static constexpr fui::ActionId PAINT_ONLY_BACK = 0xFFFF;
     header.leadingIcon = fui::bitmapFromIcon(icon_header_back_32);
     header.leadingAction = PAINT_ONLY_BACK;
-    HeaderBackTapTarget::set(frameRect.x + 4, metrics.topPadding + 4 + header.actionOffsetY, header.leadingSize,
-                             header.leadingSize);
+    HeaderBackTapTarget::set(frameRect.x, 0, header.leadingSize + 28,
+                             metrics.headerHeight);
   }
   if (trailingIcon && trailingAction != fui::NO_ACTION) {
     header.trailingIcon = trailingIcon;
