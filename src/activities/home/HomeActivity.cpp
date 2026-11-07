@@ -1,4 +1,6 @@
 #include "HomeActivity.h"
+#include "../../apps_local/library/LibraryPreferences.h"
+#include "../../util/LibrarySync.h"
 
 #include <Bitmap.h>
 #include <ContentVisibility.h>
@@ -51,24 +53,53 @@ void HomeActivity::loadRecentBooks(int maxBooks) {
     recentBookIndex = 0;
     const int limit = std::clamp(int(SETTINGS.homeRecentBookCount), 1, RecentBooksStore::MAX_RECENT_BOOKS);
     for (size_t n = 0; n < books.size() && recentBookCount < limit; ++n) {
-      if (!RecentBooksStore::isMissing(books[n])) recentSourceIndices[recentBookCount++] = static_cast<int>(n);
+      if (!RecentBooksStore::isMissing(books[n]) &&
+          libraryui::acceptsFormat(books[n].path, SETTINGS.libraryFileTypes)) {
+        recentSourceIndices[recentBookCount++] = static_cast<int>(n);
+      }
     }
-    if (recentBookCount) recentBooks.push_back(books[recentSourceIndices[0]]);
+    if (recentBookCount) {
+      recentBooks.push_back(books[recentSourceIndices[0]]);
+    } else {
+      library::LibraryIndexFile index;
+      if (index.open(library::libraryIndexPath())) {
+        library::ClixRecord record;
+        for (uint16_t row = 0; row < index.bookCount(); ++row) {
+          uint16_t ordinal = index.ordinalForRow(library::SortOrder::RecentDesc, row);
+          if (ordinal == 0xFFFF || !index.readRecord(ordinal, record)) break;
+          std::string path;
+          if (!index.readPath(record, path)) continue;
+          if (!libraryui::acceptsFormat(path, SETTINGS.libraryFileTypes)) continue;
+          RecentBook book;
+          book.path = std::move(path);
+          if (!index.readTitle(record, book.title) && !index.readName(record, book.title)) continue;
+          index.readAuthor(record, book.author);
+          if (FsHelpers::hasEpubExtension(book.path)) {
+            auto epub = makeUniqueNoThrow<Epub>(book.path, "/.crosspoint");
+            if (epub) book.coverBmpPath = epub->getThumbBmpPath();
+          } else if (FsHelpers::hasXtcExtension(book.path)) {
+            auto xtc = makeUniqueNoThrow<Xtc>(book.path, "/.crosspoint", SETTINGS.xtcCoverRotation != 0);
+            if (xtc) book.coverBmpPath = xtc->getThumbBmpPath();
+          }
+          recentBooks.push_back(std::move(book));
+          break;
+        }
+      }
+    }
     return;
   }
   recentBooks.reserve(coverGridUi ? maxBooks : std::min(static_cast<int>(books.size()), maxBooks));
 
   for (const RecentBook& book : books) {
-    // Limit to maximum number of recent books
     if (recentBooks.size() >= maxBooks) {
       break;
     }
-
-    // Skip if file no longer exists
     if (RecentBooksStore::isMissing(book)) {
       continue;
     }
-
+    if (!libraryui::acceptsFormat(book.path, SETTINGS.libraryFileTypes)) {
+      continue;
+    }
     recentBooks.push_back(book);
   }
 }
@@ -103,12 +134,13 @@ void HomeActivity::loadShelfPage() {
     GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
     library::BuildStats stats;
     if (library::buildLibraryIndex("/", stats, SETTINGS.libraryUseMetadata != 0)) cardChecked = true;
+    library_sync::syncIndexToRecents(10);
     opened = reader->index.open(library::libraryIndexPath());
   }
   const auto& recents = RECENT_BOOKS.getBooks();
   for (size_t n = 0; n < recents.size() && reader->order.count < shelfLimit; ++n) {
     const auto& book = recents[n];
-    if (!RecentBooksStore::isMissing(book))
+    if (!RecentBooksStore::isMissing(book) && libraryui::acceptsFormat(book.path, SETTINGS.libraryFileTypes))
       reader->order.add(homeui::ShelfSource::Recent, uint16_t(n),
                         library::clixPathHash(book.path.c_str(), book.path.size()));
   }
@@ -118,6 +150,9 @@ void HomeActivity::loadShelfPage() {
       uint64_t hash = 0;
       if (!reader->index.readRecord(ordinal, reader->record) || !reader->index.readPathHash(reader->record, hash))
         break;
+      std::string name;
+      if (!reader->index.readName(reader->record, name) || !libraryui::acceptsFormat(name, SETTINGS.libraryFileTypes))
+        continue;
       reader->order.add(homeui::ShelfSource::Index, ordinal, hash);
     }
   }
@@ -176,6 +211,7 @@ void HomeActivity::fillCoverGridFromLibrary() {
     if (!index.readRecord(index.ordinalForRow(library::SortOrder::RecentDesc, row), record) ||
         !index.readPath(record, book.path))
       continue;
+    if (!libraryui::acceptsFormat(book.path, SETTINGS.libraryFileTypes)) continue;
     if (std::any_of(recentBooks.begin(), recentBooks.end(),
                     [&](const RecentBook& existing) { return existing.path == book.path; }) ||
         RecentBooksStore::isMissing(book))
@@ -284,6 +320,29 @@ void HomeActivity::onEnter() {
 
   hasOpdsServers = OPDS_STORE.hasServers();
   hasPlugins = anyPluginInstalled();
+
+  {
+    library::LibraryIndexFile testIndex;
+    bool opened = testIndex.open(library::libraryIndexPath());
+    bool rebuild = !opened || library::isLibraryIndexDirty() ||
+                   testIndex.header().metadataEnabled != (SETTINGS.libraryUseMetadata != 0) ||
+                   testIndex.header().reserved[0] != content::VISIBILITY_VERSION;
+    static bool cardChecked = false;
+    if (opened && !rebuild && !cardChecked) {
+      const auto result = library::checkLibraryCard(testIndex.header());
+      rebuild = (result == library::CardCheck::Changed);
+      cardChecked = (result == library::CardCheck::Unchanged);
+    }
+    testIndex.close();
+    if (rebuild) {
+      GUI.drawPopup(renderer, tr(STR_LIBRARY_REBUILDING));
+      library::BuildStats stats;
+      if (library::buildLibraryIndex("/", stats, SETTINGS.libraryUseMetadata != 0)) {
+        cardChecked = true;
+        library_sync::syncIndexToRecents(10);
+      }
+    }
+  }
 
   if ((SETTINGS.homeLayout == CrossPointSettings::HOME_FRAMED ||
        SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE) &&

@@ -17,6 +17,9 @@ inline void touchAction(bool longPress = false) {
     }
   } else {
     HalHaptics::feedback(enabled, true, SETTINGS.hapticIntensity);
+    if (SETTINGS.keySound) {
+      HalBuzzer::click();
+    }
   }
 }
 }  // namespace haptic_feedback

@@ -35,6 +35,8 @@ enum class SettingAction {
   UiPresentation,
   ReadingFormats,
   About,
+  RebuildLibrary,
+  LibraryFormats,
 };
 
 struct SettingInfo {

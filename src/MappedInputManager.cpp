@@ -12,6 +12,7 @@
 #include <cstdlib>
 
 #include "CrossPointSettings.h"
+#include "HapticFeedback.h"
 #include "components/HeaderBackTapTarget.h"
 #include "components/UITheme.h"
 
@@ -23,11 +24,9 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
       SETTINGS.vibration == CrossPointSettings::VIBRATION_TOUCH_PAGE && gpio.wasCapacitivePagePressed();
   HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, pagePressed, SETTINGS.hapticIntensity);
   if (SETTINGS.keySound) {
-    float nx = 0.0f;
-    float ny = 0.0f;
-    const bool touchDown = !isTouchscreenLocked() && gpio.wasTouchDown(nx, ny);
     const bool anyBtnPressed = gpio.wasAnyPressed();
-    if (touchDown || anyBtnPressed) {
+    const bool pagePressedEdge = gpio.wasCapacitivePagePressed();
+    if (anyBtnPressed || pagePressedEdge) {
       HalBuzzer::click();
     }
   }
@@ -41,8 +40,14 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
         static_cast<HomeButtonAction>(SETTINGS.homeButtonLongPressAction), isTouchscreenLocked());
     if (gpio.wasHomeKeyLongPressed() && homeAction != HomeButtonAction::Ignore) {
       HalHaptics::longPress(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, SETTINGS.hapticIntensity);
+      if (SETTINGS.keySound) {
+        HalBuzzer::beep(2500, 30);
+      }
     } else if (homeAction != HomeButtonAction::Ignore) {
       HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, true, SETTINGS.hapticIntensity);
+      if (SETTINGS.keySound) {
+        HalBuzzer::click();
+      }
     }
   }
   // Settle physical release ownership before deriving an action from it.
@@ -394,6 +399,11 @@ bool MappedInputManager::wasBackGesture() const {
     int tapY = 0;
     renderer.tapToLogical(nx, ny, tapX, tapY);
     if (HeaderBackTapTarget::contains(tapX, tapY)) {
+      static unsigned long lastHeaderBackFeedback = 0;
+      if (millis() - lastHeaderBackFeedback > 200) {
+        lastHeaderBackFeedback = millis();
+        haptic_feedback::touchAction();
+      }
       rememberTouchHeldTime();
       return true;
     }

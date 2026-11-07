@@ -26,6 +26,9 @@ constexpr StrId themes[] = {StrId::STR_HOME_FRAMED, StrId::STR_HOME_FOCUS_CAROUS
 static_assert(sizeof(themes) / sizeof(themes[0]) == CrossPointSettings::HOME_LAYOUT_COUNT);
 constexpr StrId formats[] = {StrId::STR_FORMAT_EPUB, StrId::STR_FORMAT_TXT, StrId::STR_FORMAT_MD, StrId::STR_FORMAT_XTC,
                              StrId::STR_FORMAT_IMAGES};
+constexpr StrId libraryFormatNames[] = {StrId::STR_FORMAT_EPUB, StrId::STR_FORMAT_XTC, StrId::STR_FORMAT_TXT,
+                                        StrId::STR_FORMAT_MD};
+constexpr uint8_t libraryFormatMasks[] = {1, 2, 4, 8};
 }  // namespace
 int PresentationSettingsActivity::listCount() const {
   switch (kind) {
@@ -33,6 +36,8 @@ int PresentationSettingsActivity::listCount() const {
       return CrossPointSettings::HOME_LAYOUT_COUNT + 3;
     case Kind::ReadingFormats:
       return sizeof(formats) / sizeof(formats[0]);
+    case Kind::LibraryFormats:
+      return sizeof(libraryFormatNames) / sizeof(libraryFormatNames[0]);
     case Kind::FontOverview:
     case Kind::ThemeOverview:
       // Controls is the last section and belongs to the frontlight panel.
@@ -49,6 +54,8 @@ const char* PresentationSettingsActivity::screenTitle() const {
       return tr(STR_SETTINGS_APPEARANCE);
     case Kind::ReadingFormats:
       return tr(STR_READING_FORMATS);
+    case Kind::LibraryFormats:
+      return tr(STR_LIBRARY_SHOW_FILES);
     case Kind::FontOverview:
     case Kind::GameFonts:
     case Kind::AppFonts:
@@ -99,7 +106,7 @@ void PresentationSettingsActivity::fontRow(void* context, uint16_t row, fui::Lis
 void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
   pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
   useCompactSettingsRows();
-  compactSettingsRows = kind == Kind::ReadingFormats;
+  compactSettingsRows = kind == Kind::ReadingFormats || kind == Kind::LibraryFormats;
   pixelui::begin(screen, saveFailed ? 80 : 0);
   if (kind == Kind::FontOverview || contentFonts() || kind == Kind::ThemeOverview) {
     pixelui::drawHeader(renderer, screenTitle(), true);
@@ -144,7 +151,9 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     auto& item = items[n];
     item = {};
     item.actionValue = n;
-    const auto id = kind == Kind::Theme ? themes[n] : formats[n];
+    const auto id = kind == Kind::Theme            ? themes[n]
+                    : kind == Kind::LibraryFormats ? libraryFormatNames[n]
+                                                   : formats[n];
     pixelui::copyNatural(labels[n], sizeof(labels[n]), I18N.get(id), pixelui::LabelCase::Preserve);
     item.label = labels[n];
     if (kind == Kind::Theme) {
@@ -159,7 +168,9 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     }
     if (kind == Kind::Theme && screen.device().width > screen.device().height) item.subtitle = nullptr;
     item.toggle = true;
-    item.toggleChecked = kind == Kind::Theme ? SETTINGS.homeLayout == n : bool(SETTINGS.readingFormats & masks[n]);
+    item.toggleChecked = kind == Kind::Theme            ? SETTINGS.homeLayout == n
+                         : kind == Kind::LibraryFormats ? bool(SETTINGS.libraryFileTypes & libraryFormatMasks[n])
+                                                        : bool(SETTINGS.readingFormats & masks[n]);
   }
   fui::ListProps p;
   p.items = items;
@@ -279,6 +290,13 @@ void PresentationSettingsActivity::activateIndex(int n) {
       break;
     case Kind::ReadingFormats:
       SETTINGS.readingFormats ^= masks[n];
+      break;
+    case Kind::LibraryFormats:
+      SETTINGS.libraryFileTypes ^= libraryFormatMasks[n];
+      if (SETTINGS.libraryFileTypes == 0) {
+        SETTINGS.libraryFileTypes = libraryFormatMasks[n];
+      }
+      SETTINGS.saveToFile();
       break;
     case Kind::ThemeOverview: {
       const bool home = n == int(menufont::Section::Home);

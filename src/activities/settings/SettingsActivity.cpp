@@ -16,6 +16,7 @@
 #include "AboutActivity.h"
 #include "ButtonRemapActivity.h"
 #include "ClearCacheActivity.h"
+#include "../../util/LibrarySync.h"
 #include "ClockSettingsActivity.h"
 #include "CrossPointSettings.h"
 #include "DeveloperModeActivity.h"
@@ -291,6 +292,8 @@ void SettingsActivity::rebuildSettingsLists() {
     } else
       ++it;
   }
+  librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_SHOW_FILES, SettingAction::LibraryFormats));
+  librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_REBUILD, SettingAction::RebuildLibrary));
   if (categoryHome)
     showCategoryHome();
   else
@@ -340,7 +343,12 @@ void SettingsActivity::rebuildRowItems() {
       if (selectedCategoryIndex < 3)
         return settingsGroupLabel(settingsGroup(setting, selectedCategoryIndex), selectedCategoryIndex);
       if (selectedCategoryIndex == 3) {
-        if (setting.action == SettingAction::ClearCache) return StrId::STR_SETTINGS_MAINTENANCE;
+        if (setting.action == SettingAction::ClearCache || setting.action == SettingAction::RebuildLibrary) {
+          return StrId::STR_SETTINGS_MAINTENANCE;
+        }
+        if (setting.action == SettingAction::LibraryFormats) {
+          return StrId::STR_SETTINGS_FILES;
+        }
         return setting.valuePtr == &CrossPointSettings::removeReadBooksFromRecents ||
                        setting.valuePtr == &CrossPointSettings::moveFinishedToReadFolder
                    ? StrId::STR_SETTINGS_FINISHED_BOOKS
@@ -740,10 +748,29 @@ void SettingsActivity::toggleCurrentSetting() {
           LOG_ERR("SETTINGS", "OOM: AboutActivity");
         }
         break;
+      case SettingAction::RebuildLibrary: {
+        GUI.drawPopup(renderer, tr(STR_LIBRARY_REBUILDING));
+        int books = library_sync::scanAndSync(SETTINGS.libraryUseMetadata != 0);
+        if (books >= 0) {
+          char msg[64];
+          std::snprintf(msg, sizeof(msg), "%s (%d)", tr(STR_LIBRARY_REBUILD_DONE), books);
+          const char* options[] = {tr(STR_OK_BUTTON)};
+          optionPopup.showMessage(tr(STR_LIBRARY_REBUILD), msg, options, 1, 0,
+                                  [this](int) { requestUpdate(); });
+        } else {
+          const char* options[] = {tr(STR_OK_BUTTON)};
+          optionPopup.showMessage(tr(STR_LIBRARY_REBUILD), tr(STR_LIBRARY_REBUILD_FAILED), options, 1, 0,
+                                  [this](int) { requestUpdate(); });
+        }
+        break;
+      }
+      case SettingAction::LibraryFormats:
       case SettingAction::UiPresentation:
       case SettingAction::ReadingFormats: {
         const auto kind = setting.action == SettingAction::UiPresentation
                               ? PresentationSettingsActivity::Kind::Theme
+                              : setting.action == SettingAction::LibraryFormats
+                              ? PresentationSettingsActivity::Kind::LibraryFormats
                               : PresentationSettingsActivity::Kind::ReadingFormats;
         auto next = makeUniqueNoThrow<PresentationSettingsActivity>(renderer, mappedInput, kind);
         if (next)
@@ -807,6 +834,15 @@ void SettingsActivity::openSleepTimeoutPicker() {
 }
 
 std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
+  if (setting.action == SettingAction::LibraryFormats) {
+    std::string summary;
+    if (SETTINGS.libraryFileTypes & 1) summary += "EPUB ";
+    if (SETTINGS.libraryFileTypes & 2) summary += "XTC ";
+    if (SETTINGS.libraryFileTypes & 4) summary += "TXT ";
+    if (SETTINGS.libraryFileTypes & 8) summary += "MD ";
+    if (!summary.empty() && summary.back() == ' ') summary.pop_back();
+    return summary;
+  }
   if (setting.action == SettingAction::HomeButton) return tr(STR_CONFIGURE);
   if (setting.action == SettingAction::Language) return I18N.getLanguageName(I18N.getLanguage());
   if (setting.type == SettingType::ENUM && setting.valuePtr != nullptr) {

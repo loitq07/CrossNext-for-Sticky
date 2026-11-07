@@ -8,6 +8,7 @@
 #include <HalStorage.h>
 #include <I18n.h>
 #include <LibraryBuilder.h>
+#include "../../util/LibrarySync.h"
 #include <LibraryText.h>
 #include <Logging.h>
 #include <Memory.h>
@@ -389,6 +390,7 @@ void LibraryListActivity::promptRebuildIndex() {
   GUI.drawPopup(renderer, tr(STR_LIBRARY_REBUILDING));
   index.close();
   rebuildIndex();
+  library_sync::syncIndexToRecents(10);
   if (!index.open(library::libraryIndexPath())) LOG_ERR("LIB", "cannot open library index");
   resetAfterRebuild();
   requestUpdate();
