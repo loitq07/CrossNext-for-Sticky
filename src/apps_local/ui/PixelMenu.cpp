@@ -121,7 +121,7 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
   const int top = geometry.header.bottom() - 72;
   chrome::headerHeight = geometry.header.height;
   target.fill(geometry.header, black);
-  int right = safe.right() - 14;
+  int right = safe.right() - 20;
   if (model.battery >= 0) {
     const auto icon = fui::makeRect(right - 34, top + 27, 30, 19);
     target.stroke(icon, white, 2);
@@ -155,15 +155,15 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
   }
   if (model.mark) {
     const auto icon = fui::makeRect(right - 32, top + 20, 32, 32);
-    mark = icon.inset({-6, -6, -6, -6});
+    mark = fui::makeRect(icon.x - 10, top, 52, 72);
     target.bitmap(icon, model.mark, fui::BitmapMode::Contain, white);
-    right = icon.x - 12;
+    right = icon.x - 20;
   }
   if (model.secondaryMark) {
     const auto icon = fui::makeRect(right - 32, top + 20, 32, 32);
-    if (secondary) *secondary = icon.inset({-6, -6, -6, -6});
+    if (secondary) *secondary = fui::makeRect(icon.x - 10, top, 52, 72);
     target.bitmap(icon, model.secondaryMark, fui::BitmapMode::Contain, white);
-    right = icon.x - 12;
+    right = icon.x - 20;
   }
   if (model.rightLabel) {
     fui::TextStyle style;
@@ -173,10 +173,10 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
          fui::TextAlign::Right);
     right -= width + 12;
   }
-  int left = safe.x + 14;
+  int left = safe.x + 20;
   if (model.back) {
     backui::paint(target, geometry.back);
-    left = geometry.back.right() + 4;
+    left = geometry.back.right();
   }
   right -= model.titleReserve;
   fui::TextStyle titleStyle;
