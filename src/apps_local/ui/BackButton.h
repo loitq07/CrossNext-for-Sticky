@@ -19,7 +19,8 @@ inline fui::Rect rect(const fui::DeviceContext& device, fui::Rect band) {
 
 inline void paint(fui::DrawTarget& target, fui::Rect box) {
   const int x = box.x + 20;
-  const int y = box.y + (box.height > 0 ? (box.height - 1) / 2 : 35);
+  const int top = box.height >= 72 ? box.bottom() - 72 : box.y;
+  const int y = top + (box.height >= 72 ? 36 : (box.height > 0 ? box.height / 2 : 36));
   const auto ink = fui::Paint::solid(fui::Color::White);
   target.line({int16_t(x + 16), int16_t(y - 14)}, {int16_t(x), int16_t(y)}, 4, ink);
   target.line({int16_t(x), int16_t(y)}, {int16_t(x + 16), int16_t(y + 14)}, 4, ink);

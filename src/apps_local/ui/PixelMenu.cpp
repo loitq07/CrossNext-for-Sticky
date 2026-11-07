@@ -37,10 +37,11 @@ Geometry geometry(const fui::DeviceContext& device, int bottomReserve) {
   const auto safe = device.safeRect();
   Geometry out;
   out.header = fui::makeRect(0, 0, device.width, safe.y + toybox::kMenuHeaderVisibleHeight);
-  out.back = fui::makeRect(safe.x, safe.y, backui::kWidth, out.header.height);
-  const int top = out.header.bottom() + 14;
-  out.body = fui::makeRect(safe.x + kMargin, top, safe.width - kMargin * 2,
-                           std::max(0, safe.bottom() - 8 - bottomReserve - top));
+  const int top = out.header.bottom() - 72;
+  out.back = fui::makeRect(safe.x, top, backui::kWidth, 72);
+  const int bodyTop = out.header.bottom() + 14;
+  out.body = fui::makeRect(safe.x + kMargin, bodyTop, safe.width - kMargin * 2,
+                           std::max(0, safe.bottom() - 8 - bottomReserve - bodyTop));
   return out;
 }
 
