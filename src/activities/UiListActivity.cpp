@@ -1,6 +1,7 @@
 #include "UiListActivity.h"
 
 #include <GfxRenderer.h>
+#include <HalBuzzer.h>
 #include <I18n.h>
 #include <Logging.h>
 
@@ -74,6 +75,9 @@ bool UiListActivity::routeListTouch() {
 }
 
 void UiListActivity::moveSelectionTo(const int index) {
+  if (SETTINGS.keySound) {
+    HalBuzzer::click(SETTINGS.buzzerVolume);
+  }
   activeNav().requestSelection(index);
   requestUpdate();
 }

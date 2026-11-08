@@ -295,10 +295,19 @@ void SettingsActivity::rebuildSettingsLists() {
   }
   librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_SHOW_FILES, SettingAction::LibraryFormats));
   librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_REBUILD, SettingAction::RebuildLibrary));
-  if (categoryHome)
+  if (categoryHome) {
     showCategoryHome();
-  else
+  } else {
+    const auto savedNav = activeNav();
     selectCategory(selectedCategoryIndex);
+    activeNav() = savedNav;
+    if (settingsCount > 0) {
+      if (activeNav().selected > settingsCount) {
+        activeNav().selected = settingsCount;
+      }
+      activeNav().top = std::clamp(activeNav().top, 0, std::max(0, settingsCount - 1));
+    }
+  }
 }
 
 void SettingsActivity::onEnter() {
@@ -580,13 +589,15 @@ void SettingsActivity::toggleCurrentSetting() {
     const auto enumLabels = setting.enumLabels();
     if (enumLabels.size() > 2) {
       const auto valuePtr = setting.valuePtr;
+      const int savedRing = ringPos();
       optionPopup.show(setting.nameId, enumLabels.data(), static_cast<int>(enumLabels.size()), currentValue,
-                       [this, valuePtr, sleepScreenChanged, quickResumeTimeoutChanged](int idx) {
+                       [this, valuePtr, sleepScreenChanged, quickResumeTimeoutChanged, savedRing](int idx) {
                          SETTINGS.*valuePtr = idx;
                          syncQuickResumeTimeoutForSleepScreen(sleepScreenChanged, quickResumeTimeoutChanged);
                          SETTINGS.saveToFile();
                          rebuildSettingsLists();
                          applyUiSettingChange(valuePtr);
+                         activeNav().selected = std::min(savedRing, settingsCount);
                        });
       requestUpdate();
       return;
@@ -608,11 +619,13 @@ void SettingsActivity::toggleCurrentSetting() {
     }
     if (totalValues > 2 || dictionary) {
       const auto valueSetter = setting.valueSetter;
-      auto onSelect = [this, valueSetter, sleepScreenChanged, quickResumeTimeoutChanged](int idx) {
+      const int savedRing = ringPos();
+      auto onSelect = [this, valueSetter, sleepScreenChanged, quickResumeTimeoutChanged, savedRing](int idx) {
         valueSetter(idx);
         syncQuickResumeTimeoutForSleepScreen(sleepScreenChanged, quickResumeTimeoutChanged);
         SETTINGS.saveToFile();
         rebuildSettingsLists();
+        activeNav().selected = std::min(savedRing, settingsCount);
       };
       if (!setting.enumStringValues.empty()) {
         optionPopup.show(setting.nameId, setting.enumStringValues, cur, std::move(onSelect));
@@ -795,9 +808,10 @@ void SettingsActivity::toggleCurrentSetting() {
 
   syncQuickResumeTimeoutForSleepScreen(sleepScreenChanged, quickResumeTimeoutChanged);
   SETTINGS.saveToFile();
+  const int savedRing = ringPos();
   rebuildSettingsLists();
   applyUiSettingChange(changedValue);
-  activeNav().selected = std::min(ringPos(), settingsCount);
+  activeNav().selected = std::min(savedRing, settingsCount);
 }
 
 void SettingsActivity::syncQuickResumeTimeoutForSleepScreen(bool sleepScreenChanged, bool quickResumeTimeoutChanged) {

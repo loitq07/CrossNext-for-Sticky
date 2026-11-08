@@ -29,8 +29,14 @@
     "is_dir_match": "folder",
     "root_folder_id": "",
     "cursor_path": "cursor",
-    "extensions": [".epub", ".pdf", ".txt", ".mobi", ".cbz"],
-    "page_size": 8
+    "extensions": [
+      ".epub",
+      ".pdf",
+      ".txt",
+      ".mobi",
+      ".cbz"
+    ],
+    "page_size": 50
   },
   "download": {
     "url": "https://content.dropboxapi.com/2/files/download",

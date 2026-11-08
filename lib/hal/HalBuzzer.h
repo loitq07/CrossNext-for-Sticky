@@ -13,8 +13,8 @@ class HalBuzzer {
     if (!BoardConfig::hasBuzzer()) return;
     static freeink::Buzzer buzzer;
     if (buzzer.begin()) {
-      uint32_t duty = (volume == 0) ? 20 : (volume == 1 ? 90 : 512);
-      uint32_t durationMs = (volume == 0) ? 7 : (volume == 1 ? 10 : 12);
+      uint32_t duty = (volume == 0) ? 120 : (volume == 1 ? 280 : 512);
+      uint32_t durationMs = (volume == 0) ? 9 : (volume == 1 ? 12 : 15);
       buzzer.tone(4000, durationMs, duty);
     }
 #endif
@@ -25,8 +25,8 @@ class HalBuzzer {
     if (!BoardConfig::hasBuzzer()) return;
     static freeink::Buzzer buzzer;
     if (buzzer.begin()) {
-      uint32_t duty = (volume == 0) ? 25 : (volume == 1 ? 110 : 512);
-      uint32_t dur = (volume == 0) ? (durationMs * 2 / 3) : durationMs;
+      uint32_t duty = (volume == 0) ? 140 : (volume == 1 ? 300 : 512);
+      uint32_t dur = (volume == 0) ? (durationMs * 3 / 4) : durationMs;
       buzzer.tone(freqHz, dur, duty);
     }
 #endif

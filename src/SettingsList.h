@@ -678,6 +678,12 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
       v.erase(std::remove_if(v.begin(), v.end(),
                              [](const SettingInfo& s) {
                                return s.nameId == StrId::STR_LONG_PRESS_MENU ||
+                                      s.nameId == StrId::STR_ROTATION_DIRECTION ||
+                                      s.nameId == StrId::STR_SIDE_BTN_LAYOUT ||
+                                      s.nameId == StrId::STR_XTC_INVERT_DIRECTION ||
+                                      s.nameId == StrId::STR_XTC_COVER_CCW ||
+                                      s.nameId == StrId::STR_SIDE_LEFT_ACTION ||
+                                      s.nameId == StrId::STR_SIDE_RIGHT_ACTION ||
                                       (s.key && std::strncmp(s.key, "homeButton", 10) == 0) ||
                                       s.valuePtr == &CrossPointSettings::frontlightBrightness ||
                                       s.valuePtr == &CrossPointSettings::frontlightWarmth ||

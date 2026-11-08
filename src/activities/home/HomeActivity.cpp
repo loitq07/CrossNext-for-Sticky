@@ -315,7 +315,7 @@ bool HomeActivity::loadRecentCovers(int coverHeight) {
 
 void HomeActivity::onEnter() {
   Activity::onEnter();
-  setEdgeBackEnabled(SETTINGS.homeLayout == CrossPointSettings::HOME_FRAMED);
+  setEdgeBackEnabled(false);
   homemenu::Store::instance().load();
 
   hasOpdsServers = OPDS_STORE.hasServers();

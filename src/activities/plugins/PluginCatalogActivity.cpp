@@ -5,6 +5,7 @@
 #include <FreeInkUIIcon.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
+#include <HalBuzzer.h>
 #include <I18n.h>
 #include <JsonListParser.h>
 #include <Logging.h>
@@ -54,7 +55,7 @@ constexpr size_t MAX_API_RESPONSE = 48 * 1024;
 // response until leaving the catalog so downloads can release the parsed rows.
 constexpr char BROWSE_TMP_PATH[] = "/.pcat_tmp.json";
 constexpr size_t MAX_BROWSE_RESPONSE = 1024 * 1024;
-constexpr int MAX_PAGE_SIZE = 16;
+constexpr int MAX_PAGE_SIZE = 100;
 
 std::string md5Hex(const std::string& text) {
   MD5Builder md5;
@@ -102,6 +103,102 @@ bool streamBrowseFile(Parser* parser) {
   return false;
 }
 
+// Scan BROWSE_TMP_PATH in 512-byte blocks directly from SD card without allocating large strings in DRAM.
+bool scanCursorAndHasMore(const char* path, const std::string& cursorKey, std::string& outCursor, bool& outHasMore, bool& hasMoreFound) {
+  outCursor.clear();
+  outHasMore = true;
+  hasMoreFound = false;
+
+  HalFile file;
+  if (!Storage.openFileForRead("PCAT", path, file)) return false;
+
+  const std::string needleCursor = "\"" + cursorKey + "\"";
+  const std::string needleMore = "\"has_more\"";
+
+  char buf[512];
+  size_t cursorIdx = 0;
+  size_t moreIdx = 0;
+  bool inCursor = false;
+  bool inMore = false;
+  bool cursorFound = false;
+
+  while (file.available() > 0 && (!cursorFound || !hasMoreFound)) {
+    int bytesRead = file.read(buf, sizeof(buf));
+    if (bytesRead <= 0) break;
+    for (int i = 0; i < bytesRead; ++i) {
+      char c = buf[i];
+      if (!cursorFound && !inCursor) {
+        if (c == needleCursor[cursorIdx]) {
+          cursorIdx++;
+          if (cursorIdx == needleCursor.size()) {
+            inCursor = true;
+          }
+        } else {
+          cursorIdx = (c == needleCursor[0]) ? 1 : 0;
+        }
+      } else if (inCursor) {
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == ':') continue;
+        if (c == '"') {
+          bool escape = false;
+          while (true) {
+            i++;
+            if (i >= bytesRead) {
+              bytesRead = file.read(buf, sizeof(buf));
+              if (bytesRead <= 0) break;
+              i = 0;
+            }
+            char sc = buf[i];
+            if (escape) {
+              outCursor += sc;
+              escape = false;
+            } else if (sc == '\\') {
+              escape = true;
+            } else if (sc == '"') {
+              cursorFound = true;
+              inCursor = false;
+              break;
+            } else {
+              outCursor += sc;
+            }
+          }
+          if (cursorFound && hasMoreFound) return true;
+          continue;
+        } else {
+          inCursor = false;
+          cursorIdx = 0;
+        }
+      }
+
+      if (!hasMoreFound && !inMore) {
+        if (c == needleMore[moreIdx]) {
+          moreIdx++;
+          if (moreIdx == needleMore.size()) {
+            inMore = true;
+          }
+        } else {
+          moreIdx = (c == needleMore[0]) ? 1 : 0;
+        }
+      } else if (inMore) {
+        if (c == ' ' || c == '\t' || c == '\r' || c == '\n' || c == ':') continue;
+        if (c == 't' || c == 'T') {
+          outHasMore = true;
+          hasMoreFound = true;
+          inMore = false;
+          if (cursorFound && hasMoreFound) return true;
+        } else if (c == 'f' || c == 'F') {
+          outHasMore = false;
+          hasMoreFound = true;
+          inMore = false;
+          if (cursorFound && hasMoreFound) return true;
+        } else {
+          inMore = false;
+          moreIdx = 0;
+        }
+      }
+    }
+  }
+  return cursorFound || hasMoreFound;
+}
 }  // namespace
 
 namespace {
@@ -224,7 +321,8 @@ bool PluginCatalogActivity::loadManifest() {
     if (ext.is<const char*>()) manifest.jsonExtensions.emplace_back(ext.as<const char*>());
   }
   manifest.versionPath = browse["fields"]["version"] | "";
-  manifest.pageSize = browse["page_size"] | 8;
+  manifest.pageSize = browse["page_size"] | 50;
+  if (manifest.pageSize < 50) manifest.pageSize = 50;
   // Documented bounds: each row costs an Item (strings) and a screen slot.
   manifest.pageSize = std::clamp(manifest.pageSize, 1, MAX_PAGE_SIZE);
   manifest.browseLists.reserve(browse["lists"].size());
@@ -715,16 +813,46 @@ bool PluginCatalogActivity::parseBrowseResponse() {
 
   if (!manifest.cursorPath.empty()) {
     nextCursorToken.clear();
+    bool hasMoreFlag = true;
+    bool hasMoreSpecified = false;
+
+    // 1. Try reading into string and parsing via ArduinoJson (cap raised from 4KB to 256KB)
     std::string raw;
-    if (Storage.readFileToString("PCAT", BROWSE_TMP_PATH, 4096, raw)) {
+    if (Storage.readFileToString("PCAT", BROWSE_TMP_PATH, 256 * 1024, raw)) {
       JsonDocument doc;
       if (deserializeJson(doc, raw) == DeserializationError::Ok) {
         nextCursorToken = variantToString(resolvePath(doc.as<JsonVariantConst>(), manifest.cursorPath));
-        if (doc["has_more"].is<bool>() && !doc["has_more"].as<bool>()) {
-          nextCursorToken.clear();
+        if (doc["has_more"].is<bool>()) {
+          hasMoreFlag = doc["has_more"].as<bool>();
+          hasMoreSpecified = true;
         }
       }
     }
+
+    // 2. Fallback: single-pass stream scan of SD card
+    if (nextCursorToken.empty() || !hasMoreSpecified) {
+      std::string leafKey = manifest.cursorPath;
+      const size_t dotPos = leafKey.rfind('.');
+      if (dotPos != std::string::npos) leafKey = leafKey.substr(dotPos + 1);
+
+      std::string scannedCursor;
+      bool scannedMore = true;
+      bool scannedMoreFound = false;
+      if (scanCursorAndHasMore(BROWSE_TMP_PATH, leafKey, scannedCursor, scannedMore, scannedMoreFound)) {
+        if (nextCursorToken.empty() && !scannedCursor.empty()) {
+          nextCursorToken = scannedCursor;
+        }
+        if (!hasMoreSpecified && scannedMoreFound) {
+          hasMoreFlag = scannedMore;
+          hasMoreSpecified = true;
+        }
+      }
+    }
+
+    if (hasMoreSpecified && !hasMoreFlag) {
+      nextCursorToken.clear();
+    }
+
     hasMore = !nextCursorToken.empty() && !items.empty();
     if (items.size() > static_cast<size_t>(manifest.pageSize)) items.resize(manifest.pageSize);
   } else {
@@ -1172,6 +1300,9 @@ void PluginCatalogActivity::onBackButton() {
 }
 
 void PluginCatalogActivity::activateIndex(const int index) {
+  if (SETTINGS.keySound) {
+    HalBuzzer::click(SETTINGS.buzzerVolume);
+  }
   if (state == State::PLUGIN_PICKER) {
     if (index < 0 || index >= rowCount()) return;
     if (showOpds && index == 0) {
