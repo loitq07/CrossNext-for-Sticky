@@ -13,12 +13,12 @@ inline void touchAction(bool longPress = false) {
   if (longPress) {
     HalHaptics::longPress(enabled, SETTINGS.hapticIntensity);
     if (SETTINGS.keySound) {
-      HalBuzzer::beep(2500, 30);
+      HalBuzzer::beep(2500, 30, SETTINGS.buzzerVolume);
     }
   } else {
     HalHaptics::feedback(enabled, true, SETTINGS.hapticIntensity);
     if (SETTINGS.keySound) {
-      HalBuzzer::click();
+      HalBuzzer::click(SETTINGS.buzzerVolume);
     }
   }
 }

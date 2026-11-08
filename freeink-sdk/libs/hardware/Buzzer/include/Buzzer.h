@@ -27,7 +27,7 @@ class Buzzer {
 
   // Plays a square-wave tone at freqHz. durationMs > 0 blocks for that long and
   // then stops; durationMs == 0 starts a continuous tone (end it with noTone()).
-  void tone(uint32_t freqHz, uint32_t durationMs = 0);
+  void tone(uint32_t freqHz, uint32_t durationMs = 0, uint32_t duty = 512);
 
   // A short default beep (kDefaultBeepFreq for kDefaultBeepMs).
   void beep() { tone(kDefaultBeepFreq, kDefaultBeepMs); }

@@ -205,6 +205,8 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   enum HAPTIC_INTENSITY { HAPTIC_LOW = 0, HAPTIC_MEDIUM = 1, HAPTIC_HIGH = 2 };
   uint8_t hapticIntensity = HAPTIC_HIGH;
   uint8_t keySound = 1;
+  enum BUZZER_VOLUME { BUZZER_VOLUME_LOW = 0, BUZZER_VOLUME_MEDIUM = 1, BUZZER_VOLUME_HIGH = 2, BUZZER_VOLUME_COUNT };
+  uint8_t buzzerVolume = BUZZER_VOLUME_MEDIUM;
 
   enum TOUCH_READER_CONTROLS { TOUCH_READER_OFF = 0, TOUCH_READER_ON = 1, TOUCH_READER_CONTROLS_COUNT };
 

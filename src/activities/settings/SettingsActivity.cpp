@@ -5,6 +5,7 @@
 #include <GfxRenderer.h>
 #include <HalClock.h>
 #include <HalDisplay.h>
+#include <HalBuzzer.h>
 #include <LibraryBuilder.h>
 #include <Logging.h>
 #include <Memory.h>
@@ -77,7 +78,7 @@ int settingsGroup(const SettingInfo& s, int category) {
         s.valuePtr == &CrossPointSettings::previousPageGesture ||
         s.valuePtr == &CrossPointSettings::xtcInvertPageDirection)
       return 1;
-    if (s.valuePtr == &CrossPointSettings::vibration || s.valuePtr == &CrossPointSettings::hapticIntensity || s.valuePtr == &CrossPointSettings::keySound) return 2;
+    if (s.valuePtr == &CrossPointSettings::vibration || s.valuePtr == &CrossPointSettings::hapticIntensity || s.valuePtr == &CrossPointSettings::keySound || s.valuePtr == &CrossPointSettings::buzzerVolume) return 2;
     return 0;
   }
   if (s.action == SettingAction::HomeMenu || s.action == SettingAction::Language) return 0;
@@ -464,6 +465,10 @@ void SettingsActivity::onExit() {
 void SettingsActivity::applyUiSettingChange(uint8_t CrossPointSettings::* valuePtr) {
   if (valuePtr == &CrossPointSettings::touchScreenLocked) {
     mappedInput.swallowCurrentTouch();
+    return;
+  }
+  if (valuePtr == &CrossPointSettings::buzzerVolume) {
+    HalBuzzer::click(SETTINGS.buzzerVolume);
     return;
   }
   // Theme changes take effect immediately, on this screen — reload the theme

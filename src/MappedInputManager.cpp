@@ -27,7 +27,7 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
     const bool anyBtnPressed = gpio.wasAnyPressed();
     const bool pagePressedEdge = gpio.wasCapacitivePagePressed();
     if (anyBtnPressed || pagePressedEdge) {
-      HalBuzzer::click();
+      HalBuzzer::click(SETTINGS.buzzerVolume);
     }
   }
   homeAction = HomeButtonAction::Ignore;
@@ -41,12 +41,12 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
     if (gpio.wasHomeKeyLongPressed() && homeAction != HomeButtonAction::Ignore) {
       HalHaptics::longPress(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, SETTINGS.hapticIntensity);
       if (SETTINGS.keySound) {
-        HalBuzzer::beep(2500, 30);
+        HalBuzzer::beep(2500, 30, SETTINGS.buzzerVolume);
       }
     } else if (homeAction != HomeButtonAction::Ignore) {
       HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, true, SETTINGS.hapticIntensity);
       if (SETTINGS.keySound) {
-        HalBuzzer::click();
+        HalBuzzer::click(SETTINGS.buzzerVolume);
       }
     }
   }

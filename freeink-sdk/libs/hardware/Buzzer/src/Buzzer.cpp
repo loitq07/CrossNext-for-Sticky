@@ -23,9 +23,12 @@ bool Buzzer::begin() {
   return true;
 }
 
-void Buzzer::tone(uint32_t freqHz, uint32_t durationMs) {
+void Buzzer::tone(uint32_t freqHz, uint32_t durationMs, uint32_t duty) {
   if (!begun_ || freqHz == 0) return;
   ledcWriteTone(buzzerPin(), freqHz);
+  if (duty > 0 && duty < 512) {
+    ledcWrite(buzzerPin(), duty);
+  }
   if (durationMs > 0) {
     delay(durationMs);
     noTone();
@@ -51,7 +54,7 @@ void Buzzer::end() {
 
 namespace freeink {
 bool Buzzer::begin() { return false; }
-void Buzzer::tone(uint32_t, uint32_t) {}
+void Buzzer::tone(uint32_t, uint32_t, uint32_t) {}
 void Buzzer::noTone() {}
 void Buzzer::end() {}
 }  // namespace freeink
