@@ -112,6 +112,10 @@ inline TouchPageTurn detectTouchPageTurn(const GfxRenderer& renderer, const Mapp
 
   const bool nextTaps = gestureAllowsTap(SETTINGS.pageTurnGesture);
   const bool prevTaps = gestureAllowsTap(SETTINGS.previousPageGesture);
+  if (!nextTaps && !prevTaps) {
+    return result;
+  }
+
   int x = 0;
   int y = 0;
   if (!input.wasScreenTapped(x, y)) {
@@ -119,24 +123,13 @@ inline TouchPageTurn detectTouchPageTurn(const GfxRenderer& renderer, const Mapp
   }
 
   const int width = renderer.getScreenWidth();
-  const int height = renderer.getScreenHeight();
-  // Edge taps complement swipe-only preferences and leave the centre for selection.
-  const int edge = std::max(32, width * 15 / 100);
-  if (y >= 32 && y < height - 32 && (x < edge || x >= width - edge)) {
-    result.prev = (x < edge) != invertDirection;
-    result.next = !result.prev;
-    return result;
-  }
-  if (!nextTaps && !prevTaps) return result;
-  // Give the whole page to the sole tap-enabled direction. When both accept
-  // taps, split at the left third. RTL books and Inverted Tap each reverse
-  // the shared zones.
+  // RTL books and Inverted Tap each reverse the shared zones.
   const bool inverted =
       (SETTINGS.pageTurnGesture == CrossPointSettings::INVERTED_TAP ||
        SETTINGS.previousPageGesture == CrossPointSettings::INVERTED_TAP) != (rtlBook != invertDirection);
   const bool nextZone = inverted ? x < (width * 2) / 3 : x >= width / 3;
-  result.next = nextTaps && (!prevTaps || nextZone);
-  result.prev = prevTaps && (!nextTaps || !nextZone);
+  result.next = nextZone && nextTaps;
+  result.prev = !nextZone && prevTaps;
   result.heldMs = gpio.lastTouchHeldMs();
   return result;
 }
