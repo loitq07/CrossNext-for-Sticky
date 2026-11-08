@@ -1,5 +1,6 @@
 #include "LibrarySync.h"
 
+#include <ContentVisibility.h>
 #include <Epub.h>
 #include <FsHelpers.h>
 #include <LibraryBuilder.h>
@@ -33,7 +34,7 @@ void syncIndexToRecents(int maxBooks) {
     if (ordinal == 0xFFFF || !index.readRecord(ordinal, record)) break;
 
     std::string path;
-    if (!index.readPath(record, path)) continue;
+    if (!index.readPath(record, path) || content::readLaterContent(path)) continue;
     if (!libraryui::acceptsFormat(path, SETTINGS.libraryFileTypes)) continue;
 
     // Skip if already in RECENT_BOOKS

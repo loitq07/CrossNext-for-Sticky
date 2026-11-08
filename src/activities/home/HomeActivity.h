@@ -69,7 +69,7 @@ class HomeActivity final : public Activity {
     if (SETTINGS.homeLayout == CrossPointSettings::HOME_BOOX) {
       static constexpr HomeMenuItem actions[] = {
           HomeMenuItem::FILE_BROWSER, HomeMenuItem::LIBRARY, HomeMenuItem::FILE_TRANSFER, HomeMenuItem::READING_STATS,
-          HomeMenuItem::APPS,         HomeMenuItem::GAMES,   HomeMenuItem::SETTINGS_MENU};
+          HomeMenuItem::APPS,         HomeMenuItem::GAMES,   HomeMenuItem::READ_LATER, HomeMenuItem::SETTINGS_MENU};
       return idx >= 0 && idx < homeui::kPiccoActions ? actions[idx] : HomeMenuItem::NONE;
     }
     return homemenu::item(homemenu::at(homemenu::config(), idx, hasOpdsUrl));

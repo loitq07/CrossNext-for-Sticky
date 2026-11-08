@@ -64,6 +64,7 @@ CardCheck checkLibraryCard(const ClixHeader& header) {
     if (prefix + length >= sizeof(scan->path)) continue;
     if (folder.length > 1) scan->path[folder.length] = '/';
     std::memcpy(scan->path + prefix, scan->name, length + 1);
+    if (content::readLaterContent(scan->path)) continue;
     if (directory) {
       if (depth >= LIBRARY_MAX_DEPTH) continue;
       auto child = Storage.open(scan->path);

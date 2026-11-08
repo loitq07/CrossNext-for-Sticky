@@ -24,6 +24,8 @@ const char* label(Id id, bool plugins) {
   if (*custom) return custom;
   if (const auto* entry = shortcut(config(), id)) return shelf::label(entry->title);
   switch (id) {
+    case Id::ReadLater:
+      return tr(STR_READ_LATER);
     case Id::Files:
       return tr(STR_BROWSE_FILES);
     case Id::Recent:
@@ -53,6 +55,8 @@ const char* label(Id id, bool plugins) {
 homeui::Icon icon(Id id) {
   if (const auto* entry = shortcut(config(), id)) return entry->folder == 0 ? homeui::Icon::Games : homeui::Icon::Apps;
   switch (id) {
+    case Id::ReadLater:
+      return homeui::Icon::ReadLater;
     case Id::Files:
       return homeui::Icon::Files;
     case Id::Recent:
@@ -81,6 +85,8 @@ homeui::Icon icon(Id id) {
 }
 HomeMenuItem item(Id id) {
   switch (id) {
+    case Id::ReadLater:
+      return HomeMenuItem::READ_LATER;
     case Id::Files:
       return HomeMenuItem::FILE_BROWSER;
     case Id::Recent:
@@ -109,6 +115,8 @@ HomeMenuItem item(Id id) {
 }
 Id idFor(HomeMenuItem value) {
   switch (value) {
+    case HomeMenuItem::READ_LATER:
+      return Id::ReadLater;
     case HomeMenuItem::FILE_BROWSER:
       return Id::Files;
     case HomeMenuItem::LIBRARY:

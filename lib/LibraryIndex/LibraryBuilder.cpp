@@ -492,7 +492,8 @@ void walk(WalkState& st, const std::string& path, const int depth) {
     if (!inventory::visible(st.nameBuf)) continue;
     const std::string name(st.nameBuf);
 
-    if (isDir && inventory::appRootFolder(name, depth)) continue;
+    if ((isDir && inventory::appRootFolder(name, depth)) ||
+        content::readLaterContent(joinLibraryPath(path, name))) continue;
     if (isDir) {
       const size_t resumePosition = dir.position();
       dir.close();

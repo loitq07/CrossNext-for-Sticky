@@ -72,7 +72,7 @@ void HomeDashboardUi::addRow(const char* label, const homeui::Icon icon) {
   static constexpr StrId labels[] = {StrId::STR_SHORT_FILES,    StrId::STR_SHORT_RECENT,  StrId::STR_SHORT_TRANSFER,
                                      StrId::STR_SHORT_SETTINGS, StrId::STR_SHORT_PLUGINS, StrId::STR_SHORT_GAMES,
                                      StrId::STR_SHORT_APPS,     StrId::STR_SHORT_STATS};
-  homeui::copyLabel(row.brief, sizeof(row.brief), I18N.get(labels[static_cast<unsigned>(icon)]));
+  homeui::copyLabel(row.brief, sizeof(row.brief), icon == homeui::Icon::ReadLater ? tr(STR_READ_LATER) : I18N.get(labels[static_cast<unsigned>(icon)]));
 }
 
 bool HomeDashboardUi::draw(const RecentBook* book, bool librarySlot, bool plugins, int selected, int recentIndex,

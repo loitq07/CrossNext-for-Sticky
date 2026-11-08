@@ -234,7 +234,7 @@ int main(int argc, char** argv) {
                       "A very long title with many words that must wrap within the reading card and never overwrite "
                       "the menu below it");
     homeui::copyLabel(model.author, sizeof(model.author), "An author with a particularly long name");
-    model.count = 7;
+    model.count = 8;
     model.hasBook = true;
     homeui::draw(inset.target, model, geometry);
     if (argc > 1) inset.write(std::string(argv[1]) + "/" + std::to_string(size.first) + "-long-insets.pbm");
@@ -470,7 +470,7 @@ int main(int argc, char** argv) {
   for (const auto size : {fui::Size{480, 800}, fui::Size{800, 480}}) {
     Canvas c(size.width, size.height);
     model.style = homeui::Style::Boox;
-    model.count = 7;
+    model.count = 8;
     model.hasBook = true;
     auto g = homeui::layout(c.device, model.count, model.style, &model);
     CHECK(g.cover.height > 200);
@@ -486,12 +486,14 @@ int main(int argc, char** argv) {
     CHECK(c.pixels != focusedFiles);
     CHECK(!g.settingsButton.empty());
     CHECK(g.progress.bottom() < g.menu.y);
-    for (int n = 0; n < 6; ++n) {
+    for (int n = 0; n < 7; ++n) {
       CHECK(!g.primary[n].empty());
       CHECK(g.primary[n].bottom() <= c.height);
       CHECK(g.primary[n].x >= g.menu.x);
       CHECK(g.primary[n].right() <= g.menu.right());
     }
+    if (argc > 1)
+      c.write(std::string(argv[1]) + "/home-read-later-boox-" + std::to_string(size.width) + ".pbm");
   }
   for (int n = 0; n < homeui::kPiccoActions; ++n) CHECK(homeui::piccoIndex(homeui::piccoAction(n)) == n);
   CHECK(homeui::piccoIndex(static_cast<homeui::QuickAction>(-1)) == -1);

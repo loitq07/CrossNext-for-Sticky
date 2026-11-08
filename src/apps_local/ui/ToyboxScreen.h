@@ -401,9 +401,8 @@ inline void headerBand(Screen& screen, const freeink::ui::HeaderProps& props) {
     const auto box = fui::makeRect(safe.right() - 44, ink.y + (ink.height - 19) / 2, 30, 19);
     screen.target().stroke(box, paper, 2);
     screen.target().fill(fui::makeRect(box.right(), box.y + 5, 4, 9), paper);
-    screen.target().fill(fui::makeRect(box.x + 4, box.y + 4,
-                                       (box.width - 8) * std::clamp(battery.percent, 0, 100) / 100, box.height - 8),
-                         paper);
+    const int fill = battery.charging ? (box.width - 8) : (box.width - 8) * std::clamp(battery.percent, 0, 100) / 100;
+    screen.target().fill(fui::makeRect(box.x + 4, box.y + 4, fill, box.height - 8), paper);
     if (battery.charging) {
       screen.target().line({int16_t(box.x + 18), int16_t(box.y)}, {int16_t(box.x + 12), int16_t(box.y + 11)}, 2, black);
       screen.target().line({int16_t(box.x + 12), int16_t(box.y + 11)}, {int16_t(box.x + 19), int16_t(box.y + 9)}, 2,

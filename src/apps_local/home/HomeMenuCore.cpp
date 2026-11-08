@@ -6,7 +6,7 @@ namespace homemenu {
 namespace {
 constexpr Id legacyOrder[kCount] = {Id::Files,     Id::Recent,    Id::Stats,     Id::Games,     Id::Apps,
                                     Id::Transfer,  Id::Services,  Id::Shortcut0, Id::Shortcut1, Id::Shortcut2,
-                                    Id::Shortcut3, Id::Shortcut4, Id::Settings};
+                                    Id::Shortcut3, Id::Shortcut4, Id::Settings, Id::ReadLater};
 bool legacyDefaults(const Config& config) {
   if (config.visible != 0x3f || std::memcmp(config.order, legacyOrder, sizeof(legacyOrder))) return false;
   for (const auto& label : config.labels)
@@ -40,7 +40,7 @@ bool utf8(const char* s) {
   return true;
 }
 }  // namespace
-bool isShortcut(Id id) { return static_cast<int>(id) >= kBaseCount && static_cast<int>(id) < kCount; }
+bool isShortcut(Id id) { return static_cast<int>(id) >= kBaseCount && static_cast<int>(id) < kBaseCount + kShortcutCount; }
 const Shortcut* shortcut(const Config& config, Id id) {
   return isShortcut(id) ? &config.shortcuts[static_cast<int>(id) - kBaseCount] : nullptr;
 }
@@ -137,7 +137,7 @@ uint32_t checksum(const uint8_t* data, size_t length) {
 }
 void encode(const Config& config, uint32_t generation, uint8_t* bytes) {
   std::memset(bytes, 0, kSaveBytes);
-  std::memcpy(bytes, "HMC4", 4);
+  std::memcpy(bytes, "HMC5", 4);
   write32(bytes + 4, generation);
   write32(bytes + 8, config.visible);
   std::memcpy(bytes + 12, config.labels, sizeof(config.labels));
@@ -154,13 +154,14 @@ void encode(const Config& config, uint32_t generation, uint8_t* bytes) {
 }
 bool decode(const uint8_t* bytes, Config& config, uint32_t& generation, size_t length) {
   const bool legacy = length == kLegacySaveBytes && !std::memcmp(bytes, "HMC1", 4);
-  const bool current = length == kSaveBytes && !std::memcmp(bytes, "HMC4", 4);
-  const bool ordered = current || (length == kSaveBytes && !std::memcmp(bytes, "HMC3", 4));
-  if ((!legacy && !ordered && (length != kSaveBytes || std::memcmp(bytes, "HMC2", 4))) ||
+  const bool current = length == kSaveBytes && !std::memcmp(bytes, "HMC5", 4);
+  const bool previous = length == kPreviousSaveBytes && !std::memcmp(bytes, "HMC4", 4);
+  const bool ordered = current || previous || (length == kPreviousSaveBytes && !std::memcmp(bytes, "HMC3", 4));
+  if ((!legacy && !ordered && (length != kPreviousSaveBytes || std::memcmp(bytes, "HMC2", 4))) ||
       read32(bytes + length - 4) != checksum(bytes, length - 4))
     return false;
   const auto mask = read32(bytes + 8);
-  const int count = legacy ? kBaseCount : kCount;
+  const int count = legacy ? kBaseCount : current ? kCount : kCount - 1;
   if (mask & ~((1u << count) - 1) || !(mask & (1u << static_cast<int>(Id::Settings)))) return false;
   config = {};
   std::memcpy(config.order, legacyOrder, sizeof(legacyOrder));
@@ -171,7 +172,7 @@ bool decode(const uint8_t* bytes, Config& config, uint32_t& generation, size_t l
     if (!std::memchr(text, 0, kLabelBytes) || !setLabel(config, static_cast<Id>(n), text)) return false;
   }
   if (!legacy) {
-    const auto* in = bytes + 12 + sizeof(config.labels);
+    const auto* in = bytes + 12 + count * kLabelBytes;
     for (int n = 0; n < kShortcutCount; ++n) {
       auto& entry = config.shortcuts[n];
       entry.folder = *in++;
@@ -186,15 +187,28 @@ bool decode(const uint8_t* bytes, Config& config, uint32_t& generation, size_t l
     }
     if (ordered) {
       uint16_t seen = 0;
-      for (auto& id : config.order) {
+      for (int n = 0; n < count; ++n) {
+        auto& id = config.order[n];
         const auto value = *in++;
-        if (value >= kCount || (seen & (1u << value))) return false;
+        if (value >= count || (seen & (1u << value))) return false;
         seen |= 1u << value;
         id = static_cast<Id>(value);
       }
     }
   }
-  if (!current && legacyDefaults(config)) config = {};
+  if (!current && !previous && legacyDefaults(config)) config = {};
+  // Preserve saved labels, shortcuts and order, inserting the new section after Library.
+  if (!current) {
+    config.visible |= 1u << static_cast<int>(Id::ReadLater);
+    int slot = kCount - 1;
+    for (int n = 0; n < kCount; ++n)
+      if (config.order[n] == Id::ReadLater) slot = n;
+    while (slot > 0 && config.order[slot - 1] != Id::Recent) {
+      config.order[slot] = config.order[slot - 1];
+      --slot;
+    }
+    config.order[slot] = Id::ReadLater;
+  }
   for (int n = kCount - 1; visibleCount(config) > kMaxVisible && n >= 0; --n) {
     const auto id = config.order[n];
     if (id != Id::Settings) config.visible &= ~(1u << int(id));

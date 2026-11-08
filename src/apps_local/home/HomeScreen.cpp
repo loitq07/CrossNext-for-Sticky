@@ -45,6 +45,14 @@ void icon(fui::DrawTarget& target, const fui::Rect rect, Icon kind, bool inverte
     case Icon::Files:
       bitmap.data = FolderIcon;
       break;
+    case Icon::ReadLater: {
+      const auto ink = inverted ? white : black;
+      const auto paper = rect.inset({3, 1, 3, 1});
+      target.stroke(paper, ink, 2);
+      for (int n = 0; n < 3; ++n)
+        target.fill(fui::makeRect(paper.x + 5, paper.y + 6 + n * 6, paper.width - 10, 2), ink);
+      return;
+    }
     case Icon::Library: {
       const auto ink = inverted ? white : black;
       if (!proportional) {
@@ -162,9 +170,9 @@ Layout layout(const fui::DeviceContext& device, int count, Style style, const Mo
     out.sides[1] = fui::makeRect(out.coverRegion.x, out.cover.y + height / 8, sideWidth, height * 3 / 4);
     out.sides[2] =
         fui::makeRect(out.coverRegion.right() - sideWidth, out.cover.y + height / 8, sideWidth, height * 3 / 4);
-    for (int n = 0; n < 6; ++n)
-      out.primary[n] = fui::makeRect(out.menu.x + n % 3 * out.menu.width / 3, out.menu.y + n / 3 * out.menu.height / 2,
-                                     out.menu.width / 3, out.menu.height / 2);
+    for (int n = 0; n < 7; ++n)
+      out.primary[n] = fui::makeRect(out.menu.x + n % 4 * out.menu.width / 4, out.menu.y + n / 4 * out.menu.height / 2,
+                                     out.menu.width / 4, out.menu.height / 2);
     return out;
   }
   out.header = fui::makeRect(0, 0, device.width, safe.y + 72);
@@ -321,7 +329,14 @@ void drawBoox(fui::DrawTarget& target, const Model& model, const Layout& g) {
   const auto battery = fui::makeRect(g.header.right() - 42, top + 14, 26, 16);
   target.stroke(battery, white, 1);
   target.fill(fui::makeRect(battery.right(), battery.y + 4, 3, 8), white);
-  target.fill(fui::makeRect(battery.x + 3, battery.y + 3, 20 * std::clamp(model.battery, 0, 100) / 100, 10), white);
+  const int fill = model.charging ? 20 : 20 * std::clamp(model.battery, 0, 100) / 100;
+  target.fill(fui::makeRect(battery.x + 3, battery.y + 3, fill, 10), white);
+  if (model.charging) {
+    const int x = battery.x + 10, y = battery.y - 1;
+    target.line({int16_t(x + 5), int16_t(y)}, {int16_t(x + 1), int16_t(y + 9)}, 2, black);
+    target.line({int16_t(x + 1), int16_t(y + 9)}, {int16_t(x + 6), int16_t(y + 7)}, 2, black);
+    target.line({int16_t(x + 6), int16_t(y + 7)}, {int16_t(x + 2), int16_t(y + 16)}, 2, black);
+  }
   if (model.showPercent) {
     char value[8];
     std::snprintf(value, sizeof(value), "%d%%", model.battery);
@@ -345,17 +360,21 @@ void drawBoox(fui::DrawTarget& target, const Model& model, const Layout& g) {
   target.fill(fui::makeRect(g.bookProgress.x + std::clamp(filled - 3, 0, std::max(0, int(g.bookProgress.width) - 6)),
                             g.bookProgress.y - 2, 6, 8),
               black);
-  static constexpr Icon icons[] = {Icon::Files, Icon::Library, Icon::Transfer, Icon::Stats, Icon::Apps, Icon::Games};
+  static constexpr Icon icons[] = {Icon::Files, Icon::Library, Icon::Transfer, Icon::Stats, Icon::Apps, Icon::Games, Icon::ReadLater};
   static constexpr StrId labels[] = {StrId::STR_PICCO_FILES, StrId::STR_LIBRARY,    StrId::STR_PICCO_TRANSFER,
-                                     StrId::STR_PICCO_STATS, StrId::STR_SHORT_APPS, StrId::STR_SHORT_GAMES};
-  for (int n = 0; n < 6; ++n) {
+                                     StrId::STR_PICCO_STATS, StrId::STR_SHORT_APPS, StrId::STR_SHORT_GAMES, StrId::STR_READ_LATER};
+  for (int n = 0; n < 7; ++n) {
     const auto r = g.primary[n];
     const auto art = fui::makeRect(r.x + (r.width - 26) / 2, r.y + 8, 26, 26);
     const bool focus = selected == n;
     if (focus) target.fill(art.inset({-4, -4, -4, -4}), black);
     icon(target, art, icons[n], focus, true);
-    text(target, fui::makeRect(r.x + 3, r.y + 38, r.width - 6, std::max(20, int(r.height) - 40)), I18N.get(labels[n]),
-         g.header.width > g.header.height * 12 ? 3 : 0, 1, fui::Color::Black, fui::TextAlign::Center);
+    const auto label = I18N.get(labels[n]);
+    const auto font = g.header.width > g.header.height * 12 || target.measureText(0, label, {}).width > r.width - 6
+                          ? fui::FontId(3)
+                          : fui::FontId(0);
+    text(target, fui::makeRect(r.x + 3, r.y + 38, r.width - 6, std::max(20, int(r.height) - 40)), label,
+         font, 1, fui::Color::Black, fui::TextAlign::Center);
   }
 }
 

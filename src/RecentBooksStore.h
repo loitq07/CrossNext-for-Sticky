@@ -50,7 +50,7 @@ class RecentBooksStore : public PersistableStore<RecentBooksStore> {
   void updatePath(const std::string& oldPath, const std::string& newPath, const std::string& oldCachePath,
                   const std::string& newCachePath);
 
-  // True if the book's backing file is no longer present on the SD card.
+  // True if the file is missing or belongs outside the book library (resources/articles).
   static bool isMissing(const RecentBook& book);
 
   // Remove entries whose backing file is no longer on the SD card.

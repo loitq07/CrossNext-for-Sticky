@@ -2,7 +2,7 @@
 #include <string_view>
 
 namespace content {
-inline constexpr unsigned char VISIBILITY_VERSION = 1;
+inline constexpr unsigned char VISIBILITY_VERSION = 2;
 inline bool asciiEqual(std::string_view a, std::string_view b) {
   if (a.size() != b.size()) return false;
   for (size_t n = 0; n < a.size(); ++n) {
@@ -15,6 +15,13 @@ inline bool appFolder(std::string_view name) {
   return asciiEqual(name, "flashcards") || asciiEqual(name, "sleep") || asciiEqual(name, "wallpaper") ||
          asciiEqual(name, "wallpapers") || asciiEqual(name, "fonts") || asciiEqual(name, "licenses") ||
          asciiEqual(name, "apps") || asciiEqual(name, "dictionaries");
+}
+inline constexpr const char* WALLABAG_DIRECTORY = "/books/Wallabag";
+inline bool readLaterContent(std::string_view path) {
+  if (!path.empty() && path.front() == '/') path.remove_prefix(1);
+  constexpr std::string_view root = "books/wallabag";
+  return path.size() >= root.size() && asciiEqual(path.substr(0, root.size()), root) &&
+         (path.size() == root.size() || path[root.size()] == '/');
 }
 inline bool hiddenContent(std::string_view path) {
   if (!path.empty() && path.front() == '/') path.remove_prefix(1);

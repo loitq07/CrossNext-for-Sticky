@@ -351,12 +351,11 @@ void CrossPointWebServerActivity::startWebServer() {
     LOG_DBG("WEBACT", "Web server started successfully");
     lastWifiBars = isApMode ? 0 : barsForRssi(WiFi.RSSI(), 0);
 
-    // The device is online: deliver queued plugin events through their
-    // manifest handlers. STA only (AP mode has no internet route); bounded by
-    // the drain's per-call event budget so serving is not noticeably delayed.
-    if (!isApMode) {
-      pluginevents::drain(&renderer);
-    }
+    // DISABLED: Delivering queued plugin events triggers outbound HTTPS/TLS requests
+    // that exhaust internal SRAM right as the Web Server is coming up.
+    // if (!isApMode) {
+    //   pluginevents::drain(&renderer);
+    // }
 
     // Force an immediate render since we're transitioning from a subactivity
     // that had its own rendering task. We need to make sure our display is shown.

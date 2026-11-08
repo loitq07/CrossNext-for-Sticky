@@ -7,6 +7,7 @@
 #include "HomeCoverCache.h"
 #include "RecentBooksStore.h"
 #include "UiAppHost.h"
+#include "apps_local/home/HomeMenuCore.h"
 #include "components/bars/tab-bar.h"
 #include "components/media/book-card.h"
 #include "components/media/cover-grid.h"
@@ -91,8 +92,5 @@ class CoverGridHomeUi final : public UiAppHost {
   freeink::ui::CoverGridProps grid;
   freeink::ui::Rect gridBounds{};
   freeink::ui::TabBarProps tabs;
-  // fork-local seam: room for the shelf's folders (GAMES, APPS) after
-  // upstream's five tabs. See drawTabs().
-  static constexpr int SHELF_TABS = 2;
-  std::array<freeink::ui::TabItem, 5 + SHELF_TABS> tabItems;
+  std::array<freeink::ui::TabItem, homemenu::kMaxVisible> tabItems;
 };

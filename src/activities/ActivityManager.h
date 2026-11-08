@@ -28,7 +28,8 @@ enum class HomeMenuItem {
   SETTINGS_MENU,
   READING_STATS,
   GAMES,
-  APPS
+  APPS,
+  READ_LATER
 };
 
 /**
@@ -143,6 +144,7 @@ class ActivityManager {
   void goToSettings();
   void goToFileBrowser(std::string path = {});
   void goToLibrary();
+  void goToReadLater();
   void goToBrowser();
   void goToPlugins(bool showOpds);
   void goToReader(std::string path, bool allowFastInitialRefresh = false);

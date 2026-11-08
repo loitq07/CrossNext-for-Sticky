@@ -173,6 +173,7 @@ immediate/waiting requests.
 | `src/util/BookCacheUtils.{cpp,h}` | Notify retained Home artwork of transfer/cache mutations, including non-book cover files with synthetic FAT dates | one atomic revision hook |
 | `lib/hal/HalFrontlight.{h,cpp}`, `lib/hal/HalPowerManager.cpp` | Prepare the light for deep sleep through the existing SDK park/wake contract | thin HAL lifecycle hook |
 | `lib/FsHelpers/ContentVisibility.h`, `lib/LibraryIndex/LibraryBuilder.cpp`, `lib/LibraryIndex/LibraryFormat.h`, `src/activities/library/LibraryListActivity.cpp` | Hide root resource folders and reconcile one old index using reserved header byte 0 as the visibility policy version | shared filter and cache marker |
+| `lib/LibraryIndex/LibraryCardCheck.cpp`, `src/RecentBooksStore.cpp`, `src/util/LibrarySync.cpp`, `src/activities/plugins/PluginCatalogActivity.{h,cpp}`, `src/activities/reader/ReaderUtils.h` | Separate Wallabag articles from books and recents, open Wallabag from the local Read Later section, and return articles to that section | shared path policy, optional direct catalog target; see `docs/apps/read-later.md` |
 | `src/activities/reader/DictionaryDefinitionActivity.{h,cpp}`, `src/util/DictHtmlPages.cpp` | Shared dictionary chrome, explicit save/undo, arrows/swipes and readable left-aligned definitions | local Words screen helper and reader seam |
 | `src/activities/reader/ReaderToolbarUi.cpp` | Bind the Contents prose font in the family picker and selected family label | one font-slot binding |
 | `src/activities/home/HomeActivity.{h,cpp}` | Repaint cached carousel steps once; repaint again only after missing artwork or a loading notice changed the frame | existing thumbnail load result |
@@ -382,7 +383,7 @@ a quarter of a million lines of reading features this fork does not touch.
 
 ## Personal Home menu and reading history
 
-The Home registry is owned by `src/apps_local/home/HomeMenu*`. Its upstream seams are `HomeActivity.{h,cpp}`, `ActivityManager.{h,cpp}` (stable menu identifiers/return selection), `CoverGridHomeUi.{h,cpp}` (the same registry in the optional cover-grid presentation), and `SettingsActivity.{h,cpp}` (one System action). It replaces fixed positional row arithmetic; it does not change reader navigation.
+The Home registry is owned by `src/apps_local/home/HomeMenu*`. Its upstream seams are `HomeActivity.{h,cpp}`, `ActivityManager.{h,cpp}` (stable menu identifiers/return selection), `CoverGridHomeUi.{h,cpp}` (the same registry in the optional cover-grid presentation), and `SettingsActivity.{h,cpp}` (one System action). It replaces fixed positional row arithmetic. Read Later adds its dedicated Home destination and routes Back from Wallabag EPUBs through `ReaderUtils`; see [Read Later](docs/apps/read-later.md).
 
 `ReaderActivity.cpp` flushes the existing qualified `ReaderSession` into the fork-owned reading journal before plugin delivery; `ReaderSession.{h,cpp}` exposes its qualified page count. The statistics UI, fixed records and SD repository live in `src/apps_local/reading`. No dependency is taken on `REFERENCIA FIRMWARE/`. See [reading statistics](docs/reading-stats.md) for counting rules, storage growth and the hardware checks. The shared Library seam is limited to row fitting and grouped frames.
 

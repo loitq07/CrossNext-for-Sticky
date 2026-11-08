@@ -18,7 +18,7 @@ void HomeMenuSettingsActivity::onEnter() {
   services = plugins || OPDS_STORE.hasServers();
 }
 int HomeMenuSettingsActivity::menuRows() const {
-  int count = homemenu::kBaseCount;
+  int count = homemenu::kBaseCount + 1;
   for (const auto& entry : draft.shortcuts)
     if (*entry.title) ++count;
   return count;
@@ -26,7 +26,8 @@ int HomeMenuSettingsActivity::menuRows() const {
 homemenu::Id HomeMenuSettingsActivity::idAtRow(int index) const {
   if (view == View::Order) return homemenu::at(draft, index, services);
   if (index < homemenu::kBaseCount) return static_cast<homemenu::Id>(index);
-  int row = homemenu::kBaseCount;
+  if (index == homemenu::kBaseCount) return homemenu::Id::ReadLater;
+  int row = homemenu::kBaseCount + 1;
   for (int n = 0; n < homemenu::kShortcutCount; ++n)
     if (*draft.shortcuts[n].title && index == row++) return static_cast<homemenu::Id>(homemenu::kBaseCount + n);
   return homemenu::Id::Count;
@@ -128,7 +129,7 @@ void HomeMenuSettingsActivity::activateIndex(int index) {
     } else if (save()) {
       show(View::Visibility);
       const auto added = homemenu::findShortcut(draft, folder, title);
-      for (int row = homemenu::kBaseCount; row < menuRows(); ++row)
+      for (int row = homemenu::kBaseCount + 1; row < menuRows(); ++row)
         if (idAtRow(row) == added) {
           moveSelectionTo(row);
           break;

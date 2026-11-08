@@ -30,7 +30,12 @@ bool RecentBooksStore::fromJson(JsonVariantConst doc) {
     book.title = obj["title"] | "";
     book.author = obj["author"] | "";
     book.coverBmpPath = obj["coverBmpPath"] | "";
-    recentBooks.push_back(book);
+    if (content::readLaterContent(book.path) || content::hiddenContent(book.path)) {
+      // Persist the migration after the loader releases its store lock.
+      requestResave();
+    } else {
+      recentBooks.push_back(book);
+    }
   }
 
   LOG_DBG("RBS", "Recent books loaded from file (%d entries)", getCount());
@@ -39,7 +44,7 @@ bool RecentBooksStore::fromJson(JsonVariantConst doc) {
 
 void RecentBooksStore::addBook(const std::string& path, const std::string& title, const std::string& author,
                                const std::string& coverBmpPath) {
-  if (content::hiddenContent(path)) return;
+  if (content::hiddenContent(path) || content::readLaterContent(path)) return;
   // Drop stale entries first so a new add can't evict a valid book in their stead.
   pruneMissing();
 
@@ -107,7 +112,7 @@ void RecentBooksStore::updatePath(const std::string& oldPath, const std::string&
 }
 
 bool RecentBooksStore::isMissing(const RecentBook& book) {
-  return content::hiddenContent(book.path) || !Storage.exists(book.path.c_str());
+  return content::hiddenContent(book.path) || content::readLaterContent(book.path) || !Storage.exists(book.path.c_str());
 }
 
 bool RecentBooksStore::pruneMissing() {

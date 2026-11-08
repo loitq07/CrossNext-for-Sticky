@@ -636,10 +636,9 @@ void WifiSelectionActivity::checkConnectionStatus() {
       WIFI_STORE.setLastConnectedSsid(selectedSSID);
     }
 
-    // Every station join is a window where plugin senders are deliverable, so
-    // drain the plugin outboxes here (web server up and sleep entry are the
-    // other such moments). Cheap no-op when nothing is queued.
-    pluginevents::drain(&renderer);
+    // DISABLED: Draining plugin outboxes here triggers TLS handshakes right when
+    // connecting to Wi-Fi, fragmenting SRAM before starting the Web Server.
+    // pluginevents::drain(&renderer);
 
     currentSSID = selectedSSID;
     // The hidden-network prompt may request a password while joining an open AP.

@@ -23,7 +23,7 @@ bool Store::read(int index) {
   if (!Storage.openFileForRead("HOME-MENU", kPaths[index], file)) return false;
   if (file.read(buffer, 4) == 4 && !std::memcmp(buffer, "HMC", 3) && buffer[3] > kSaveVersion) readOnly = true;
   readLength = file.size();
-  return (readLength == kSaveBytes || readLength == kLegacySaveBytes) && file.seek(0) &&
+  return (readLength == kSaveBytes || readLength == kPreviousSaveBytes || readLength == kLegacySaveBytes) && file.seek(0) &&
          file.read(buffer, readLength) == static_cast<int>(readLength);
 }
 void Store::load() {

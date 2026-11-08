@@ -28,6 +28,9 @@
 #include <cstring>
 
 #include "CrossPointSettings.h"
+#if FREEINK_CAP_BLE_HID_HOST
+#include <BleKeyboardHost.h>
+#endif
 #include "CrossPointState.h"
 #include "DevMode.h"
 #include "DevSerialBridge.h"
@@ -257,12 +260,9 @@ void silentRestartToSettings() { silentRestartTo(SILENT_REBOOT_TARGET_SETTINGS, 
 
 void silentRestartToJoinNetwork() {
   if (deepSleepInProgress) return;
-#if FREEINK_CAP_TOUCH
-  // A software reset would cycle touch/frontlight rails; those boards proceed
-  // into Join Network without the fresh-heap reboot (return, don't stop WiFi —
-  // this runs on the way *in*, unlike the exit-time silentRestart()).
-  if (BoardConfig::hasTouch()) return;
-#endif
+  // Previously touch boards bypassed this defrag reboot, but with fragmented
+  // internal SRAM (<10KB) on ESP32-S3 touch boards, starting the web server
+  // inevitably crashed. Rebooting ensures a pristine ~200KB heap for WebServer + WiFi.
   armSilentReboot(SILENT_REBOOT_TARGET_JOIN_NETWORK);
   LOG_DBG("MAIN", "Silent restart (target=join-network)");
   GUI.drawPopup(renderer, tr(STR_LOADING_POPUP));
@@ -492,6 +492,11 @@ void enterDeepSleep(bool fromTimeout = false, bool unattended = false) {
     WiFi.disconnect(true);
     WiFi.mode(WIFI_OFF);
   }
+#if FREEINK_CAP_BLE_HID_HOST
+  if (BleHid.isRunning()) {
+    BleHid.end(1000);
+  }
+#endif
 
   halTiltSensor.deepSleep();
   display.deepSleep();
@@ -673,6 +678,15 @@ void setup() {
     SETTINGS.readerMenuStyle = CrossPointSettings::READER_MENU_TOOLBAR;
   }
   SETTINGS.loadFromFile();
+#if FREEINK_CAP_BLE_HID_HOST
+  if (SETTINGS.bluetooth) {
+    if (BleHid.begin("CrossNext")) {
+      if (SETTINGS.bluetoothDevice[0] != '\0') {
+        BleHid.armSelectedPeerReconnect(SETTINGS.bluetoothDevice);
+      }
+    }
+  }
+#endif
   // After checkPanic() so the panic record is still there to read, and after
   // the settings so the toggle is known; reads one card file, never the radio.
   // Upstream moved SETTINGS.loadFromFile()

@@ -248,6 +248,8 @@ class MappedInputManager {
   mutable unsigned long touchHeldOverrideMs = 0;
   mutable unsigned long touchHeldOverrideAt = 0;
   mutable uint16_t longPressFiredButtons = 0;
+  mutable uint16_t blePressedMask = 0;
+  mutable uint16_t bleReleasedMask = 0;
   mutable uint16_t suppressedReleaseButtons = 0;
   mutable uint8_t suppressedNavigationReleases = 0;
 #if FREEINK_CAP_TOUCH

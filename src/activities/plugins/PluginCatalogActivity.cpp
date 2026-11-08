@@ -1,4 +1,5 @@
 #include "PluginCatalogActivity.h"
+#include <ContentVisibility.h>
 
 #include <Arduino.h>
 #include <ArduinoJson.h>
@@ -443,6 +444,9 @@ std::string PluginCatalogActivity::substituted(std::string tpl, const Item* item
 }
 
 std::string PluginCatalogActivity::downloadDir() const {
+  // Wallabag articles have one owned location, including downloads from Plugins.
+  if (manifestPath.size() >= 20 && manifestPath.compare(manifestPath.size() - 20, 20, "/wallabag/device.json") == 0)
+    return content::WALLABAG_DIRECTORY;
   for (const auto& kv : config) {
     if (kv.first != "dest_dir" || kv.second.empty()) continue;
     std::string dir = kv.second.front() == '/' ? kv.second : "/" + kv.second;
@@ -455,10 +459,11 @@ std::string PluginCatalogActivity::downloadDir() const {
 }
 
 PluginCatalogActivity::PluginCatalogActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
-                                             const bool showOpds, const bool rootMode)
+                                             const bool showOpds, const bool rootMode, std::string directPlugin)
     : CatalogActivity("PluginCatalog", renderer, mappedInput, /*wantsTouchLongPress=*/false, /*pixelChrome=*/true),
       showOpds(showOpds),
-      rootMode(rootMode) {}
+      rootMode(rootMode),
+      directPlugin(std::move(directPlugin)) {}
 
 PluginCatalogActivity::~PluginCatalogActivity() = default;
 
@@ -468,7 +473,18 @@ int PluginCatalogActivity::apiRequest(const pluginhttp::RequestSpec& req, String
 
 void PluginCatalogActivity::onEnter() {
   CatalogActivity::onEnter();
-  enterPluginPicker();
+  if (directPlugin.empty()) {
+    enterPluginPicker();
+    return;
+  }
+  for (const auto& plugin : discoverPlugins()) {
+    if (plugin.name != directPlugin || plugin.manifestPath.empty()) continue;
+    manifestPath = plugin.manifestPath;
+    catalogTitle = plugin.title;
+    enterCatalog();
+    return;
+  }
+  fail(StrId::STR_READ_LATER_INSTALL);
 }
 
 void PluginCatalogActivity::enterPluginPicker() {
@@ -533,7 +549,10 @@ void PluginCatalogActivity::enterCatalog() {
 // Leaving the open catalog (Back at its root, or Back out of an error /
 // sign-in screen): return to the plugin picker. Wi-Fi stays up so the next
 // pick connects instantly; onExit tears it down when the activity ends.
-void PluginCatalogActivity::exitCatalog() { enterPluginPicker(); }
+void PluginCatalogActivity::exitCatalog() {
+  if (!directPlugin.empty()) finish();
+  else enterPluginPicker();
+}
 
 void PluginCatalogActivity::resetBrowse() {
   items.clear();
@@ -1244,6 +1263,11 @@ bool PluginCatalogActivity::handleCustomInput() {
 }
 
 void PluginCatalogActivity::retryBrowse() {
+  if (!directPlugin.empty() && manifestPath.empty()) {
+    // Re-check installation after a missing-plugin error; never fetch an empty URL.
+    onEnter();
+    return;
+  }
   if (state == State::NO_TOKEN && manifest.hasDeviceCode()) {
     beginAuth();
   } else if (wantsListPicker()) {

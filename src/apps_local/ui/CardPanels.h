@@ -20,8 +20,15 @@ inline fui::Rect begin(toybox::Screen& s, const char* title, int actionReserve =
   const auto status = s.headerStatus();
   int right = battery.x - 10;
   if (status.percent >= 0) {
-    s.target().fill(fui::makeRect(battery.x + 4, battery.y + 4, 20 * std::clamp(status.percent, 0, 100) / 100, 9),
+    const int fill = status.charging ? 20 : 20 * std::clamp(status.percent, 0, 100) / 100;
+    s.target().fill(fui::makeRect(battery.x + 4, battery.y + 4, fill, 9),
                     dashboard::paper);
+    if (status.charging) {
+      const int x = battery.x + 11, y = battery.y - 1;
+      s.target().line({int16_t(x + 5), int16_t(y)}, {int16_t(x + 1), int16_t(y + 10)}, 2, dashboard::ink);
+      s.target().line({int16_t(x + 1), int16_t(y + 10)}, {int16_t(x + 6), int16_t(y + 8)}, 2, dashboard::ink);
+      s.target().line({int16_t(x + 6), int16_t(y + 8)}, {int16_t(x + 2), int16_t(y + 18)}, 2, dashboard::ink);
+    }
     if (status.showPercent) {
       char label[8];
       std::snprintf(label, sizeof(label), "%d%%", status.percent);

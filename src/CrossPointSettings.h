@@ -395,6 +395,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // reflashed and driven without a cable. Off is the shipped default and turns
   // all of it off again; see src/DevMode.h.
   uint8_t devMode = 0;
+  uint8_t bluetooth = 0;
+  char bluetoothDevice[18] = {0};
+  char bluetoothDeviceName[32] = {0};
   // Anonymous device info on requests to CrossPlay's own services (0 = off,
   // 1 = on): a hashed id, the board and a small report ride as headers on
   // requests the device was making anyway; it never makes one to report. On

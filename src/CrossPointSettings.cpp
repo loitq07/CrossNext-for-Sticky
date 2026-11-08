@@ -67,6 +67,9 @@ uint8_t CrossPointSettings::sleepTimeoutEnumToMinutes(const uint8_t legacyValue)
 void CrossPointSettings::toJson(JsonDocument& doc) const {
   const CrossPointSettings& s = *this;
   doc["readingDailyGoal"] = readingDailyGoal;
+  doc["bluetooth"] = bluetooth;
+  if (bluetoothDevice[0] != '\0') doc["bluetoothDevice"] = bluetoothDevice;
+  if (bluetoothDeviceName[0] != '\0') doc["bluetoothDeviceName"] = bluetoothDeviceName;
 
   for (const auto& info : getSettingsList(nullptr, nullptr, /*forPersistence=*/true)) {
     if (!info.key) continue;
@@ -150,6 +153,10 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
 bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   CrossPointSettings& s = *this;
   bool needsResave = false;
+  bluetooth = doc["bluetooth"] | 0;
+  copyToField(bluetoothDevice, doc["bluetoothDevice"] | "", sizeof(bluetoothDevice));
+  copyToField(bluetoothDeviceName, doc["bluetoothDeviceName"] | "", sizeof(bluetoothDeviceName));
+
   readingDailyGoal = doc["readingDailyGoal"].is<uint8_t>() && doc["readingDailyGoal"].as<uint8_t>() < 10
                          ? doc["readingDailyGoal"].as<uint8_t>()
                          : 0;

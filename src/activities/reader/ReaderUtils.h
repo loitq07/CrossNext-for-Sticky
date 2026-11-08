@@ -1,5 +1,6 @@
 #pragma once
 
+#include <ContentVisibility.h>
 #include <CrossPointSettings.h>
 #include <GfxRenderer.h>
 #include <HalGPIO.h>
@@ -234,6 +235,11 @@ inline bool handleBackNavigation(const MappedInputManager& mappedInput, Activity
   const bool backTriggered = mappedInput.wasLongPressed(MappedInputManager::Button::Back, GO_BACK_OR_HOME_MS) ||
                              mappedInput.wasReleased(MappedInputManager::Button::Back);
   if (!backTriggered) return false;
+
+  if (content::readLaterContent(filePath)) {
+    activityManager.goToReadLater();
+    return true;
+  }
 
   const bool longPress = mappedInput.getHeldTime() >= GO_BACK_OR_HOME_MS;
   if (longPress != SETTINGS.backShortToFileBrowser) {

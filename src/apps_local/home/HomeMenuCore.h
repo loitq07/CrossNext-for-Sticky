@@ -18,26 +18,28 @@ enum class Id : uint8_t {
   Shortcut2,
   Shortcut3,
   Shortcut4,
+  ReadLater,
   Count
 };
 constexpr int kCount = static_cast<int>(Id::Count);
 constexpr int kBaseCount = static_cast<int>(Id::Shortcut0);
-constexpr int kShortcutCount = kCount - kBaseCount;
-constexpr int kMaxVisible = 7;
-constexpr char kSaveVersion = '4';
+constexpr int kShortcutCount = 5;
+constexpr int kMaxVisible = 8;
+constexpr char kSaveVersion = '5';
 constexpr size_t kLabelBytes = 49;
 constexpr size_t kItemBytes = 64;
 constexpr size_t kLegacySaveBytes = 416;
-constexpr size_t kSaveBytes = 992;
+constexpr size_t kPreviousSaveBytes = 992;
+constexpr size_t kSaveBytes = 1088;
 struct Shortcut {
   uint8_t folder = 0;
   char title[kItemBytes]{};
 };
 struct Config {
-  uint16_t visible = 0x7f;
+  uint16_t visible = 0x207f;
   char labels[kCount][kLabelBytes]{};
   Shortcut shortcuts[kShortcutCount]{};
-  Id order[kCount] = {Id::Files,     Id::Recent,    Id::Transfer,  Id::Stats,     Id::Games,
+  Id order[kCount] = {Id::Files,     Id::Recent,    Id::ReadLater, Id::Transfer,  Id::Stats,     Id::Games,
                       Id::Apps,      Id::Services,  Id::Shortcut0, Id::Shortcut1, Id::Shortcut2,
                       Id::Shortcut3, Id::Shortcut4, Id::Settings};
 };

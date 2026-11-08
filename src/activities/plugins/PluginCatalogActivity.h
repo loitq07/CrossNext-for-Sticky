@@ -39,7 +39,7 @@ class PluginCatalogActivity final : public CatalogActivity {
   // showOpds adds the OPDS row; rootMode returns Home instead of popping to Settings.
   // Out-of-line construction/destruction needs the complete SecureHttpClient type.
   explicit PluginCatalogActivity(GfxRenderer& renderer, MappedInputManager& mappedInput, bool showOpds = false,
-                                 bool rootMode = false);
+                                 bool rootMode = false, std::string directPlugin = {});
   ~PluginCatalogActivity() override;
 
   void onEnter() override;
@@ -123,6 +123,7 @@ class PluginCatalogActivity final : public CatalogActivity {
   std::vector<PluginRef> installedPlugins;
   bool showOpds = false;
   bool rootMode = false;
+  std::string directPlugin;
   int pickerReturnRow = 0;  // picker row to reselect after leaving a catalog
   std::vector<Item> items;
   // Row buffer over items/browseLists plus the synthetic pager rows; rebuilt

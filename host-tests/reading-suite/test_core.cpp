@@ -69,13 +69,16 @@ int main() {
   }
 
   homemenu::Config menu;
+  CHECK(homemenu::visibleCount(menu) == 8);
+  CHECK(homemenu::at(menu, 2) == homemenu::Id::ReadLater);
+  CHECK(homemenu::setVisible(menu, homemenu::Id::ReadLater, false));
   CHECK(homemenu::visibleCount(menu) == 7);
   CHECK(homemenu::at(menu, 6) == homemenu::Id::Settings);
   CHECK(homemenu::at(menu, 2) == homemenu::Id::Transfer);
   CHECK(homemenu::at(menu, 3) == homemenu::Id::Stats);
   CHECK(!homemenu::setVisible(menu, homemenu::Id::Settings, false));
-  CHECK(!homemenu::setVisible(menu, homemenu::Id::Services, true));
-  CHECK(homemenu::visibleCount(menu) == 7);
+  CHECK(homemenu::setVisible(menu, homemenu::Id::Services, true));
+  CHECK(homemenu::visibleCount(menu) == 8);
   CHECK(homemenu::addShortcut(menu, 0, "CHESS") == homemenu::Id::Count);
   CHECK(homemenu::setVisible(menu, homemenu::Id::Services, false));
   CHECK(homemenu::setVisible(menu, homemenu::Id::Apps, false));
@@ -99,11 +102,12 @@ int main() {
   }
   // Eight-entry saves migrate without discarding custom labels or shortcut definitions.
   homemenu::Config eight;
+  CHECK(homemenu::setVisible(eight, homemenu::Id::ReadLater, false));
   eight.visible |= 1u << int(homemenu::Id::Services);
   CHECK(homemenu::setLabel(eight, homemenu::Id::Files, "My files"));
   homemenu::encode(eight, 99, menuBytes);
   CHECK(homemenu::decode(menuBytes, restored, generation));
-  CHECK(homemenu::visibleCount(restored) == 7);
+  CHECK(homemenu::visibleCount(restored) == 8);
   CHECK(homemenu::indexOf(restored, homemenu::Id::Settings) >= 0);
   CHECK(!std::strcmp(restored.labels[int(homemenu::Id::Files)], "My files"));
   // All entries, including Settings and shortcuts, can move without changing identity.
@@ -121,42 +125,13 @@ int main() {
   auto hash = homemenu::checksum(menuBytes, sizeof(menuBytes) - 4);
   for (int n = 0; n < 4; ++n) menuBytes[sizeof(menuBytes) - 4 + n] = hash >> (8 * n);
   CHECK(!homemenu::decode(menuBytes, restored, generation));
-  // HMC2 has no order array: retain its default Settings-last layout and labels.
-  homemenu::encode(menu, 44, menuBytes);
-  menuBytes[3] = '2';
-  hash = homemenu::checksum(menuBytes, sizeof(menuBytes) - 4);
-  for (int n = 0; n < 4; ++n) menuBytes[sizeof(menuBytes) - 4 + n] = hash >> (8 * n);
-  CHECK(homemenu::decode(menuBytes, restored, generation));
-  CHECK(homemenu::at(restored, 5) == homemenu::Id::Settings && generation == 44);
-  // Stock HMC2/HMC3 menus gain Transfer; customized menus keep their choices.
-  homemenu::Config stock;
-  stock.visible = 0x3f;
-  constexpr homemenu::Id oldOrder[] = {homemenu::Id::Files,     homemenu::Id::Recent,    homemenu::Id::Stats,
-                                       homemenu::Id::Games,     homemenu::Id::Apps,      homemenu::Id::Transfer,
-                                       homemenu::Id::Services,  homemenu::Id::Shortcut0, homemenu::Id::Shortcut1,
-                                       homemenu::Id::Shortcut2, homemenu::Id::Shortcut3, homemenu::Id::Shortcut4,
-                                       homemenu::Id::Settings};
-  std::memcpy(stock.order, oldOrder, sizeof(oldOrder));
-  for (char version : {'2', '3'}) {
-    homemenu::encode(stock, 45, menuBytes);
-    menuBytes[3] = version;
-    hash = homemenu::checksum(menuBytes, sizeof(menuBytes) - 4);
-    for (int n = 0; n < 4; ++n) menuBytes[sizeof(menuBytes) - 4 + n] = hash >> (8 * n);
-    CHECK(homemenu::decode(menuBytes, restored, generation));
-    CHECK(homemenu::visibleCount(restored) == 7 && homemenu::at(restored, 2) == homemenu::Id::Transfer);
-    CHECK(homemenu::at(restored, 6) == homemenu::Id::Settings);
-  }
-  CHECK(homemenu::setLabel(stock, homemenu::Id::Files, "My books"));
-  homemenu::encode(stock, 46, menuBytes);
-  menuBytes[3] = '3';
-  hash = homemenu::checksum(menuBytes, sizeof(menuBytes) - 4);
-  for (int n = 0; n < 4; ++n) menuBytes[sizeof(menuBytes) - 4 + n] = hash >> (8 * n);
-  CHECK(homemenu::decode(menuBytes, restored, generation));
-  CHECK(homemenu::visibleCount(restored) == 6 && homemenu::at(restored, 2) == homemenu::Id::Stats);
+  // HMC1-HMC4 byte-layout migration has independent fixtures in read-later/test_core.cpp.
+  // The current codec also preserves an explicit hide of the new section.
   homemenu::Config hidden;
+  CHECK(homemenu::setVisible(hidden, homemenu::Id::ReadLater, false));
   CHECK(homemenu::setVisible(hidden, homemenu::Id::Transfer, false));
   homemenu::encode(hidden, 47, menuBytes);
-  CHECK(menuBytes[3] == '4');
+  CHECK(menuBytes[3] == '5');
   CHECK(homemenu::decode(menuBytes, restored, generation));
   CHECK(homemenu::visibleCount(restored) == 6 && homemenu::indexOf(restored, homemenu::Id::Transfer) == -1);
   testStorage = {};
@@ -177,18 +152,18 @@ int main() {
   homemenu::Store recoveredPrefs;
   recoveredPrefs.load();
   CHECK(recoveredPrefs.get().visible == menu.visible);
-  testStorage.files["/.crosspoint/home-menu-b.bin"] = {'H', 'M', 'C', '5'};
+  testStorage.files["/.crosspoint/home-menu-b.bin"] = {'H', 'M', 'C', '6'};
   homemenu::Store futurePrefs;
   futurePrefs.load();
   CHECK(!futurePrefs.save(changed));
-  // A shortcut shares the seven-item budget and is identified by title, not shelf row.
+  // A shortcut shares the eight-item budget and is identified by title, not shelf row.
   homemenu::Config shortcuts;
   CHECK(homemenu::setVisible(shortcuts, homemenu::Id::Apps, false));
   const auto chessId = homemenu::addShortcut(shortcuts, 0, "CHESS");
-  CHECK(chessId != homemenu::Id::Count && homemenu::visibleCount(shortcuts) == 7);
+  CHECK(chessId != homemenu::Id::Count && homemenu::visibleCount(shortcuts) == 8);
   CHECK(homemenu::findShortcut(shortcuts, 0, "CHESS") == chessId);
-  CHECK(homemenu::at(shortcuts, 6) == homemenu::Id::Settings);
-  CHECK(homemenu::at(shortcuts, 5) == chessId);
+  CHECK(homemenu::at(shortcuts, 7) == homemenu::Id::Settings);
+  CHECK(homemenu::at(shortcuts, 6) == chessId);
   CHECK(homemenu::addShortcut(shortcuts, 1, "HABITS") == homemenu::Id::Count);
   CHECK(homemenu::setLabel(shortcuts, chessId, "My chess"));
   homemenu::encode(shortcuts, 17, menuBytes);
@@ -196,12 +171,13 @@ int main() {
   CHECK(generation == 17 && !std::strcmp(homemenu::shortcut(restored, chessId)->title, "CHESS"));
   CHECK(!std::strcmp(restored.labels[static_cast<int>(chessId)], "My chess"));
   homemenu::removeShortcut(shortcuts, chessId);
-  CHECK(homemenu::visibleCount(shortcuts) == 6);
+  CHECK(homemenu::visibleCount(shortcuts) == 7);
   CHECK(homemenu::findShortcut(shortcuts, 0, "CHESS") == homemenu::Id::Count);
   CHECK(homemenu::addShortcut(shortcuts, 1, "HABITS") == chessId);
   CHECK(!shortcuts.labels[static_cast<int>(chessId)][0]);
   // Retiring an app removes its saved Home entry without consuming another slot or label.
   homemenu::Config retired;
+  CHECK(homemenu::setVisible(retired, homemenu::Id::ReadLater, false));
   CHECK(homemenu::setVisible(retired, homemenu::Id::Games, false));
   CHECK(homemenu::setVisible(retired, homemenu::Id::Apps, false));
   const auto retiredId = homemenu::addShortcut(retired, 1, "BESTIARY");
@@ -227,7 +203,7 @@ int main() {
   const uint32_t legacyHash = homemenu::checksum(legacy, sizeof(legacy) - 4);
   for (int n = 0; n < 4; ++n) legacy[sizeof(legacy) - 4 + n] = static_cast<uint8_t>(legacyHash >> (8 * n));
   CHECK(homemenu::decode(legacy, restored, generation, sizeof(legacy)));
-  CHECK(generation == 4 && homemenu::visibleCount(restored) == 6);
+  CHECK(generation == 4 && homemenu::visibleCount(restored) == 7);
   CHECK(!std::strcmp(restored.labels[3], "My settings"));
   uint8_t oldDefault[homemenu::kLegacySaveBytes]{};
   std::memcpy(oldDefault, "HMC1", 4);
@@ -235,7 +211,7 @@ int main() {
   hash = homemenu::checksum(oldDefault, sizeof(oldDefault) - 4);
   for (int n = 0; n < 4; ++n) oldDefault[sizeof(oldDefault) - 4 + n] = hash >> (8 * n);
   CHECK(homemenu::decode(oldDefault, restored, generation, sizeof(oldDefault)));
-  CHECK(homemenu::visibleCount(restored) == 7 && homemenu::at(restored, 2) == homemenu::Id::Transfer);
+  CHECK(homemenu::visibleCount(restored) == 8 && homemenu::at(restored, 3) == homemenu::Id::Transfer);
   testStorage = {};
   testStorage.files["/.crosspoint/home-menu-a.bin"] = {legacy, legacy + sizeof(legacy)};
   homemenu::Store migrated;

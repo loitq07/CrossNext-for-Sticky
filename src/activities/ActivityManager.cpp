@@ -1,4 +1,5 @@
 #include "ActivityManager.h"
+#include "apps_local/readlater/ReadLaterActivity.h"
 
 #include <BoardConfig.h>
 #include <FontCacheManager.h>
@@ -443,6 +444,11 @@ void ActivityManager::goToPlugins(bool showOpds) {
   replaceActivity(std::make_unique<PluginCatalogActivity>(renderer, mappedInput, showOpds, /*rootMode=*/true));
 }
 
+void ActivityManager::goToReadLater() {
+  auto activity = makeUniqueNoThrow<ReadLaterActivity>(renderer, mappedInput);
+  if (activity) replaceActivity(std::move(activity));
+}
+
 void ActivityManager::goToReader(std::string path, const bool allowFastInitialRefresh) {
   if (path.empty()) {
     goToFileBrowser("/");
@@ -479,7 +485,9 @@ void ActivityManager::goToFullScreenMessage(std::string message, EpdFontFamily::
 void ActivityManager::goHome(HomeMenuItem initialMenuItem, bool cleanInitialRefresh) {
   if (initialMenuItem == HomeMenuItem::NONE && currentActivity) {
     const auto& activityName = currentActivity->name;
-    if (activityName == "FileBrowser") {
+    if (activityName == "ReadLater") {
+      initialMenuItem = HomeMenuItem::READ_LATER;
+    } else if (activityName == "FileBrowser") {
       initialMenuItem = HomeMenuItem::FILE_BROWSER;
     } else if (activityName == "Library") {
       initialMenuItem = HomeMenuItem::LIBRARY;

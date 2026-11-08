@@ -9,7 +9,7 @@ namespace fui = freeink::ui;
 
 constexpr int kMaxRows = 8;
 enum class Style : uint8_t { Framed, Carousel, Boox };
-enum class Icon { Files, Library, Transfer, Settings, Plugins, Games, Apps, Stats, Gear };
+enum class Icon { Files, Library, Transfer, Settings, Plugins, Games, Apps, Stats, Gear, ReadLater };
 struct Row {
   char label[96]{};
   char brief[32]{};
@@ -39,7 +39,7 @@ struct Layout {
   Style style = Style::Framed;
   fui::Rect sides[4]{}, coverRegion{}, progress{}, bookProgress{};
   fui::Rect header{}, card{}, cover{}, badge{}, previous{}, next{}, title{}, author{}, menu{};
-  fui::Rect settingsButton{}, primary[6]{};
+  fui::Rect settingsButton{}, primary[7]{};
   fui::Rect rows[kMaxRows]{};
   int count = 0;
 };
@@ -64,13 +64,14 @@ enum class QuickAction : int16_t {
   Transfer = -12,
   Stats = -13,
   Apps = -14,
-  Games = -15
+  Games = -15,
+  ReadLater = -16
 };
 constexpr QuickAction primaryActions[] = {QuickAction::Files, QuickAction::Library, QuickAction::Transfer,
-                                          QuickAction::Stats, QuickAction::Apps,    QuickAction::Games};
-constexpr int kPiccoActions = 7;
+                                          QuickAction::Stats, QuickAction::Apps,    QuickAction::Games, QuickAction::ReadLater};
+constexpr int kPiccoActions = 8;
 constexpr QuickAction piccoAction(int index) {
-  return index >= 0 && index < 6 ? primaryActions[index] : QuickAction::Settings;
+  return index >= 0 && index < 7 ? primaryActions[index] : QuickAction::Settings;
 }
 constexpr int piccoIndex(QuickAction action) {
   for (int n = 0; n < kPiccoActions; ++n)
@@ -91,7 +92,7 @@ void build(Screen& screen, const Model& model, const Layout& geometry, fui::Butt
       if (model.canPrevious) screen.frame().hit(geometry.sides[1], kSelect, kPreviousBook, fui::InputTouch);
       if (model.canNext) screen.frame().hit(geometry.sides[2], kSelect, kNextBook, fui::InputTouch);
     }
-    for (int n = 0; n < 6; ++n)
+    for (int n = 0; n < 7; ++n)
       screen.frame().hit(geometry.primary[n], kSelect, int(primaryActions[n]), fui::InputTouch);
     return;
   }

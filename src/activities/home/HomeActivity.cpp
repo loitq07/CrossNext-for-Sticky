@@ -487,6 +487,9 @@ void HomeActivity::loop() {
       case HomeMenuItem::FILE_BROWSER:
         onFileBrowserOpen();
         break;
+      case HomeMenuItem::READ_LATER:
+        activityManager.goToReadLater();
+        break;
       case HomeMenuItem::LIBRARY:
         onLibraryOpen();
         break;

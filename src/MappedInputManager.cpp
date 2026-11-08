@@ -12,6 +12,9 @@
 #include <cstdlib>
 
 #include "CrossPointSettings.h"
+#if FREEINK_CAP_BLE_HID_HOST
+#include <BleKeyboardHost.h>
+#endif
 #include "HapticFeedback.h"
 #include "components/HeaderBackTapTarget.h"
 #include "components/UITheme.h"
@@ -20,6 +23,58 @@ namespace fui = freeink::ui;
 
 void MappedInputManager::update(const bool deferHomeButtonAction) const {
   gpio.update();
+  blePressedMask = 0;
+  bleReleasedMask = 0;
+#if FREEINK_CAP_BLE_HID_HOST
+  if (BleHid.isRunning()) {
+    BleHid.poll();
+    freeink::KeyEvent ev;
+    while (BleHid.popKey(ev)) {
+      if (ev.pressed) {
+        auto inject = [this](Button btn) {
+          blePressedMask |= (1u << static_cast<uint8_t>(btn));
+          bleReleasedMask |= (1u << static_cast<uint8_t>(btn));
+        };
+        if (ev.special == freeink::SpecialKey::PageDown || ev.special == freeink::SpecialKey::Right ||
+            ev.ch == ' ' || ev.keycode == 0x4E || ev.keycode == 0x4F) {
+          inject(Button::PageForward);
+          inject(Button::Down);
+        } else if (ev.special == freeink::SpecialKey::PageUp || ev.special == freeink::SpecialKey::Left ||
+                   ev.special == freeink::SpecialKey::Backspace || ev.keycode == 0x4B ||
+                   ev.keycode == 0x50) {
+          inject(Button::PageBack);
+          inject(Button::Up);
+        } else if (ev.special == freeink::SpecialKey::Down || ev.keycode == 0x51) {
+          inject(Button::Down);
+          inject(Button::PageForward);
+        } else if (ev.special == freeink::SpecialKey::Up || ev.keycode == 0x52) {
+          inject(Button::Up);
+          inject(Button::PageBack);
+        } else if (ev.special == freeink::SpecialKey::Enter || ev.keycode == 0x28) {
+          inject(Button::Confirm);
+        } else if (ev.special == freeink::SpecialKey::Escape || ev.keycode == 0x29) {
+          inject(Button::Back);
+        } else if (ev.keycode == 0x01 || ev.keycode == 0xE9) {
+          inject(Button::PageForward);
+          inject(Button::Down);
+        } else if (ev.keycode == 0x02 || ev.keycode == 0xEA) {
+          inject(Button::PageBack);
+          inject(Button::Up);
+        }
+      }
+    }
+    freeink::RawButtonEvent raw;
+    while (BleHid.popRawButton(raw)) {
+      // Drain raw events
+    }
+    if (blePressedMask != 0) {
+      HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, true, SETTINGS.hapticIntensity);
+      if (SETTINGS.keySound) {
+        HalBuzzer::click(SETTINGS.buzzerVolume);
+      }
+    }
+  }
+#endif
   const bool pagePressed =
       SETTINGS.vibration == CrossPointSettings::VIBRATION_TOUCH_PAGE && gpio.wasCapacitivePagePressed();
   HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, pagePressed, SETTINGS.hapticIntensity);
@@ -448,6 +503,7 @@ bool MappedInputManager::wasPowerConfirmClick() const {
 #endif
 
 bool MappedInputManager::wasPressed(const Button button) const {
+  if ((blePressedMask & (1u << static_cast<uint8_t>(button))) != 0) return true;
   if (button == Button::Confirm && homeAction == HomeButtonAction::Confirm) return true;
   if (button == Button::Back && wasBackGesture()) return true;
 #if FREEINK_CAP_TOUCH
@@ -457,6 +513,7 @@ bool MappedInputManager::wasPressed(const Button button) const {
 }
 
 bool MappedInputManager::wasReleased(const Button button) const {
+  if ((bleReleasedMask & (1u << static_cast<uint8_t>(button))) != 0) return true;
   if (button == Button::Confirm && homeAction == HomeButtonAction::Confirm) return true;
   if (button == Button::Back && wasBackGesture()) return true;
 #if FREEINK_CAP_TOUCH

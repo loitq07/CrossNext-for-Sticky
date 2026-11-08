@@ -35,6 +35,9 @@
 #include "StatusBarSettingsActivity.h"
 #include "TextSettingsActivity.h"
 #include "activities/network/WifiSelectionActivity.h"
+#if FREEINK_CAP_BLE_HID_HOST
+#include "activities/network/BluetoothActivity.h"
+#endif
 #include "activities/plugins/PluginCatalogActivity.h"
 #include "activities/util/IntervalSelectionActivity.h"
 #include "apps_local/home/HomeMenuSettingsActivity.h"
@@ -87,7 +90,7 @@ int settingsGroup(const SettingInfo& s, int category) {
       s.valuePtr == &CrossPointSettings::removeReadBooksFromRecents ||
       s.valuePtr == &CrossPointSettings::moveFinishedToReadFolder)
     return 2;
-  if (s.action == SettingAction::Network || s.action == SettingAction::KOReaderSync ||
+  if (s.action == SettingAction::Network || s.action == SettingAction::Bluetooth || s.action == SettingAction::KOReaderSync ||
       s.action == SettingAction::OPDSBrowser)
     return 3;
   if (s.action == SettingAction::ClockSettings) return 4;
@@ -126,6 +129,8 @@ StrId settingHelp(const SettingInfo& setting) {
       return StrId::STR_SETTINGS_STATUS_HELP;
     case SettingAction::Network:
       return StrId::STR_SETTINGS_WIFI_HELP;
+    case SettingAction::Bluetooth:
+      return StrId::STR_SETTINGS_BLUETOOTH_HELP;
     case SettingAction::KOReaderSync:
       return StrId::STR_SETTINGS_SYNC_HELP;
     case SettingAction::OPDSBrowser:
@@ -240,6 +245,9 @@ void SettingsActivity::rebuildSettingsLists() {
                             SettingInfo::Action(StrId::STR_HOME_BUTTON, SettingAction::HomeButton));
   }
   systemSettings.push_back(SettingInfo::Action(StrId::STR_WIFI_NETWORKS, SettingAction::Network));
+#if FREEINK_CAP_BLE_HID_HOST
+  systemSettings.push_back(SettingInfo::Action(StrId::STR_BLUETOOTH, SettingAction::Bluetooth));
+#endif
   // Clock configuration only exists where the RTC probe found hardware; on
   // clockless boards there is nothing to set.
   if (halClock.isAvailable()) {
@@ -375,6 +383,7 @@ void SettingsActivity::rebuildRowItems() {
         selectedCategoryIndex == 6) {
       const auto& s = settings[i];
       item.icon = s.action == SettingAction::Network                       ? settingsart::Wifi
+                  : s.action == SettingAction::Bluetooth                   ? settingsart::Wifi
                   : s.action == SettingAction::HomeMenu                    ? settingsart::Home
                   : s.action == SettingAction::Language                    ? settingsart::Globe
                   : s.action == SettingAction::ClockSettings               ? settingsart::Clock
@@ -702,6 +711,17 @@ void SettingsActivity::toggleCurrentSetting() {
           return;
         }
         startActivityForResult(std::move(activity), resultHandler);
+        break;
+      }
+      case SettingAction::Bluetooth: {
+#if FREEINK_CAP_BLE_HID_HOST
+        auto activity = makeUniqueNoThrow<BluetoothActivity>(renderer, mappedInput);
+        if (!activity) {
+          LOG_ERR("SETTINGS", "OOM: BluetoothActivity");
+          return;
+        }
+        startActivityForResult(std::move(activity), resultHandler);
+#endif
         break;
       }
       case SettingAction::ClearCache:

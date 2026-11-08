@@ -263,9 +263,15 @@ void CoverGridHomeUi::drawLicorice(UiScreen& screen) {
   const auto battery = fui::makeRect(safe.right() - 40, safe.y + 14, 26, 16);
   target.stroke(battery, paper, 1);
   target.fill(fui::makeRect(battery.right(), battery.y + 4, 3, 8), paper);
-  target.fill(fui::makeRect(battery.x + 3, battery.y + 3,
-                            20 * std::clamp(int(shelfStatus.status.battery.percent), 0, 100) / 100, 10),
-              paper);
+  const bool charging = shelfStatus.status.battery.charging;
+  const int fill = charging ? 20 : 20 * std::clamp(int(shelfStatus.status.battery.percent), 0, 100) / 100;
+  target.fill(fui::makeRect(battery.x + 3, battery.y + 3, fill, 10), paper);
+  if (charging) {
+    const int x = battery.x + 10, y = battery.y - 1;
+    target.line({int16_t(x + 5), int16_t(y)}, {int16_t(x + 1), int16_t(y + 9)}, 2, ink);
+    target.line({int16_t(x + 1), int16_t(y + 9)}, {int16_t(x + 6), int16_t(y + 7)}, 2, ink);
+    target.line({int16_t(x + 6), int16_t(y + 7)}, {int16_t(x + 2), int16_t(y + 16)}, 2, ink);
+  }
   if (shelfStatus.status.battery.label) {
     char value[8];
     std::snprintf(value, sizeof(value), "%d%%", int(shelfStatus.status.battery.percent));
@@ -579,6 +585,9 @@ void CoverGridHomeUi::drawTabs(UiScreen& screen, fui::Rect rect) {
     }
     const uint8_t* icon = LibraryIcon;
     switch (homemenu::at(homemenu::config(), index, self.hasOpds)) {
+      case homemenu::Id::ReadLater:
+        homeui::drawIcon(target, iconRect, homeui::Icon::ReadLater);
+        return true;
       case homemenu::Id::Files:
         icon = FolderIcon;
         break;

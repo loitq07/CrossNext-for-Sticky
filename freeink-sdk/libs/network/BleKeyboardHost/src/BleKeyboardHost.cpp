@@ -316,13 +316,9 @@ void doConnect(const char* addrStr, uint8_t type) {
 #if FREEINK_BLE_HID_SCAN_DEBUG
     Serial.printf("[BleHid] connect failed: %s type=%u err=%d\n", addrStr, type, g_client->getLastError());
 #endif
-    if (!g_targetTryAltType) {
-      self().onConnectFailed(g_client->getLastError() == BLE_HS_ETIMEOUT ? "Connect timeout" : "Connection failed");
-      return;
-    }
     type = type == 0 ? 1 : 0;
 #if FREEINK_BLE_HID_SCAN_DEBUG
-    Serial.printf("[BleHid] retry connect: %s type=%u\n", addrStr, type);
+    Serial.printf("[BleHid] retry connect with alt type: %s type=%u\n", addrStr, type);
 #endif
     addr = NimBLEAddress(std::string(addrStr), type);
     g_disconnectObserved.store(false);
@@ -343,15 +339,21 @@ void doConnect(const char* addrStr, uint8_t type) {
     self().onConnectFailed("Not a HID device");
     return;
   }
-  if (!g_client->secureConnection()) {
+  // Many BLE page-turner remotes (e.g. Hanlinyue E1, TikTok remotes) operate
+  // with standard open HID reports and do not support or require SMP encryption/bonding.
+  // Try subscribing to HID input reports directly first.
+  bool hidOk = setupHid(g_client);
+  if (!hidOk) {
+    // If unencrypted subscription failed (device requires encryption/bonding),
+    // request secure connection and retry.
 #if FREEINK_BLE_HID_SCAN_DEBUG
-    Serial.printf("[BleHid] security failed: %s err=%d\n", addrStr, g_client->getLastError());
+    Serial.printf("[BleHid] HID setup without security failed, requesting security: %s\n", addrStr);
 #endif
-    g_client->disconnect();
-    self().onConnectFailed("Pairing failed");
-    return;
+    if (g_client->secureConnection()) {
+      hidOk = setupHid(g_client);
+    }
   }
-  if (!setupHid(g_client)) {
+  if (!hidOk) {
 #if FREEINK_BLE_HID_SCAN_DEBUG
     Serial.printf("[BleHid] HID setup failed: %s\n", addrStr);
 #endif
@@ -533,7 +535,7 @@ bool BleKeyboardHost::begin(const char* hostName) {
   g_client->setConnectionParams(/*minInterval=*/12, /*maxInterval=*/24, /*latency=*/0, /*timeout=*/800);
   g_client->setClientCallbacks(&g_clientCb, false);
 
-  xTaskCreate(connTaskFn, "ble-conn", 4096, nullptr, 3, &g_connTask);
+  xTaskCreate(connTaskFn, "ble-conn", 2048, nullptr, 3, &g_connTask);
   begun_ = true;
 #if FREEINK_BLE_HID_SCAN_DEBUG
   Serial.println("[BleHid] begin: ok");
