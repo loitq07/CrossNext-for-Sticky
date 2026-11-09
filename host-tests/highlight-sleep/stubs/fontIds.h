@@ -1,0 +1,2 @@
+#pragma once
+enum { NOTOSERIF_14_FONT_ID, SMALL_FONT_ID, UI_10_FONT_ID };

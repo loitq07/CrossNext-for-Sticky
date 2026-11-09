@@ -25,6 +25,7 @@
 #include "CrossPointState.h"
 #include "activities/reader/ReaderUtils.h"
 #include "apps_local/notes/NotesSleep.h"
+#include "apps_local/quotes/HighlightSleep.h"
 #include "apps_local/reading/ReadingGoal.h"
 #include "apps_local/reading/ReadingGoalScreens.h"
 #include "apps_local/reading/ReadingStatsStore.h"
@@ -573,6 +574,8 @@ void SleepActivity::onEnter() {
   }
 
   switch (SETTINGS.sleepScreen) {
+    case CrossPointSettings::SLEEP_SCREEN_MODE::HIGHLIGHTS:
+      return highlightsleep::render(renderer);
     case CrossPointSettings::SLEEP_SCREEN_MODE::READING_GOAL: {
       const auto section = menufont::Section::Statistics;
       const bool previous = chrome::lightHeader;

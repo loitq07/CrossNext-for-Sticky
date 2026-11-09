@@ -12,6 +12,34 @@ Fondos lists supported image files in `/sleep`, `/WALLPAPER`, and `/wallpapers` 
 
 The carousel cover moves down 28 logical pixels in portrait and 12 in landscape, with its caption group lowered 10 pixels overall. Its cover is slightly shorter, preserving at least eight pixels between the author and progress bar. A badge at the cover's upper right uses the same real saved progress as the bar and the framed layout.
 
+## Highlight sleep screen
+
+Settings → Display → Sleep screen → Book highlights shows a saved highlight,
+book title and author. "Change highlight every" accepts 0–240 minutes (default
+5); 0 keeps one highlight until the next sleep. The source is the same latest
+512 complete records in `/My Clippings.txt` used by Quotes. Hidden quotes,
+bookmarks, empty and incomplete records are skipped. The next selection excludes
+the previous record whenever another visible highlight exists. Long passages
+fit the screen with an ellipsis. No available highlight shows a translated hint.
+
+Two or more valid highlights enable RTC timer wakes. Each wake paints the next
+highlight and returns to deep sleep, with no splash, reader, frontlight restore
+or capture of the user's book/app resume state. The interval starts after each
+paint; boot and display time can add a few seconds. A single highlight or an
+unreadable collection disables rotation. The existing Quick Resume after timeout
+setting still takes precedence for automatic sleep. Power Off retains the HAL's
+no-timer behavior. The simulator can preview the sleep screen but has no deep
+sleep timer.
+
+`host-tests/highlight-sleep/run.sh` verifies streaming record identities,
+latest-512 retention, CRLF/end-of-file handling, selection, hidden/empty entries,
+interval limits and read-only file access. Build `gh_release_sticky` for the
+target device. On hardware, set a one-minute interval with two saved highlights,
+sleep from a book and an app, observe two changes, then wake and verify the same
+book position/app resumes. Check 0, one highlight, an empty card and Quick Resume
+after timeout. Physical refresh quality, sleep current and timer wake behavior
+require device verification.
+
 ## Verification and device handoff
 
 Run the host `reading-tools`, `coherence`, `notes`, and `wallpapers` suites from the isolated QA runner. The browser preview is `site/qa-reading-tools.html`; its sample quotes/notes are disposable QA data. The normal simulator uses the actual native activities.

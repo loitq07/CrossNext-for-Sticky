@@ -49,6 +49,7 @@
 #include "apps_local/power/PowerButtonPolicy.h"
 #include "apps_local/power/PowerMenuActivity.h"
 #include "apps_local/powerprobe/PowerProbe.h"
+#include "apps_local/quotes/HighlightSleep.h"
 #include "apps_local/words/DictionaryDefaults.h"
 
 // How long the device sleeps before waking itself, in microseconds. 0 means
@@ -374,7 +375,10 @@ CROSSPLAY_SLEEP_NORETURN static void startDeepSleepArmed(const uint64_t timerMic
 #endif
 }
 
-[[maybe_unused]] static uint64_t resleepTimerMicros() { return kTimerWakeMicros; }
+[[maybe_unused]] static uint64_t resleepTimerMicros() {
+  const auto highlightTimer = highlightsleep::timerMicros();
+  return highlightTimer ? highlightTimer : kTimerWakeMicros;
+}
 
 // Plugin-event delivery on the way into deep sleep. sleep.enter is delivered
 // now — over the live connection, or by bringing WiFi up when a plugin
@@ -475,7 +479,13 @@ void enterDeepSleep(bool fromTimeout = false, bool unattended = false) {
   // Commit to sleeping before goToSleep() runs the outgoing activity's onExit():
   // a WiFi activity would otherwise silentRestart() here and reboot instead.
   deepSleepInProgress = true;
-  activityManager.goToSleep(fromTimeout);
+  highlightsleep::disarm();
+  if (unattended && SETTINGS.sleepScreen == CrossPointSettings::HIGHLIGHTS) {
+    // No activity, popup or resume-state capture on a scheduled highlight change.
+    highlightsleep::render(renderer);
+  } else {
+    activityManager.goToSleep(fromTimeout);
+  }
 
   if (isQuickResumeSleep) {
     saveSleepFrameBuffer();
@@ -504,7 +514,7 @@ void enterDeepSleep(bool fromTimeout = false, bool unattended = false) {
   Storage.prepareForDeepSleep();
   LOG_DBG("MAIN", "Entering deep sleep");
 
-  startDeepSleepArmed(kTimerWakeMicros);
+  startDeepSleepArmed(resleepTimerMicros());
 }
 
 void setupDisplayAndFonts(bool seamless = false) {
@@ -679,7 +689,15 @@ void setup() {
   }
   SETTINGS.loadFromFile();
 #if FREEINK_CAP_BLE_HID_HOST
-  if (SETTINGS.bluetooth) {
+  // Scheduled sleep-screen changes never need a keyboard reconnection.
+#if CROSSPLAY_CAN_ARM_TIMER
+  const bool allowBluetoothWake = wakeupReason != HalGPIO::WakeupReason::Timer &&
+                                  !(startedUnattended && wakeupReason == HalGPIO::WakeupReason::Other &&
+                                    !rebootedFromPanic);
+#else
+  const bool allowBluetoothWake = true;
+#endif
+  if (SETTINGS.bluetooth && allowBluetoothWake) {
     if (BleHid.begin("CrossNext")) {
       if (SETTINGS.bluetoothDevice[0] != '\0') {
         BleHid.armSelectedPeerReconnect(SETTINGS.bluetoothDevice);
@@ -768,6 +786,7 @@ void setup() {
 #if CROSSPLAY_CAN_ARM_TIMER
     case HalGPIO::WakeupReason::Timer: {
       unattendedWakeMagic = UNATTENDED_WAKE_MAGIC;
+      if (highlightsleep::timerMicros()) break;
       LOG_DBG("MAIN", "Timer wake: returning to sleep");
       powerprobe::beforeSleep();
       Storage.prepareForDeepSleep();

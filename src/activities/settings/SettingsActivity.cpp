@@ -61,6 +61,7 @@ int settingsGroup(const SettingInfo& s, int category) {
   if (category == 0) {
     if (s.valuePtr == &CrossPointSettings::sleepScreen || s.valuePtr == &CrossPointSettings::sleepScreenCoverMode ||
         s.valuePtr == &CrossPointSettings::sleepScreenCoverFilter ||
+        s.valuePtr == &CrossPointSettings::sleepHighlightMinutes ||
         s.valuePtr == &CrossPointSettings::quickResumeSleepScreen)
       return 0;
     if (s.action == SettingAction::UiPresentation) return 2;
@@ -580,6 +581,21 @@ void SettingsActivity::toggleCurrentSetting() {
     return;
   }
 
+  if (setting.valuePtr == &CrossPointSettings::sleepHighlightMinutes) {
+    auto picker = makeUniqueNoThrow<IntervalSelectionActivity>(
+        renderer, mappedInput, "SleepHighlightInterval", StrId::STR_SLEEP_HIGHLIGHT_INTERVAL,
+        SETTINGS.sleepHighlightMinutes, 0, 240, 1, 5, StrId::STR_SLEEP_TIMER_VALUE_FORMAT);
+    if (!picker) return;
+    startActivityForResult(std::move(picker), [this](const ActivityResult& result) {
+      if (!result.isCancelled) {
+        SETTINGS.sleepHighlightMinutes = static_cast<uint8_t>(std::get<IntervalResult>(result.data).value);
+        SETTINGS.saveToFile();
+      }
+      requestUpdate();
+    });
+    return;
+  }
+
   // Developer Mode is a TOGGLE so it persists and shows On/Off like any other,
   // but selecting it opens a screen rather than flipping in place. It has to:
   // turning it on produces a pairing code, and a code nobody can read is the
@@ -904,6 +920,13 @@ std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
     return "";
   }
   if (setting.type == SettingType::VALUE && setting.valuePtr != nullptr) {
+    if (setting.valuePtr == &CrossPointSettings::sleepHighlightMinutes) {
+      if (!SETTINGS.sleepHighlightMinutes) return tr(STR_STATE_OFF);
+      char valueBuffer[32];
+      snprintf(valueBuffer, sizeof(valueBuffer), tr(STR_SLEEP_TIMER_VALUE_FORMAT),
+               static_cast<unsigned int>(SETTINGS.sleepHighlightMinutes));
+      return valueBuffer;
+    }
     if (setting.nameId == StrId::STR_TIME_TO_SLEEP) {
       if (SETTINGS.sleepTimeoutMinutes >= CrossPointSettings::SLEEP_TIMEOUT_NEVER_MINUTES) {
         return tr(STR_SLEEP_NEVER);

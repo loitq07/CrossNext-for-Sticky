@@ -32,6 +32,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
     // CrossPlay: the note chosen in Notes, drawn live (apps_local/notes/NotesSleep.h).
     NOTE = 8,
     READING_GOAL = 9,
+    HIGHLIGHTS = 10,
     SLEEP_SCREEN_MODE_COUNT
   };
   enum SLEEP_SCREEN_COVER_MODE { FIT = 0, CROP = 1, SLEEP_SCREEN_COVER_MODE_COUNT };
@@ -234,6 +235,8 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
 
   // Sleep screen settings
   uint8_t sleepScreen = DARK;
+  // 0 keeps one highlight; otherwise rotate every 1..240 minutes during deep sleep.
+  uint8_t sleepHighlightMinutes = 5;
   // Night mode: inverted output polarity, applied to every activity per
   // render by ActivityManager. The sleep screen opts out itself.
   uint8_t screenInverted = 0;

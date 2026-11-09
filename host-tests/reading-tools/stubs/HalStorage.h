@@ -48,6 +48,8 @@ class HalFile {
     return true;
   }
   size_t size() const { return data ? data->size() : 0; }
+  uint64_t fileSize64() const { return size(); }
+  size_t available() const { return size() - cursor; }
   int read(void* out, size_t count) {
     if (!data || testStorage.refuseReads) return -1;
     if (applyIndex >= 0 && path == testStorage.failApplyPath && applyIndex++ == testStorage.failApplyRecord) {

@@ -195,6 +195,10 @@ const char* sleepScreenModeName(const uint8_t sleepScreenMode) {
       return tr(STR_WALLPAPER_NOTE_0491F7BD);
     case kSleepNote:
       return tr(STR_WALLPAPER_NOTE_2C924E30);
+    case kSleepHighlights:
+      return tr(STR_SLEEP_HIGHLIGHTS);
+    case kSleepReadingGoal:
+      return tr(STR_GOAL_WALLPAPER);
     default:
       return tr(STR_WALLPAPER_NOTE_BC7819B3);
   }
@@ -249,6 +253,12 @@ const char* modeTakeoverNote(const uint8_t previousMode) {
       return tr(STR_WALLPAPER_NOTE_375ED76A);
     case kSleepNote:
       return tr(STR_WALLPAPER_NOTE_9802A6AC);
+    case kSleepHighlights:
+    case kSleepReadingGoal: {
+      static char label[160];
+      std::snprintf(label, sizeof(label), "%s → %s", sleepScreenModeName(previousMode), tr(STR_CUSTOM));
+      return label;
+    }
     default:
       return nullptr;
   }

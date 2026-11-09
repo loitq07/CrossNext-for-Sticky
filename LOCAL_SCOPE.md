@@ -27,6 +27,14 @@ computes its `count` from its own table rather than being told.
 
 ## The one rule that keeps this sustainable
 
+Highlight sleep is owned by `apps_local/quotes/HighlightSleep*`. It reuses the
+Quotes export and hidden flags with one checked temporary workspace and the
+existing framebuffer. Two RTC values retain the rotation arm and last record
+key. The narrow settings, SleepActivity and main sleep/wake seams add a validated
+interval and repaint on timer wakes without changing the user's resume state.
+No task, network request, collection rewrite or new on-card format is added.
+See [reading tools](docs/apps/reading-tools-redesign.md#highlight-sleep-screen).
+
 Upstream moves fast and we want its work. Every change we make is measured by
 how much upstream-owned code it touches.
 

@@ -85,12 +85,15 @@ check(timer_case is not None, "main.cpp still has a Timer wake case to be unatte
 if call is not None and timer_case is not None:
     check(call > timer_case, "the frontlight decision runs after the wake switch, not before it")
 
-# 4. Nothing else in main.cpp turns the light on. toggleFrontlight() is a user
-#    gesture and reads Frontlight.isOn() for its argument; a second literal
-#    setOn(true) would be a second boot-time path, which is how this codebase
-#    fixes one twin and ships the other.
-lit = [i for i, line in enumerate(lines) if re.search(r"Frontlight\.setOn\(\s*true\s*\)", line)]
-check(len(lit) == 1, "main.cpp has exactly one unconditional Frontlight.setOn(true) (found %d)" % len(lit))
+# 4. setup() has only the guarded restore. Manual light/warmth actions outside
+#    setup may also turn it on; they are not boot-time restoration paths.
+setup_line = line_of(r"void setup\s*\(")
+loop_line = line_of(r"void loop\s*\(")
+check(setup_line is not None and loop_line is not None, "setup and loop bounds are available")
+lit = [i for i, line in enumerate(lines)
+       if setup_line is not None and loop_line is not None and setup_line < i < loop_line
+       and re.search(r"Frontlight\.setOn\(\s*true\s*\)", line)]
+check(len(lit) == 1, "setup has exactly one unconditional Frontlight.setOn(true) (found %d)" % len(lit))
 if lit and call is not None:
     check(0 <= lit[0] - call <= 3, "that setOn(true) is the body of the restoreFrontlight() check")
 

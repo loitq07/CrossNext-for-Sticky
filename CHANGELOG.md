@@ -1,5 +1,17 @@
 # CrossNext changes
 
+## Sticky v1.4.8 — 2026-11-09
+
+- Add Book highlights as a sleep screen, showing a saved passage, book title and author.
+- Rotate highlights during deep sleep every 1–240 minutes (default 5); 0 disables rotation.
+- Reuse the latest 512 complete saved quote records and honor hidden quotes.
+- Avoid immediate repeats and skip empty, incomplete and bookmark records.
+- Keep book/app resume state and the frontlight unchanged during scheduled changes;
+  skip Bluetooth keyboard reconnection on unattended wakes.
+- Add English, Spanish and Vietnamese labels and an empty-collection hint.
+
+See [v1.4.8 release notes](docs/releases/CrossNext-Sticky-v1.4.8.md).
+
 ## CrossNext v1.1.0 — 2026-10-25
 
 - Add PET: three companions, reading-based growth, care, four minigames,
