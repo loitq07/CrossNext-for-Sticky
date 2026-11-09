@@ -1,6 +1,8 @@
 """Run with python3 test/test_clipping_selection_text.py (requires a host C/C++ compiler)."""
 
 from pathlib import Path
+import os
+import shlex
 import subprocess
 import tempfile
 
@@ -33,6 +35,7 @@ saved_hit = method("int EpubReaderActivity::clippingAtPoint", "void EpubReaderAc
 saved_draw = method("void EpubReaderActivity::drawClippingHighlights", "void EpubReaderActivity::renderStatusBar", reader_source)
 
 selection_policy = method("int ClipSelectionActivity::selectionActionCount", "ClippingResult::Action ClipSelectionActivity::selectionAction")
+restore_selection = method("bool ClipSelectionActivity::restoreInitialSelection", "bool ClipSelectionActivity::extractWords")
 
 # Compile production extraction, export, and redraws with bounded UI/rendering stubs.
 harness = r"""
@@ -41,6 +44,7 @@ harness = r"""
 #include <cstdint>
 #include <cstdio>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 #include <BidiUtils.h>
@@ -152,6 +156,12 @@ bool selectionLowMemory(const int first, const int last) {
 }
 """ + clean_word + r"""
 struct ClipSelectionActivity {
+  enum class Mode { Clip, Lookup, Edit };
+  Mode mode = Mode::Clip;
+  std::optional<Clipping> initialSelection;
+  uint16_t initialFirstPage = 0, initialPageCount = 0;
+  uint32_t initialLayoutSignature = 0;
+  bool restoreInitialSelection();
 """ + word_box + r"""
   std::unique_ptr<WordBox[]> words = makeUniqueNoThrow<WordBox[]>(240);
   static constexpr size_t MAX_SELECTABLE_WORDS = 240;
@@ -177,7 +187,7 @@ struct ClipSelectionActivity {
   Rect handleRect(int, bool) const { return {}; }
   Rect actionRect() const { return {}; }
 };
-""" + build_text + selection_policy + extract_words + clean_draw + highlight_draw + selection_draw + r"""
+""" + build_text + selection_policy + restore_selection + extract_words + clean_draw + highlight_draw + selection_draw + r"""
 struct EpubReaderActivity {
   Renderer& renderer;
   explicit EpubReaderActivity(Renderer& renderer) : renderer(renderer) {}
@@ -232,6 +242,35 @@ int main() {
   assert(!selectionLowMemory(0, 0));
   assert(!selectionLowMemory(0, 239));
   ClipSelectionActivity activity;
+  {
+    activity.mode = ClipSelectionActivity::Mode::Edit;
+    activity.wordCount = 3;
+    for (int i = 0; i < 3; ++i) {
+      activity.words[i].startOffset = i * 10;
+      activity.words[i].endOffset = i * 10 + 5;
+      activity.words[i].pageWordIndex = i;
+    }
+    Clipping clipping;
+    clipping.startOffset = 10;
+    clipping.endOffset = 25;
+    activity.initialSelection = clipping;
+    assert(activity.restoreInitialSelection());
+    assert(activity.rangeStart == 1 && activity.selected == 2);
+    assert(activity.selectionActionCount() == 1);  // Editing always offers Save quote.
+    activity.initialSelection->endOffset = 35;
+    assert(!activity.restoreInitialSelection());  // Never truncate an oversized saved range.
+    activity.initialSelection->startOffset = activity.initialSelection->endOffset = UINT32_MAX;
+    activity.initialSelection->pageCount = activity.initialPageCount = 3;
+    activity.initialSelection->layoutSignature = activity.initialLayoutSignature = 42;
+    activity.initialSelection->startWordIndex = 1;
+    activity.initialSelection->endWordIndex = 2;
+    assert(activity.restoreInitialSelection());  // Legacy layout-bound highlights.
+    activity.initialLayoutSignature = 43;
+    assert(!activity.restoreInitialSelection());
+    activity.initialSelection.reset();
+    activity.mode = ClipSelectionActivity::Mode::Clip;
+    activity.rangeStart = -1;
+  }
   for (const int8_t tracking : {2, -2}) {
     auto page = std::make_unique<Page>();
     for (int i = 0; i < 2; ++i) {
@@ -356,12 +395,12 @@ int main() {
 """
 with tempfile.TemporaryDirectory() as directory:
     cpp = Path(directory) / "selection.cpp"
-    executable = Path(directory) / "selection"
+    executable = Path(directory) / ("selection.exe" if os.name == "nt" else "selection")
     bidi_object = Path(directory) / "minibidi.o"
     cpp.write_text(harness)
-    subprocess.run(["cc", "-c", str(ROOT / "lib/MiniBidi/minibidi.c"), "-o", str(bidi_object)], check=True)
+    subprocess.run([*shlex.split(os.environ.get("CC", "cc")), "-c", str(ROOT / "lib/MiniBidi/minibidi.c"), "-o", str(bidi_object)], check=True)
     subprocess.run([
-        "c++", "-std=c++20", "-Wall", "-Wextra", "-Werror",
+        *shlex.split(os.environ.get("CXX", "c++")), "-std=c++20", "-Wall", "-Wextra", "-Werror",
         "-I", str(ROOT / "src"), "-I", str(ROOT / "lib/Memory"),
         "-I", str(ROOT / "test/minibidi_arabic/stubs"),
         "-I", str(ROOT / "lib/MiniBidi"), "-I", str(ROOT / "lib/Utf8"),

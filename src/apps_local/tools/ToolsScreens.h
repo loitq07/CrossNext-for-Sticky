@@ -1,8 +1,10 @@
 #pragma once
 #include "../ui/ToyboxScreen.h"
 
+class GfxRenderer;
+
 namespace toolsui {
-enum class Kind : uint8_t { Calendar, Clock, Counter };
+enum class Kind : uint8_t { Calendar, Clock, Counter, Ruler };
 enum : freeink::ui::ActionId {
   Previous = 1,
   Next,
@@ -35,4 +37,5 @@ struct Work {
 };
 int calendarDayAt(const freeink::ui::DeviceContext&, const Model&, int x, int y);
 void build(toybox::Screen&, const Model&, Work&);
+void ruler(GfxRenderer& renderer);
 }  // namespace toolsui

@@ -48,6 +48,7 @@
 #include "apps_local/Shelf.h"
 #include "apps_local/power/PowerButtonPolicy.h"
 #include "apps_local/power/PowerMenuActivity.h"
+#include "apps_local/ui/ToyboxFonts.h"
 #include "apps_local/powerprobe/PowerProbe.h"
 #include "apps_local/quotes/HighlightSleep.h"
 #include "apps_local/words/DictionaryDefaults.h"
@@ -552,6 +553,7 @@ void setupDisplayAndFonts(bool seamless = false) {
   renderer.insertFont(UI_10_FONT_ID, ui10FontFamily);
   renderer.insertFont(UI_12_FONT_ID, ui12FontFamily);
   renderer.insertFont(SMALL_FONT_ID, smallFontFamily);
+  toybox::ensureFonts(renderer);
 
   // Discover and load SD card fonts
   sdFontSystem.begin(renderer);

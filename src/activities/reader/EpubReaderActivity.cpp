@@ -52,6 +52,7 @@
 #include "activities/network/WifiSelectionActivity.h"
 #include "activities/settings/TextSettingsActivity.h"
 #include "apps_local/readertext/BookSearchActivity.h"
+#include "apps_local/readertext/ReaderTouchActions.h"
 #include "apps_local/reading/ReadingStatsActivity.h"
 #include "apps_local/ui/Rotation.h"
 #include "apps_local/words/Vocabulary.h"
@@ -352,10 +353,25 @@ void EpubReaderActivity::openDictionaryWordSelect() {
 }
 
 void EpubReaderActivity::startClipSelection(const int initialX, const int initialY,
-                                            const ClipSelectionActivity::Mode mode) {
+                                            const ClipSelectionActivity::Mode mode, const size_t editingIndex) {
   if (!section || !epub || section->currentPage < 0 || section->currentPage >= section->pageCount) return;
 
-  const int pageNumber = section->currentPage;
+  const Clipping* editing = mode == ClipSelectionActivity::Mode::Edit ? CLIPPINGS.clippingAt(editingIndex) : nullptr;
+  if (mode == ClipSelectionActivity::Mode::Edit && !editing) return;
+  int pageNumber = section->currentPage;
+  if (editing) {
+    const auto startPage = editing->startOffset != UINT32_MAX
+                               ? section->getPageForVisibleTextOffset(editing->startOffset)
+                               : std::optional<uint16_t>(editing->startPage);
+    if (!startPage || *startPage >= section->pageCount) {
+      clippingMessage = StrId::STR_CLIPPING_FAILED;
+      showClippingMessage = true;
+      clippingMessageTime = millis();
+      requestUpdate();
+      return;
+    }
+    pageNumber = *startPage;
+  }
   const uint16_t pageCount = section->pageCount;
   const uint16_t spineIndex = static_cast<uint16_t>(currentSpineIndex);
   std::vector<std::unique_ptr<Page>> pages;
@@ -364,16 +380,11 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
        ++pageOffset) {
     auto page = section->loadPage(pageNumber + pageOffset);
     if (!page) break;
-    if (pageOffset == 0 && initialX >= 0 && CLIPPINGS.hasClippings()) {
+    if (pageOffset == 0 && initialX >= 0 && mode == ClipSelectionActivity::Mode::Clip && CLIPPINGS.hasClippings()) {
       RenderLock lock;
       const int clippingIndex = clippingAtPoint(*page, initialX, initialY);
       if (clippingIndex >= 0) {
-        const bool removed = CLIPPINGS.removeClippingAt(static_cast<size_t>(clippingIndex));
-        if (!removed) LOG_ERR("CLIP", "Failed to delete highlighted clipping %d", clippingIndex);
-        clippingMessage = removed ? StrId::STR_CLIPPING_REMOVED : StrId::STR_CLIPPING_DELETE_FAILED;
-        showClippingMessage = true;
-        clippingMessageTime = millis();
-        requestUpdate();
+        openClippingActions(static_cast<size_t>(clippingIndex));
         return;
       }
     }
@@ -411,7 +422,8 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
     requestUpdate();
     return;
   }
-  startActivityForResult(std::move(activity), [this, spineIndex, pageNumber, pageCount, layoutSignature,
+  if (editing) activity->setInitialSelection(*editing, pageNumber, pageCount, layoutSignature);
+  startActivityForResult(std::move(activity), [this, spineIndex, pageNumber, pageCount, layoutSignature, editingIndex,
                                                bookTitle = std::move(bookTitle), author = std::move(author),
                                                chapterTitle = std::move(chapterTitle)](const ActivityResult& result) {
     if (result.isCancelled) {
@@ -472,6 +484,33 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
     }
     const uint16_t paragraphIndex =
         section ? section->getParagraphIndexForPage(startPage).value_or(UINT16_MAX) : UINT16_MAX;
+    if (editingIndex != SIZE_MAX) {
+      const Clipping* original = CLIPPINGS.clippingAt(editingIndex);
+      bool saved = false;
+      if (original) {
+        Clipping edited = *original;
+        edited.startPage = startPage;
+        edited.endPage = endPage;
+        edited.pageCount = pageCount;
+        edited.startWordIndex = clipping.startWordIndex;
+        edited.endWordIndex = clipping.endWordIndex;
+        edited.wordCount = clipping.wordCount;
+        edited.paragraphIndex = paragraphIndex;
+        edited.layoutSignature = layoutSignature;
+        edited.startOffset = clipping.startOffset;
+        edited.endOffset = clipping.endOffset;
+        saved = CLIPPINGS.updateClippingAt(editingIndex, edited, clipping.text);
+      }
+      const bool exported =
+          saved && ClippingsManager::saveClipping(bookTitle, author, chapterTitle, startPage + 1, clipping.text);
+      clippingMessage = !saved     ? StrId::STR_CLIPPING_FAILED
+                        : exported ? StrId::STR_CLIPPING_SAVED
+                                   : StrId::STR_CLIPPING_EXPORT_FAILED;
+      showClippingMessage = true;
+      clippingMessageTime = millis();
+      requestUpdate();
+      return;
+    }
     const auto addResult = CLIPPINGS.addClipping(
         spineIndex, startPage, endPage, pageCount, clipping.startWordIndex, clipping.endWordIndex, clipping.wordCount,
         chapterTitle.c_str(), paragraphIndex, clipping.text, layoutSignature, clipping.startOffset, clipping.endOffset);
@@ -487,6 +526,54 @@ void EpubReaderActivity::startClipSelection(const int initialX, const int initia
     clippingMessageTime = millis();
     requestUpdate();
   });
+}
+
+void EpubReaderActivity::openClippingActions(const size_t index) {
+  if (!CLIPPINGS.clippingAt(index)) return;
+  automaticPageTurnActive = false;
+  pendingManualTurn = 0;
+  pendingManualTurnTouch = false;
+  static constexpr StrId OPTIONS[] = {StrId::STR_EDIT_CLIPPING, StrId::STR_DELETE, StrId::STR_CANCEL};
+  overlayPopup.show(StrId::STR_CLIPPINGS, OPTIONS, 3, 0, [this, index](int action) {
+    if (action == 0) {
+      startClipSelection(-1, -1, ClipSelectionActivity::Mode::Edit, index);
+    } else if (action == 1) {
+      const bool removed = CLIPPINGS.removeClippingAt(index);
+      clippingMessage = removed ? StrId::STR_CLIPPING_REMOVED : StrId::STR_CLIPPING_DELETE_FAILED;
+      showClippingMessage = true;
+      clippingMessageTime = millis();
+    }
+    requestUpdate();
+  });
+  requestUpdate();
+}
+
+bool EpubReaderActivity::handleReaderTouchActions() {
+  if (!SETTINGS.touchReaderControls || !mappedInput.hasTouch()) return false;
+  int x = 0, y = 0;
+  if (!mappedInput.wasScreenTapped(x, y)) return false;
+  RenderLock lock;
+  if (!section || section->currentPage < 0 || section->currentPage >= section->pageCount) return false;
+  if (readertext::isBookmarkCorner(x, y, renderer.getScreenWidth(), renderer.getScreenHeight())) {
+    automaticPageTurnActive = false;
+    pendingManualTurn = 0;
+    pendingManualTurnTouch = false;
+    lock.unlock();  // addBookmark() acquires the reader's non-recursive render mutex.
+    addBookmark();
+    showBookmarkMessage = true;
+    bookmarkMessageTime = millis();
+    haptic_feedback::touchAction();
+    requestUpdate();
+    return true;
+  }
+  if (!CLIPPINGS.hasClippings()) return false;
+  auto page = section->loadPage(section->currentPage);
+  if (!page) return false;
+  const int index = clippingAtPoint(*page, x, y);
+  if (index < 0) return false;
+  openClippingActions(static_cast<size_t>(index));
+  haptic_feedback::touchAction();
+  return true;
 }
 
 void EpubReaderActivity::openFootnoteSelect(const bool reopenMenuOnCancel) {
@@ -603,8 +690,8 @@ void EpubReaderActivity::loop() {
 
   {
     RenderLock lock(RenderLock::Mode::Try);
-    if (lock.ownsLock() && section && !section->isBuilding() && section->isPartial() && buildViewportWidth > 0 &&
-        !partialRebuildStartFailed &&
+    if (lock.ownsLock() && !overlayPopup.isActive() && section && !section->isBuilding() && section->isPartial() &&
+        buildViewportWidth > 0 && !partialRebuildStartFailed &&
         section->currentPage + PARTIAL_REBUILD_START_MARGIN >= static_cast<int>(section->pageCount)) {
       const ReaderRenderSpec buildSpec = SETTINGS.readerRenderSpec(buildViewportWidth, buildViewportHeight);
       if (!section->startBuild(buildSpec)) {
@@ -620,7 +707,8 @@ void EpubReaderActivity::loop() {
   {
     RenderLock lock(RenderLock::Mode::Try);
     // Not under an open toolbar or panel: those repaint straight onto the page in the framebuffer.
-    if (lock.ownsLock() && overlay == Overlay::None && backgroundBuildWanted() && buildTickHeapGate()) {
+    if (lock.ownsLock() && overlay == Overlay::None && !overlayPopup.isActive() && backgroundBuildWanted() &&
+        buildTickHeapGate()) {
       // A build step can lend the framebuffer (image probes), which hands it back white while the
       // panel still shows the page; redraw so nothing is later painted over the blank buffer.
       const uint32_t loansBefore = renderer.frameBufferLoanCount();
@@ -689,7 +777,14 @@ void EpubReaderActivity::loop() {
     return;
   }
 
+  if (overlayPopup.isActive()) {
+    RenderLock lock;
+    lastPageTurnTime = millis();
+    overlayPopup.handleInput(mappedInput, [this] { requestUpdate(); });
+    return;
+  }
   if (handleContentsReturn()) return;
+  if (!atEndOfBook && handleReaderTouchActions()) return;
   int selectionX = 0;
   int selectionY = 0;
   if (!atEndOfBook && SETTINGS.touchReaderControls && mappedInput.wasScreenLongPress(selectionX, selectionY)) {
@@ -1521,6 +1616,7 @@ void EpubReaderActivity::render(RenderLock&& lock) {
     return;
   }
   ReaderActivity::render(std::move(lock));
+  if (overlay == Overlay::None && overlayPopup.isActive()) overlayPopup.processRender(renderer, mappedInput);
 }
 
 bool EpubReaderActivity::isAtEndOfBook() const { return epub && currentSpineIndex >= epub->getSpineItemsCount(); }
@@ -1540,11 +1636,12 @@ bool EpubReaderActivity::backgroundBuildWanted() const {
 
 bool EpubReaderActivity::skipLoopDelay() {
   // The main loop holds the render lock while querying this hint.
-  return overlay == Overlay::None && !buildHeapPaused && backgroundBuildWanted();
+  return overlay == Overlay::None && !overlayPopup.isActive() && !buildHeapPaused && backgroundBuildWanted();
 }
 
 std::optional<uint32_t> EpubReaderActivity::nextLoopWakeDelayMs(const uint32_t now) const {
-  if (overlay != Overlay::None || !section || backgroundBuildWanted()) return loopdeadline::LEGACY_POLL_MS;
+  if (overlay != Overlay::None || overlayPopup.isActive() || !section || backgroundBuildWanted())
+    return loopdeadline::LEGACY_POLL_MS;
   loopdeadline::Deadline next(now);
   if (automaticPageTurnActive) next.after(lastPageTurnTime, pageTurnDuration);
   if (showBookmarkMessage) next.after(bookmarkMessageTime, ReaderUtils::BOOKMARK_MESSAGE_DURATION_MS);
@@ -1602,9 +1699,10 @@ bool EpubReaderActivity::canQueueNextPagePrefetch() const {
       mappedInput.isPressed(MappedInputManager::Button::PageBack))
     return false;
   return section && !section->isBuilding() && !section->isPartial() && overlay == Overlay::None &&
-         !pageBufferStale.load() && !automaticPageTurnActive && pendingManualTurn == 0 && lastRenderedPage >= 0 &&
-         lastRenderedPage == section->currentPage && prefetchAttemptedFromPage != section->currentPage &&
-         section->currentPage + 1 < section->pageCount && prefetchHeapAvailable(true);
+         !overlayPopup.isActive() && !pageBufferStale.load() && !automaticPageTurnActive && pendingManualTurn == 0 &&
+         lastRenderedPage >= 0 && lastRenderedPage == section->currentPage &&
+         prefetchAttemptedFromPage != section->currentPage && section->currentPage + 1 < section->pageCount &&
+         prefetchHeapAvailable(true);
 }
 
 void EpubReaderActivity::idlePrefetchNextPage() {
@@ -2145,6 +2243,7 @@ void EpubReaderActivity::renderContents(std::unique_ptr<Page> page, const int or
       renderStatusBar();
     else if (overlay == Overlay::None)
       renderContentsReturn(true);
+
   };
 
   if (pageHasImagesNeedingDecode) {
@@ -2500,6 +2599,9 @@ void EpubReaderActivity::renderStatusBar() {
 
   GUI.drawStatusBar(renderer, bookProgress, currentPage, pageCount, title, 0, textYOffset, true, currentPageBookmarked,
                     section ? section->isBuilding() : false);
+  if (currentPageBookmarked) {
+    BaseTheme::drawDogEarBookmark(renderer);
+  }
   if (overlay == Overlay::None) renderContentsReturn();
 }
 void EpubReaderActivity::restoreContentsPosition(ContentsPosition position) {

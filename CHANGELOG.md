@@ -1,5 +1,17 @@
 # CrossNext changes
 
+## Sticky v1.4.9 — 2026-11-10
+
+- Integrate Baemin Daniel Bold font family (`baemin_10`, `baemin_12`, `baemin_14`, `baemin_18`) with full Vietnamese diacritics.
+- Match authentic CrossNext numeral design with Baemin Daniel numerals for reading stats, clocks, and counters.
+- Expand battery percentage box from 58px to 76px, preventing 100% truncation.
+- Preserve natural mixed-case subtitles in Settings and Quotes lists.
+- Smart Home badge fallback ("TIẾP TỤC") preventing truncation dots.
+- Configure exact bezel insets for Seeed reTerminal Sticky.
+- Touch gesture enhancements for Shelf and Reading Tools.
+
+See [v1.4.9 release notes](docs/releases/CrossNext-Sticky-v1.4.9.md).
+
 ## Sticky v1.4.8 — 2026-11-09
 
 - Add Book highlights as a sleep screen, showing a saved passage, book title and author.

@@ -6,9 +6,11 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "ClippingStore.h"
 #include "activities/Activity.h"
 #include "components/OptionPopup.h"
 #include "components/themes/BaseTheme.h"
@@ -16,11 +18,13 @@
 
 class ClipSelectionActivity final : public Activity {
  public:
-  enum class Mode : uint8_t { Clip, Lookup };
+  enum class Mode : uint8_t { Clip, Lookup, Edit };
 
   ClipSelectionActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,
                         std::vector<std::unique_ptr<Page>> pages, int marginLeft, int marginTop, int initialX = -1,
                         int initialY = -1, Mode mode = Mode::Clip);
+
+  void setInitialSelection(const Clipping& clipping, uint16_t firstPage, uint16_t pageCount, uint32_t layoutSignature);
 
   void onEnter() override;
   void loop() override;
@@ -50,6 +54,7 @@ class ClipSelectionActivity final : public Activity {
   static constexpr size_t MAX_SELECTABLE_WORDS = 240;
 
   bool extractWords();
+  bool restoreInitialSelection();
   int closestInRow(uint16_t row, int centerX) const;
   int wordAt(int x, int y) const;
   int dragWordAt(int x, int y) const;
@@ -85,6 +90,10 @@ class ClipSelectionActivity final : public Activity {
   const int initialX;
   const int initialY;
   const Mode mode;
+  std::optional<Clipping> initialSelection;
+  bool initialSelectionFailed = false;
+  uint16_t initialFirstPage = 0, initialPageCount = 0;
+  uint32_t initialLayoutSignature = 0;
   OptionPopup actionPopup;
   // ponytail: retain 16 button frames during refresh; increase only if overflow is observed.
   std::array<uint8_t, 16> pendingButtons{};

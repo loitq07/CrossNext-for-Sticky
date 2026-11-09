@@ -160,8 +160,8 @@ enum UIIcon {
 // Additional themes can inherit from this and override methods as needed
 
 namespace BaseMetrics {
-constexpr ThemeMetrics values = {.batteryWidth = 15,
-                                 .batteryHeight = 12,
+constexpr ThemeMetrics values = {.batteryWidth = 26,
+                                 .batteryHeight = 16,
                                  .topPadding = 5,
                                  .batteryBarHeight = 20,
                                  .headerHeight = 84,
@@ -290,6 +290,7 @@ class BaseTheme {
                               int rowHeight = -1) const;
   static void drawSelectionHandle(const GfxRenderer& renderer, Rect rect, bool left);
   static void drawSelectionActions(const GfxRenderer& renderer, Rect rect, bool singleWord);
+  static void drawDogEarBookmark(const GfxRenderer& renderer);
   virtual Rect drawPopup(const GfxRenderer& renderer, const char* message) const;
   virtual void fillPopupProgress(const GfxRenderer& renderer, const Rect& layout, const int progress) const;
   static void drawStatusBar(GfxRenderer& renderer, const float bookProgress, const int currentPage, const int pageCount,

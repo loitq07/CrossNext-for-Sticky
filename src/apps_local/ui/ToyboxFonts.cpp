@@ -23,6 +23,10 @@
 #include "fonts/reading_serif_bold_12.h"
 #include "fonts/reading_serif_bold_14.h"
 #include "fonts/reading_serif_bold_16.h"
+#include "fonts/baemin_10.h"
+#include "fonts/baemin_12.h"
+#include "fonts/baemin_14.h"
+#include "fonts/baemin_18.h"
 #include "fonts/ui_prose_10.h"
 #include "fonts/ui_prose_14.h"
 #include "fonts/ui_prose_bold_14.h"
@@ -35,21 +39,21 @@ namespace toybox {
 namespace {
 
 // One-bit Noto UI faces share the existing built-in registry.
-EpdFont prose14(&ui_prose_14);
-EpdFont proseBold14(&ui_prose_bold_14);
+EpdFont prose14(&baemin_14);
+EpdFont proseBold14(&baemin_14);
 EpdFontFamily proseFamily(&prose14, &proseBold14);
-EpdFont library10(&ui_prose_10);
-EpdFont libraryBold10(&book_bold_10);
+EpdFont library10(&baemin_12);
+EpdFont libraryBold10(&baemin_12);
 EpdFontFamily libraryFamily(&library10, &libraryBold10);
 EpdFont bookText10(&book_text_10);
 EpdFontFamily bookListFamily(&bookText10, &libraryBold10);
-EpdFont display30(&ui_prose_14);
+EpdFont display30(&baemin_18);
 EpdFont large44(&display_sans_40);
 EpdFont clockLabel22(&display_sans_22);
 EpdFont huge64(&display_sans_56);
-EpdFont ui20(&ui_prose_14);
-EpdFont carousel18(&ui_prose_14);
-EpdFont tile10(&ui_prose_10);
+EpdFont ui20(&baemin_14);
+EpdFont carousel18(&baemin_14);
+EpdFont tile10(&baemin_10);
 // Noto Serif, converted at 1 bit by us rather than taken from builtinFonts/.
 // The builtin cuts are --2bit, and GfxRenderer's BW path paints a pixel for ANY
 // coverage above zero, so they flood to mush -- which is why Toybox has its own
@@ -59,7 +63,7 @@ EpdFont tile10(&ui_prose_10);
 // Noto Serif specifically because it is what the EPUB reader sets books in. An
 // app whose surface is a page of prose should look like the rest of this
 // device's reading, not like its games.
-EpdFont button14(&ui_prose_10);
+EpdFont button14(&baemin_12);
 EpdFont reading11(&reading_serif_11);
 EpdFont reading14(&reading_serif_14);
 EpdFont readingBold12(&reading_serif_bold_12);
@@ -86,40 +90,18 @@ EpdFontFamily serifSmallFamily(&instrument10);
 EpdFontFamily serifTitleFamily(&instrument24);
 
 bool registered = false;
-menufont::Style registeredStyle = menufont::Style::NotoSans;
+menufont::Style registeredStyle = menufont::Style::Pixel;
 
 const EpdFontFamily* menuFamily(menufont::Style style, int id) {
-  // The built-in serif cuts are too tall for dense captions and board labels.
-  if (id == kTileFontId && style != menufont::Style::Pixel) return &smallFontFamily;
-  bool small = false;
-  switch (id) {
-    case kTileFontId:
-    case kButtonFontId:
-    case kLibraryFontId:
-    case kBookListFontId:
-      small = true;
-      break;
-    case kUiFontId:
-    case kDisplayFontId:
-    case kCarouselTitleFontId:
-    case kProseFontId:
-      break;
-    default:
-      return nullptr;
+  if (style == menufont::Style::NotoSerif) {
+    return (id == kTileFontId || id == kButtonFontId || id == kLibraryFontId || id == kBookListFontId)
+               ? &readingSmallFamily
+               : &readingFamily;
   }
-  switch (style) {
-    case menufont::Style::Pixel:
-      return small ? &libraryFamily : &proseFamily;
-    case menufont::Style::Classic:
-      return id == kTileFontId ? &smallFontFamily : small ? &ui10FontFamily : &ui12FontFamily;
-    case menufont::Style::NotoSans:
-      return small ? &libraryFamily : &proseFamily;
-    case menufont::Style::NotoSerif:
-      return small ? &readingSmallFamily : &readingFamily;
-    case menufont::Style::Count:
-      break;
-  }
-  return nullptr;
+  if (id == kTileFontId) return &tileFamily;
+  if (id == kDisplayFontId) return &displayFamily;
+  if (id == kButtonFontId || id == kLibraryFontId || id == kBookListFontId) return &buttonFamily;
+  return &uiFamily;
 }
 
 bool bindMenuFonts(GfxRenderer& renderer, menufont::Style style) {
@@ -159,14 +141,14 @@ FontMetrics metricsFor(const int fontId) {
   const EpdFontData* data = fontId == kHugeFontId               ? &display_sans_56
                             : fontId == kClockLabelFontId       ? &display_sans_22
                             : fontId == kLargeFontId            ? &display_sans_40
-                            : fontId == kDisplayFontId          ? &ui_prose_14
-                            : fontId == kTileFontId             ? &ui_prose_10
-                            : fontId == kButtonFontId           ? &ui_prose_10
+                            : fontId == kDisplayFontId          ? &baemin_18
+                            : fontId == kTileFontId             ? &baemin_10
+                            : fontId == kButtonFontId           ? &baemin_12
                             : fontId == kReadingBoldFontId      ? &reading_serif_bold_16
                             : fontId == kReadingFontId          ? &reading_serif_14
                             : fontId == kReadingSmallFontId     ? &reading_serif_11
                             : fontId == kReadingBoldSmallFontId ? &reading_serif_bold_12
-                                                                : &ui_prose_14;
+                                                                : &baemin_14;
   FontMetrics metrics;
   metrics.ascender = data->ascender;
   // 'H' stands in for cap height: a flat-topped capital with no overshoot, so it
@@ -200,8 +182,10 @@ void verifyCutMetrics() {
     const toybox::CutMetrics* cut;
   };
   const Pair pairs[] = {
-      {"ui_prose_10", &ui_prose_10, &tileFamily, &toybox::kTileCut},
-      {"ui_prose_14", &ui_prose_14, &uiFamily, &toybox::kUiCut},
+      {"baemin_10", &baemin_10, &tileFamily, &toybox::kTileCut},
+      {"baemin_12", &baemin_12, &buttonFamily, &toybox::kButtonCut},
+      {"baemin_14", &baemin_14, &uiFamily, &toybox::kUiCut},
+      {"baemin_18", &baemin_18, &displayFamily, &toybox::kDisplayCut},
       {"display_sans_40", &display_sans_40, &largeFamily, &toybox::kLargeCut},
       {"display_sans_56", &display_sans_56, &hugeFamily, &toybox::kHugeCut},
       {"instrument_10", &instrument_10, &serifSmallFamily, &toybox::kSerifSmallCut},
@@ -253,6 +237,9 @@ void ensureFonts(GfxRenderer& renderer) {
   renderer.setFallbackFont(kBookListFontId, UI_10_FONT_ID);
   renderer.setFallbackFont(kProseFontId, UI_12_FONT_ID);
   renderer.setFallbackFont(kCarouselTitleFontId, UI_12_FONT_ID);
+  renderer.replaceBuiltinFont(UI_12_FONT_ID, uiFamily);
+  renderer.replaceBuiltinFont(UI_10_FONT_ID, buttonFamily);
+  renderer.replaceBuiltinFont(SMALL_FONT_ID, tileFamily);
   const auto style = interfaceFontStyle();
   if (registered) {
     syncInterfaceFonts(renderer);

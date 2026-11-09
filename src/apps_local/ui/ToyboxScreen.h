@@ -396,28 +396,19 @@ inline void headerBand(Screen& screen, const freeink::ui::HeaderProps& props) {
   if (!clock.empty()) screen.target().text(clock, battery.clock, clockStyle);
   if (battery.percent >= 0) {
     const auto safe = screen.device().safeRect();
-    const auto paper = fui::Paint::solid(fui::Color::White);
-    const auto black = fui::Paint::solid(fui::Color::Black);
-    const auto box = fui::makeRect(safe.right() - 44, ink.y + (ink.height - 19) / 2, 30, 19);
-    screen.target().stroke(box, paper, 2);
-    screen.target().fill(fui::makeRect(box.right(), box.y + 5, 4, 9), paper);
-    const int fill = battery.charging ? (box.width - 8) : (box.width - 8) * std::clamp(battery.percent, 0, 100) / 100;
-    screen.target().fill(fui::makeRect(box.x + 4, box.y + 4, fill, box.height - 8), paper);
-    if (battery.charging) {
-      screen.target().line({int16_t(box.x + 18), int16_t(box.y)}, {int16_t(box.x + 12), int16_t(box.y + 11)}, 2, black);
-      screen.target().line({int16_t(box.x + 12), int16_t(box.y + 11)}, {int16_t(box.x + 19), int16_t(box.y + 9)}, 2,
-                           black);
-      screen.target().line({int16_t(box.x + 19), int16_t(box.y + 9)}, {int16_t(box.x + 14), int16_t(box.y + 20)}, 2,
-                           black);
-    }
+    const auto fgColor = chrome::lightHeader ? fui::Color::Black : fui::Color::White;
+    const int iconY = ink.y + (ink.height - cds::kBatteryHeight) / 2;
+    const auto icon = fui::makeRect(safe.right() - 20 - cds::kBatteryWidth - cds::kBatteryCapWidth, iconY,
+                                    cds::kBatteryWidth, cds::kBatteryHeight);
+    cds::paintBattery(screen.target(), icon, {battery.percent, battery.charging, fgColor});
     if (battery.showPercent) {
       char value[8];
       std::snprintf(value, sizeof(value), "%d%%", std::clamp(battery.percent, 0, 100));
       fui::TextStyle style;
       style.font = 3;
-      style.color = fui::Color::White;
+      style.color = fgColor;
       style.align = fui::TextAlign::Right;
-      screen.target().text(fui::makeRect(box.x - 64, ink.y, 58, ink.height), value, style);
+      screen.target().text(fui::makeRect(icon.x - cds::kBatteryPercentGap - 58, ink.y, 58, ink.height), value, style);
     }
   }
 }

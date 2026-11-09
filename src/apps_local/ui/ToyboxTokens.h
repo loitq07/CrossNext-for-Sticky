@@ -18,6 +18,7 @@
 
 #include "LightUi.h"
 #include "ToyboxMetrics.h"
+#include "UnifiedDesignTokens.h"
 
 namespace toybox {
 
@@ -75,34 +76,13 @@ inline fui::StyleSet bandOutlineStyles() {
   return styles;
 }
 
-// A settings row: hairline outline at rest, inverted when selected. Same two
-// states menuRow() drew by hand.
+// A settings row: hairline outline at rest, anti-ghosting outline when selected.
 inline fui::StyleSet rowStyles(bool light = chrome::lightHeader) {
-  if (light) return lightui::controlStyles(true);
-  fui::StyleSet styles;
-  styles.explicitlySet = true;
-  styles.normal.background = fui::Paint::solid(fui::Color::White);
-  styles.normal.foreground = fui::Paint::solid(fui::Color::Black);
-  styles.normal.border = fui::Paint::solid(fui::Color::Black);
-  styles.normal.borderWidth = kHairline;
-  styles.selected.background = fui::Paint::solid(fui::Color::Black);
-  styles.selected.foreground = fui::Paint::solid(fui::Color::White);
-  // Focus is what the buttons move and touch does not, so it has to look like
-  // selection rather than like a third state: this screen only ever has one
-  // current row however you got to it.
-  styles.focused = styles.selected;
-  styles.active = styles.selected;
-  styles.disabled = styles.normal;
-  styles.disabled.foreground = fui::Paint::dither(fui::Color::DarkGray);
-  return styles;
+  return cds::listRowStyles(light);
 }
 
 inline fui::StyleSet buttonStyles(bool light = chrome::lightHeader) {
-  if (light) return lightui::controlStyles();
-  auto styles = rowStyles(false);
-  styles.normal.borderWidth = kFrame;
-  styles.disabled.borderWidth = kFrame;
-  return styles;
+  return cds::buttonStyles(light);
 }
 
 // Why a big label drifts low in a small box, and the one fix for it.
@@ -134,10 +114,10 @@ struct CutMetrics {
 // ui/fonts/. ToyboxFonts.cpp checks these against the real font data at startup
 // and logs an error if a regenerated cut ever moves, so they cannot rot in
 // silence -- which matters because nothing else here can see a font.
-constexpr CutMetrics kTileCut{28, 23, 16};     // ui_prose_10
-constexpr CutMetrics kButtonCut{28, 23, 16};   // ui_prose_10
-constexpr CutMetrics kUiCut{40, 32, 21};       // ui_prose_14
-constexpr CutMetrics kDisplayCut{40, 32, 21};  // ui_prose_14
+constexpr CutMetrics kTileCut{25, 21, 15};     // baemin_10
+constexpr CutMetrics kButtonCut{30, 25, 18};   // baemin_12
+constexpr CutMetrics kUiCut{35, 30, 21};       // baemin_14
+constexpr CutMetrics kDisplayCut{45, 38, 27};  // baemin_18
 constexpr CutMetrics kLargeCut{114, 90, 60};   // display_sans_40
 constexpr CutMetrics kHugeCut{159, 125, 84};   // display_sans_56
 

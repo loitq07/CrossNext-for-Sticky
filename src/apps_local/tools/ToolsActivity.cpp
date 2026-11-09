@@ -30,6 +30,9 @@ std::unique_ptr<Activity> ToolsActivity::clock(GfxRenderer& r, MappedInputManage
 std::unique_ptr<Activity> ToolsActivity::counter(GfxRenderer& r, MappedInputManager& i) {
   return create(r, i, toolsui::Kind::Counter);
 }
+std::unique_ptr<Activity> ToolsActivity::ruler(GfxRenderer& r, MappedInputManager& i) {
+  return create(r, i, toolsui::Kind::Ruler);
+}
 void ToolsActivity::onEnter() {
   Activity::onEnter();
   toybox::ensureFonts(renderer);
@@ -215,6 +218,16 @@ void ToolsActivity::counterLoop() {
   }
 }
 void ToolsActivity::loop() {
+  if (kind == toolsui::Kind::Ruler) {
+    RenderLock lock(*this);
+    int x = 0, y = 0;
+    if (mappedInput.wasReleased(MappedInputManager::Button::Back) ||
+        mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
+        mappedInput.wasScreenTapped(x, y)) {
+      shelf::leave(renderer, mappedInput);
+    }
+    return;
+  }
   if (kind == toolsui::Kind::Counter) {
     counterLoop();
     return;
@@ -275,6 +288,12 @@ void ToolsActivity::render(RenderLock&&) {
   model.rotateRight = SETTINGS.rotationDirection != 0;
   if (kind == toolsui::Kind::Clock) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
+  if (kind == toolsui::Kind::Ruler) {
+    toolsui::ruler(renderer);
+    renderer.displayBuffer();
+    ready = true;
+    return;
+  }
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);
   if (kind == toolsui::Kind::Clock) target.setFont(4, toybox::kClockLabelFontId);

@@ -83,7 +83,7 @@ struct Rows {
       item.icon = fui::bitmapFromIcon(self.model.checks[index] ? extra_checked_32 : extra_unchecked_32);
       item.toggle = false;
     }
-    pixelui::copyNatural(self.label, sizeof(self.label), item.label);
+    pixelui::copyCaps(self.label, sizeof(self.label), item.label);
     item.label = self.label;
   }
 };

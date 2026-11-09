@@ -11,6 +11,7 @@ class ToolsActivity final : public Activity {
   static std::unique_ptr<Activity> calendar(GfxRenderer&, MappedInputManager&);
   static std::unique_ptr<Activity> clock(GfxRenderer&, MappedInputManager&);
   static std::unique_ptr<Activity> counter(GfxRenderer&, MappedInputManager&);
+  static std::unique_ptr<Activity> ruler(GfxRenderer&, MappedInputManager&);
   void onEnter() override;
   void onExit() override;
   void loop() override;

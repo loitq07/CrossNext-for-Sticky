@@ -61,6 +61,8 @@ class ClippingStore {
                         uint16_t paragraphIndex, const std::string& text, uint32_t layoutSignature,
                         uint32_t startOffset = UINT32_MAX, uint32_t endOffset = UINT32_MAX);
   bool removeClippingAt(size_t index);
+  // Replace the selection atomically, retaining its sync identity and creation time.
+  bool updateClippingAt(size_t index, const Clipping& replacement, const std::string& text);
   bool saveToFile();
   bool prepareSync();
   bool finishUploads();

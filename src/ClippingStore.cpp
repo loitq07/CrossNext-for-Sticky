@@ -227,6 +227,24 @@ ClippingStore::AddResult ClippingStore::addClipping(const uint16_t spineIndex, c
   return AddResult::Added;
 }
 
+bool ClippingStore::updateClippingAt(const size_t index, const Clipping& replacement, const std::string& text) {
+  if (!loaded || index >= clippingSize || text.empty() || text.size() > CLIPPING_TEXT_MAX) return false;
+  const Clipping previous = clippingRef(index);
+  clippingRef(index) = replacement;
+  Clipping& clipping = clippingRef(index);
+  memcpy(clipping.id, previous.id, sizeof(clipping.id));
+  clipping.timestamp = previous.timestamp;
+  clipping.syncRevision = previous.syncRevision;
+  clipping.pendingUpload = true;
+  clipping.textLength = static_cast<uint16_t>(text.size());
+  if (!writeToFile(&text, index)) {
+    clippingRef(index) = previous;
+    return false;
+  }
+  dirty = false;
+  return true;
+}
+
 bool ClippingStore::removeClippingAt(const size_t index) {
   if (!loaded || index >= clippingSize) return false;
   if (clippingRef(index).id[0]) {

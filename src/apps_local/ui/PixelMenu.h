@@ -6,6 +6,7 @@
 
 #include "LightUi.h"
 #include "PixelText.h"
+#include "UnifiedDesignTokens.h"
 
 namespace toybox {
 class Screen;
@@ -13,8 +14,8 @@ class Screen;
 
 namespace pixelui {
 namespace fui = freeink::ui;
-constexpr int kMargin = 10;
-constexpr int kRowHeight = 66;
+constexpr int kMargin = cds::kMargin;
+constexpr int kRowHeight = cds::kRowStandard;
 constexpr int kBorder = 2;
 constexpr int kPageHeight = 44;
 constexpr int kPageReserve = kPageHeight + 16;

@@ -17,6 +17,7 @@
 #include "RecentBooksStore.h"
 #include "apps_local/ui/PixelMenuTheme.h"
 #include "apps_local/ui/PixelText.h"
+#include "apps_local/ui/UnifiedDesignTokens.h"
 #include "clippings/SelectionGeometry.h"
 #include "components/HeaderBackTapTarget.h"
 #include "components/PopupLayout.h"
@@ -343,9 +344,9 @@ void BaseTheme::applyHeaderStatus(const GfxRenderer& renderer, freeink::ui::Head
     snprintf(percentText, sizeof(percentText), "%u%%", static_cast<unsigned>(percentage));
     status.battery.label = percentText;
   }
-  status.battery.glyphWidth = static_cast<int16_t>(metrics.batteryWidth);
-  status.battery.glyphHeight = static_cast<int16_t>(metrics.batteryHeight);
-  status.battery.gap = batteryPercentSpacing;
+  status.battery.glyphWidth = static_cast<int16_t>(cds::kBatteryWidth);
+  status.battery.glyphHeight = static_cast<int16_t>(cds::kBatteryHeight);
+  status.battery.gap = static_cast<int16_t>(cds::kBatteryPercentGap);
   status.batteryLeft = metrics.headerBatterySide == 1;
   status.edgeInset = static_cast<int16_t>(headerStatusInset());
 
@@ -399,15 +400,12 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   // same publish-a-fresh-slot path applySharedUiTheme() uses (see
   // UiAppHelpers.h) rather than overwriting the previously-published
   // instance in place, since some other FreeInkApp could be mid-read of it.
-  if (chrome::lightHeader) pixelui::bindFonts(ui.target, const_cast<GfxRenderer&>(renderer));
+  pixelui::bindFonts(ui.target, const_cast<GfxRenderer&>(renderer));
   const fui::ThemeTokens& tokens = refreshSharedUiThemeTokens(ui.target);
-  // Header status text (battery percent, right label) stays at the fixed
-  // small font like the legacy headers; the uiScale small font is for list
-  // subtitles.
   if (!chrome::lightHeader) {
-    ui.target.setFont(fui::GfxRendererTarget::FONT_SMALL, SMALL_FONT_ID);
-    ui.target.setFont(fui::GfxRendererTarget::FONT_LABEL, SMALL_FONT_ID);
-    ui.target.setFont(fui::GfxRendererTarget::FONT_CLOCK, UI_12_FONT_ID);
+    ui.target.setFont(fui::GfxRendererTarget::FONT_SMALL, toybox::kButtonFontId);
+    ui.target.setFont(fui::GfxRendererTarget::FONT_LABEL, toybox::kTileFontId);
+    ui.target.setFont(fui::GfxRendererTarget::FONT_CLOCK, toybox::kButtonFontId);
   }
   // Callers pass a full-width header rect, so the battery/title would sit at the
   // true screen edges — clipped on rounded-corner panels (EEGO A4). Inset the band
@@ -421,8 +419,8 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
   fui::HeaderProps props;
   // All header draws share the serialized render path.
   static char naturalTitle[192];
-  if (chrome::lightHeader && title) {
-    pixelui::copyNatural(naturalTitle, sizeof(naturalTitle), title);
+  if (title) {
+    pixelui::copyCaps(naturalTitle, sizeof(naturalTitle), title);
     title = naturalTitle;
   }
   props.title = title;
@@ -493,6 +491,11 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
     props.styles.normal.borderWidth = tokens.headerUnderline;
   }
   fui::header(ui.frame, band, props);
+  if (chrome::lightHeader && title != nullptr) {
+    ui.target.line({band.x, static_cast<int16_t>(band.bottom() - 1)},
+                   {static_cast<int16_t>(band.right()), static_cast<int16_t>(band.bottom() - 1)}, 1,
+                   fui::Paint::dither(fui::Color::DarkGray));
+  }
 }
 
 void BaseTheme::drawSubHeader(const GfxRenderer& renderer, Rect rect, const char* label, const char* rightLabel) const {
@@ -509,7 +512,9 @@ void BaseTheme::drawSubHeader(const GfxRenderer& renderer, Rect rect, const char
   }
 
   if (labelWidth > 0) {
-    auto truncatedLabel = renderer.truncatedText(UI_12_FONT_ID, label, labelWidth, EpdFontFamily::REGULAR);
+    char capsLabel[128];
+    pixelui::copyCaps(capsLabel, sizeof(capsLabel), label);
+    auto truncatedLabel = renderer.truncatedText(UI_12_FONT_ID, capsLabel, labelWidth, EpdFontFamily::REGULAR);
     renderer.drawText(UI_12_FONT_ID, rect.x + BaseMetrics::values.contentSidePadding, rect.y, truncatedLabel.c_str(),
                       true, EpdFontFamily::REGULAR);
   }
@@ -1026,6 +1031,23 @@ void BaseTheme::drawSelectionHandle(const GfxRenderer& renderer, const Rect rect
   const int radius = rect.width / 2;
   renderer.fillRoundedRect(rect.x, rect.y, rect.width, rect.height, radius, Color::Black);
   renderer.fillRect(left ? rect.x + radius : rect.x, rect.y, radius, radius);
+}
+
+void BaseTheme::drawDogEarBookmark(const GfxRenderer& renderer) {
+  const int w = renderer.getScreenWidth();
+  constexpr int S = 36;
+  // 1. Missing corner background: light gray dither to match Sticky's bezel
+  for (int i = 0; i < S; ++i) {
+    renderer.fillRectDither(w - S + i, i, S - i, 1, Color::LightGray);
+  }
+  // 2. Folded flap: white paper
+  for (int i = 1; i < S; ++i) {
+    renderer.drawLine(w - S + 1, i, w - S + i - 1, i, false);
+  }
+  // 3. Crisp border lines around folded flap (2px outline)
+  renderer.drawLine(w - S, 0, w - S, S, 2, true);
+  renderer.drawLine(w - S, S, w - 1, S, 2, true);
+  renderer.drawLine(w - S, 0, w - 1, S, 2, true);
 }
 
 void BaseTheme::drawSelectionActions(const GfxRenderer& renderer, const Rect rect, const bool singleWord) {

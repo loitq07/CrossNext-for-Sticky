@@ -1,6 +1,8 @@
 #include "ToolsScreens.h"
 
+#include <GfxRenderer.h>
 #include <I18n.h>
+#include "fontIds.h"
 
 #include <algorithm>
 #include <cmath>
@@ -273,6 +275,84 @@ void build(toybox::Screen& s, const Model& m, Work& w) {
       }
       counter(s, m, w, body);
       break;
+    case Kind::Ruler:
+      break;
   }
+}
+
+void ruler(GfxRenderer& renderer) {
+  const int w = renderer.getScreenWidth();
+  const int h = renderer.getScreenHeight();
+
+  // 1. Top edge ruler: 0 to 30px
+  for (int y = 0; y <= 30; ++y) {
+    const int len = (y % 10 == 0) ? 40 : (y % 5 == 0) ? 22 : 10;
+    renderer.drawLine(0, y, len, y, true);
+    renderer.drawLine(w - len, y, w - 1, y, true);
+    if (y % 5 == 0) {
+      char num[8];
+      std::snprintf(num, sizeof(num), "%d", y);
+      renderer.drawText(SMALL_FONT_ID, len + 3, y, num);
+    }
+  }
+
+  // 2. Bottom edge ruler: 0 to 30px from bottom
+  for (int i = 0; i <= 30; ++i) {
+    const int y = h - 1 - i;
+    const int len = (i % 10 == 0) ? 40 : (i % 5 == 0) ? 22 : 10;
+    renderer.drawLine(0, y, len, y, true);
+    renderer.drawLine(w - len, y, w - 1, y, true);
+    if (i % 5 == 0) {
+      char num[8];
+      std::snprintf(num, sizeof(num), "%d", i);
+      renderer.drawText(SMALL_FONT_ID, len + 3, y - 10, num);
+    }
+  }
+
+  // 3. Left edge ruler: 0 to 30px
+  for (int x = 0; x <= 30; ++x) {
+    const int len = (x % 10 == 0) ? 40 : (x % 5 == 0) ? 22 : 10;
+    renderer.drawLine(x, 0, x, len, true);
+    renderer.drawLine(x, h - len, x, h - 1, true);
+    if (x % 5 == 0 && x > 0) {
+      char num[8];
+      std::snprintf(num, sizeof(num), "%d", x);
+      renderer.drawText(SMALL_FONT_ID, x - 4, len + 2, num);
+    }
+  }
+
+  // 4. Right edge ruler: 0 to 30px from right
+  for (int i = 0; i <= 30; ++i) {
+    const int x = w - 1 - i;
+    const int len = (i % 10 == 0) ? 40 : (i % 5 == 0) ? 22 : 10;
+    renderer.drawLine(x, 0, x, len, true);
+    renderer.drawLine(x, h - len, x, h - 1, true);
+    if (i % 5 == 0 && i > 0) {
+      char num[8];
+      std::snprintf(num, sizeof(num), "%d", i);
+      renderer.drawText(SMALL_FONT_ID, x - 10, len + 2, num);
+    }
+  }
+
+  // 5. Center diagnostic card
+  const int cardW = 380, cardH = 320;
+  const int cardX = (w - cardW) / 2;
+  const int cardY = (h - cardH) / 2;
+  renderer.drawRect(cardX, cardY, cardW, cardH, 2, true);
+
+  renderer.drawText(UI_12_FONT_ID, cardX + 30, cardY + 25, "BEZEL CALIBRATION RULER");
+  renderer.drawText(SMALL_FONT_ID, cardX + 30, cardY + 70, "Device: Seeed Sticky (480x800)");
+
+  char insetsBuf[64];
+  int top = 0, right = 0, bottom = 0, left = 0;
+  renderer.getOrientedViewableTRBL(&top, &right, &bottom, &left);
+  std::snprintf(insetsBuf, sizeof(insetsBuf), "Current Insets: T:%d R:%d B:%d L:%d", top, right, bottom, left);
+  renderer.drawText(SMALL_FONT_ID, cardX + 30, cardY + 110, insetsBuf);
+
+  renderer.drawText(SMALL_FONT_ID, cardX + 30, cardY + 160, "Look straight on at the screen edges.");
+  renderer.drawText(SMALL_FONT_ID, cardX + 30, cardY + 185, "The smallest tick visible is the hidden px.");
+
+  renderer.drawRect(cardX + 40, cardY + 235, cardW - 80, 50, 2, true);
+  renderer.drawText(UI_10_FONT_ID, cardX + 85, cardY + 252, "TAP SCREEN TO EXIT");
 }
 }  // namespace toolsui

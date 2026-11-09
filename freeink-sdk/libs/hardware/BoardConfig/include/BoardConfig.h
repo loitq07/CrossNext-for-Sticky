@@ -1469,6 +1469,13 @@ static_assert(EEGO_A4.displayWidth / 8 * EEGO_A4.displayHeight == 52992,
 //     bus-sharing / CS arbitration with the panel needs a hardware check.
 //   * PDM mic pins (19/20/38) are from the schematic/spec; no vendor demo uses the
 //     mic, so they're unconfirmed in code.
+#ifndef STICKY_VIEWABLE_INSETS
+// Seeed reTerminal Sticky 3.97" 800x480: Flush tempered glass panel.
+// Full 800x480 panel frame with zero bezel occlusion.
+// Overridable in platformio.ini via -DSTICKY_VIEWABLE_INSETS="{top, right, bottom, left}"
+#define STICKY_VIEWABLE_INSETS {0, 0, 0, 0}
+#endif
+
 constexpr BoardProfile STICKY = {
     Board::Sticky,
     "sticky",
@@ -1528,7 +1535,10 @@ constexpr BoardProfile STICKY = {
     // Seeed's firmware team; native firmware drives it). Without it the pin's
     // JTAG reset-default pull-up disables charging the whole time we're awake
     // (~0.06 A USB input awake vs ~0.5 A once sleep isolates the pad).
-    {45, 46, 39, false}};
+    {45, 46, 39, false},
+    0,                      // displayControllerVariant
+    STICKY_VIEWABLE_INSETS, // viewableInsets: full 800x480 panel frame (not X4's sunken {9, 3, 3, 3})
+    false};                 // batteryChargeStatusActiveHigh: false (low = USB present)
 
 // --- Waveshare ESP32-S3-ePaper-3.97 — ESP32-S3-WROOM-1-N16R8, SSD1677 800x480 --
 // Pins come from the vendor demo sources (waveshareteam/ESP32-S3-ePaper-3.97):

@@ -64,7 +64,7 @@ inline void utf8ToUpper(char* out, size_t bytes) {
   }
 }
 
-inline bool copyNatural(char* out, size_t size, const char* text, LabelCase casing = LabelCase::Sentence) {
+inline bool copyNatural(char* out, size_t size, const char* text, LabelCase casing = LabelCase::Preserve) {
   if (!size) return false;
   if (!text) text = "";
   bool mixed = false;

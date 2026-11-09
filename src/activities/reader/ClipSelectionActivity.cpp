@@ -82,7 +82,46 @@ void ClipSelectionActivity::onEnter() {
     selected = rangeStart = hit;
     ignoreInitialTouch = true;
   }
+  if (initialSelection && !restoreInitialSelection()) {
+    initialSelectionFailed = true;
+    // Never silently replace a saved quote with a truncated selection window.
+    static constexpr StrId OPTIONS[] = {StrId::STR_BACK};
+    actionPopup.show(StrId::STR_CLIPPING_TOO_LONG, OPTIONS, 1, 0, [this](int) { cancel(); });
+  }
   requestUpdate();
+}
+
+void ClipSelectionActivity::setInitialSelection(const Clipping& clipping, const uint16_t firstPage,
+                                                const uint16_t pageCount, const uint32_t layoutSignature) {
+  initialSelection = clipping;
+  initialFirstPage = firstPage;
+  initialPageCount = pageCount;
+  initialLayoutSignature = layoutSignature;
+}
+
+bool ClipSelectionActivity::restoreInitialSelection() {
+  const Clipping& clipping = *initialSelection;
+  int first = -1, last = -1;
+  bool hasStart = false, hasEnd = false;
+  const bool anchored = clipping.startOffset != UINT32_MAX && clipping.endOffset != UINT32_MAX;
+  for (size_t i = 0; i < wordCount; ++i) {
+    const auto& word = words[i];
+    const uint16_t page = initialFirstPage + word.pageOffset;
+    if (!clippingContainsWord(clipping, clipping.spineIndex, page, initialPageCount, initialLayoutSignature,
+                              word.pageWordIndex, word.startOffset, word.endOffset))
+      continue;
+    if (first < 0) first = static_cast<int>(i);
+    last = static_cast<int>(i);
+    hasStart = hasStart || (anchored ? word.startOffset <= clipping.startOffset && word.endOffset > clipping.startOffset
+                                     : page == clipping.startPage && word.pageWordIndex == clipping.startWordIndex);
+    hasEnd = hasEnd || (anchored ? word.startOffset < clipping.endOffset && word.endOffset >= clipping.endOffset
+                                 : page == clipping.endPage && word.pageWordIndex == clipping.endWordIndex);
+  }
+  if (first < 0 || !hasStart || !hasEnd) return false;
+  rangeStart = first;
+  selected = last;
+  currentPageOffset = words[first].pageOffset;
+  return true;
 }
 
 bool ClipSelectionActivity::extractWords() {
@@ -345,6 +384,7 @@ bool ClipSelectionActivity::buildSelectedText(const int first, const int last, s
 }
 
 int ClipSelectionActivity::selectionActionCount() const {
+  if (mode == Mode::Edit) return 1;
   if (rangeStart < 0) return 2;
   const int first = std::min(rangeStart, selected), last = std::max(rangeStart, selected);
   uint32_t start = UINT32_MAX, end = 0;
@@ -479,6 +519,10 @@ void ClipSelectionActivity::loopButtons() {
 
 void ClipSelectionActivity::loop() {
   if (wordCount == 0) return;
+  if (initialSelectionFailed && !actionPopup.isActive()) {
+    cancel();
+    return;
+  }
   if (!mappedInput.hasTouch()) {
     loopButtons();
     return;

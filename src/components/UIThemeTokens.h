@@ -4,6 +4,7 @@
 
 #include "../../lib/GfxRenderer/ChromeRegion.h"
 #include "../apps_local/ui/LightUi.h"
+#include "../apps_local/ui/UnifiedDesignTokens.h"
 #include "UITheme.h"
 #include "UiControlChrome.h"
 
@@ -17,10 +18,9 @@ inline freeink::ui::ThemeTokens uiThemeTokens(const freeink::ui::GfxRendererTarg
   const ThemeMetrics& metrics = UITheme::getInstance().getMetrics();
 
   fui::ThemeTokens tokens = fui::themeTokensForLineHeight(target.lineHeight(fui::GfxRendererTarget::FONT_BODY));
-  // The outlined button, in UiControlChrome.h so host tests bind to the real
-  // thing rather than to a copy of it. See the comment there for why the core
-  // theme needs one at all.
-  tokens.button = uiButtonStyles();
+  // The outlined button and anti-ghosting list row styles from CrossDesign System (CDS)
+  tokens.button = cds::buttonStyles();
+  tokens.listRow = cds::listRowStyles();
   // Button-device lists retain the theme's preferred density. The SDK still
   // grows individual rows for wrapping, subtitles and icons.
   if (!BoardConfig::hasTouch()) tokens.listMinRowHeight = static_cast<int16_t>(metrics.listRowHeight);
@@ -55,8 +55,8 @@ inline freeink::ui::ThemeTokens uiThemeTokens(const freeink::ui::GfxRendererTarg
   if (chrome::lightHeader) {
     tokens.bodyText.bold = tokens.smallText.bold = tokens.titleText.bold = false;
     tokens.headerUnderline = 0;
-    tokens.listRow = lightui::controlStyles(true);
-    tokens.button = lightui::controlStyles();
+    tokens.listRow = cds::listRowStyles(true);
+    tokens.button = cds::buttonStyles(true);
   }
   return tokens;
 }

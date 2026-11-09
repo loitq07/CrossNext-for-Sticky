@@ -12,6 +12,7 @@
 #include "ExtraIcons.h"
 #include "PixelMenu.h"
 #include "QuickAction.h"
+#include "UnifiedDesignTokens.h"
 
 namespace quickui {
 namespace fui = freeink::ui;
@@ -233,15 +234,10 @@ void build(Screen& screen, const Model& model, Work& work) {
   std::snprintf(work.label, sizeof(work.label), "%d%%", model.battery);
   pixelui::text(screen.target(), fui::makeRect(g.header.right() - 98, g.header.y, 66, g.header.height), work.label,
                 chrome::lightHeader ? 0 : 3, fui::Color::Black, fui::TextAlign::Right);
-  const auto battery = fui::makeRect(g.header.right() - 28, g.header.y + (chrome::lightHeader ? 13 : 23), 26, 18);
-  fui::BatteryIndicatorProps batteryProps;
-  batteryProps.percent = static_cast<uint8_t>(std::clamp(model.battery, 0, 100));
-  batteryProps.charging = model.charging;
-  batteryProps.glyphWidth = battery.width;
-  batteryProps.glyphHeight = battery.height;
-  fui::batteryIndicator(screen.frame(), fui::makeRect(battery.x, battery.y, battery.width + 2, battery.height),
-                        batteryProps);
-  screen.target().stroke(battery, fui::Paint::solid(fui::Color::Black), 2);
+  const int iconY = g.header.y + (g.header.height - cds::kBatteryHeight) / 2;
+  const auto battery = fui::makeRect(g.header.right() - 20 - cds::kBatteryWidth - cds::kBatteryCapWidth, iconY,
+                                     cds::kBatteryWidth, cds::kBatteryHeight);
+  cds::paintBattery(screen.target(), battery, {model.battery, model.charging, fui::Color::Black});
   if (model.touch) {
     const int width = g.tiles.width / 4;
     const int size = chrome::lightHeader ? 44 : std::min(96, int(g.tiles.height) - 54);

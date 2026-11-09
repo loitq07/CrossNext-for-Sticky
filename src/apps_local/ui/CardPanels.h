@@ -3,6 +3,7 @@
 #include "../cards/CardsLabels.h"
 #include "GameGuide.h"
 #include "ReferenceArt.h"
+#include "UnifiedDesignTokens.h"
 
 namespace cardpanel {
 namespace fui = freeink::ui;
@@ -10,30 +11,33 @@ inline fui::Rect begin(toybox::Screen& s, const char* title, int actionReserve =
   const auto safe = s.device().safeRect();
   const int h = safe.y + 56;
   chrome::headerHeight = h;
-  s.target().fill(fui::makeRect(0, 0, s.device().width, h), dashboard::ink);
+  const auto bgPaint = chrome::lightHeader ? dashboard::paper : dashboard::ink;
+  const auto fgPaint = chrome::lightHeader ? dashboard::ink : dashboard::paper;
+  const auto fgColor = chrome::lightHeader ? fui::Color::Black : fui::Color::White;
+
+  s.target().fill(fui::makeRect(0, 0, s.device().width, h), bgPaint);
+  if (chrome::lightHeader) {
+    s.target().line({0, static_cast<int16_t>(h - 1)},
+                    {static_cast<int16_t>(s.device().width), static_cast<int16_t>(h - 1)}, 1,
+                    fui::Paint::dither(fui::Color::DarkGray));
+  }
   const auto back = fui::makeRect(safe.x, safe.y, backui::kWidth, h);
-  backui::paint(s.target(), back);
+  backui::paint(s.target(), back, chrome::lightHeader);
   backui::publish(s.device().hasTouch, back);
-  const auto battery = fui::makeRect(safe.right() - 39, safe.y + 20, 28, 17);
-  s.target().stroke(battery, dashboard::paper, 2);
-  s.target().fill(fui::makeRect(battery.right(), battery.y + 4, 4, 9), dashboard::paper);
+  int right = safe.right() - 20;
   const auto status = s.headerStatus();
-  int right = battery.x - 10;
   if (status.percent >= 0) {
-    const int fill = status.charging ? 20 : 20 * std::clamp(status.percent, 0, 100) / 100;
-    s.target().fill(fui::makeRect(battery.x + 4, battery.y + 4, fill, 9),
-                    dashboard::paper);
-    if (status.charging) {
-      const int x = battery.x + 11, y = battery.y - 1;
-      s.target().line({int16_t(x + 5), int16_t(y)}, {int16_t(x + 1), int16_t(y + 10)}, 2, dashboard::ink);
-      s.target().line({int16_t(x + 1), int16_t(y + 10)}, {int16_t(x + 6), int16_t(y + 8)}, 2, dashboard::ink);
-      s.target().line({int16_t(x + 6), int16_t(y + 8)}, {int16_t(x + 2), int16_t(y + 18)}, 2, dashboard::ink);
-    }
+    const int iconY = safe.y + (56 - cds::kBatteryHeight) / 2;
+    const auto battery = fui::makeRect(right - cds::kBatteryWidth - cds::kBatteryCapWidth, iconY,
+                                       cds::kBatteryWidth, cds::kBatteryHeight);
+    cds::paintBattery(s.target(), battery, {status.percent, status.charging, fgColor});
+    right = battery.x - cds::kBatteryPercentGap;
     if (status.showPercent) {
       char label[8];
-      std::snprintf(label, sizeof(label), "%d%%", status.percent);
-      dashboard::text(s, fui::makeRect(battery.x - 60, safe.y, 54, 56), label, 0, fui::TextAlign::Right, true);
-      right = battery.x - 70;
+      std::snprintf(label, sizeof(label), "%d%%", std::clamp(status.percent, 0, 100));
+      dashboard::text(s, fui::makeRect(right - 54, safe.y, 54, 56), label, 0, fui::TextAlign::Right,
+                      !chrome::lightHeader);
+      right -= 64;
     }
   }
   if (actionReserve > 0) right = std::min(right, safe.right() - actionReserve - 12);
@@ -42,11 +46,14 @@ inline fui::Rect begin(toybox::Screen& s, const char* title, int actionReserve =
   titleStyle.font = 1;
   titleStyle.bold = true;
   char titleLabel[96];
-  pixelui::copyCaps(titleLabel, sizeof(titleLabel), title);
+  if (chrome::lightHeader)
+    pixelui::copyNatural(titleLabel, sizeof(titleLabel), title);
+  else
+    pixelui::copyCaps(titleLabel, sizeof(titleLabel), title);
   const int titleEnd = left + s.target().measureText(1, titleLabel, titleStyle).width + 14;
   fui::TextStyle clockStyle;
   clockStyle.font = fui::HEADER_CLOCK_FONT;
-  clockStyle.color = fui::Color::White;
+  clockStyle.color = fgColor;
   const auto clock = fui::headerClockRect(
       s.target(), fui::makeRect(titleEnd, safe.y, std::max(0, right - titleEnd), 56), status.clock, clockStyle);
   if (!clock.empty()) {
@@ -55,8 +62,8 @@ inline fui::Rect begin(toybox::Screen& s, const char* title, int actionReserve =
   }
   // Compact boards give their fixed action buttons precedence over the title.
   if (!actionReserve || s.target().measureText(3, titleLabel, {}).width <= right - left)
-    dashboard::text(s, fui::makeRect(left, safe.y, std::max(0, right - left), 56), title, 1, fui::TextAlign::Left,
-                    true);
+    dashboard::text(s, fui::makeRect(left, safe.y, std::max(0, right - left), 56), titleLabel, 1, fui::TextAlign::Left,
+                    !chrome::lightHeader);
   const auto body = fui::makeRect(safe.x + 12, h + 12, safe.width - 24, safe.bottom() - h - 24);
   s.setContentMarginAbsolute(
       {body.y, int16_t(s.device().width - body.right()), int16_t(s.device().height - body.bottom()), body.x});

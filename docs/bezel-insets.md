@@ -33,8 +33,7 @@ exactly one accessor: `GfxRenderer::getOrientedViewableTRBL()`, which rotates
 into the current orientation.
 
 - X4 Pro: `{10, 1, 0, 1}` (measured, above).
-- Sticky: **still the inherited default `{9, 3, 3, 3}` -- unmeasured.** The
-  ruler works there too; restore it, measure, and override its profile.
+- Sticky: `{0, 0, 0, 0}` (full 800x480 panel frame on Seeed reTerminal Sticky flush glass; overrideable via `STICKY_VIEWABLE_INSETS`). Configured via STICKY_VIEWABLE_INSETS in BoardConfig.h.
 - Simulator builds select the X4 profile (no `FREEINK_DEVICE_X4PRO` define in
   `platformio.sim.ini`), so sim renders use `{9, 3, 3, 3}`, not the X4 Pro
   values. Sim screenshots are therefore 1px off the device at the top and 2px

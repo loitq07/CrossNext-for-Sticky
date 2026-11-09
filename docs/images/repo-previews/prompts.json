@@ -1,0 +1,24 @@
+{
+  "tool": "built-in image_gen.imagegen",
+  "created": "2026-11-09",
+  "purpose": "AI-generated promotional artwork for the repository, using a maintainer-supplied real Sticky photo as hardware reference. Not a substitute for physical-device test evidence.",
+  "references": {
+    "crossnext-hero-light.png": "Maintainer-supplied 15547.jpg",
+    "crossnext-features.png": "crossnext-hero-light.png",
+    "crossnext-social-dark.png": "crossnext-hero-light.png"
+  },
+  "prompts": [
+    {
+      "file": "crossnext-hero-light.png",
+      "prompt": "Use case: product-mockup. Asset type: wide GitHub README hero banner, 16:9 landscape, high resolution. Create a polished editorial product image for the open source firmware repository CrossNext for Sticky. Input image 1 is a hardware and screen appearance reference: faithfully preserve this specific white Seeed reTerminal Sticky e-paper device's proportions, broad white bezel, slim rectangular body and real grayscale reading-shelf interface. Remove the hand, steering wheel, car interior and background; stage the device upright on the right half on a warm ivory paper studio surface, soft natural shadows and a subtle sage-green circle behind it. Do not add hardware buttons to the front or invent a glowing LCD screen. Device should be large, elegant and convincing; its real reading-shelf layout remains visible, without inventing new app screens. Left half has beautiful spacious typography. Text verbatim: 'CrossNext' as the largest heading, 'for reTerminal Sticky' underneath, and 'Read. Study. Play.' as a smaller line. Bottom left a small restrained badge reading 'OPEN SOURCE FIRMWARE'. Black typography, subtle forest-green accents, matte paper texture, refined contemporary publishing design, excellent spacing and clean edges. No invented logo, no Seeed endorsement badge, no version number, no watermark. This is promotional artwork, not documentary evidence. Deliver one finished banner, not a collage of variants."
+    },
+    {
+      "file": "crossnext-features.png",
+      "prompt": "Use case: ads-marketing. Asset type: feature overview image for the CrossNext for Sticky GitHub repository. One finished wide landscape 16:9 graphic. Input image 1 is the visual design and product reference; match its tactile warm ivory paper, fine black editorial serif headings, restrained sage green accents and exact white e-paper device silhouette. Make a DIFFERENT composition: upper left title exactly 'Read. Study. Play.' with small subtitle 'CrossNext for reTerminal Sticky'. Below, a spacious row of three equal feature cards with thin black borders and beautiful simple monochrome pixel-inspired illustrations (a book, a small stack of flashcards, and a chess knight); these are decorative feature illustrations, not app screenshots. Exact headings and text: card 1 'READ' and 'EPUB · TXT · Markdown · XTC'; card 2 'STUDY' and 'Flashcards · Vocabulary · Dictionary'; card 3 'PLAY' and 'Games · Virtual pet · Tools'. Bottom a fine horizontal divider, then 'English · Español · Tiếng Việt' on the left and 'Open source. Made for E-Ink.' on the right. A small carefully reproduced device from the reference may sit near the upper right as a supporting visual without crowding title. Preserve the reference screen appearance if included; no fake feature screens, no invented logo. Strong visual hierarchy, generous margins, accurate diacritics, legible typography, no extra text or watermark."
+    },
+    {
+      "file": "crossnext-social-dark.png",
+      "prompt": "Use case: ads-marketing. Asset type: GitHub social preview / repository share card, wide 1.91:1 landscape, roughly 1280x670 framing. Create one finished high-end editorial promotional banner. Input image 1 is the hardware and typography reference: faithfully preserve this exact white reTerminal Sticky e-paper device with its grayscale reading-shelf interface, proportions, broad white bezel, no front buttons and matte non-backlit screen. New art direction: deep charcoal textured background with a subtle muted sage-green geometric halo, off-white editorial serif typography. Left 60% clean typography: exact large text 'CrossNext', below 'for reTerminal Sticky', then smaller 'Read. Study. Play.'. Along bottom left, a small restrained monospace line exactly 'github.com/loitq07/CrossNext-for-Sticky'. Right 40%: the device staged in a slight realistic three-quarter angle on dark matte paper, soft studio rim light on the white case, no illuminated screen. Preserve actual reading-shelf screen appearance. Add a tiny tasteful top-left outlined label 'OPEN SOURCE'. Give every line and object comfortable margins, keep URL fully readable, excellent contrast, quiet sophisticated design. No invented logo, no fake features, no version, no Seeed endorsement, no extra text, no watermark."
+    }
+  ]
+}

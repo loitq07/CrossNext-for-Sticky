@@ -211,7 +211,10 @@ class EpubReaderActivity final : public ReaderActivity {
   void openFootnoteSelect(bool reopenMenuOnCancel);
   void openDictionaryWordSelect();
   void startClipSelection(int initialX = -1, int initialY = -1,
-                          ClipSelectionActivity::Mode mode = ClipSelectionActivity::Mode::Clip);
+                          ClipSelectionActivity::Mode mode = ClipSelectionActivity::Mode::Clip,
+                          size_t editingIndex = SIZE_MAX);
+  void openClippingActions(size_t index);
+  bool handleReaderTouchActions();
   int clippingAtPoint(const Page& page, int x, int y) const;
   void openClippings();
   void applyProgressChange(const ProgressChangeResult& progress);
