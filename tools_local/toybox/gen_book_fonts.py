@@ -48,7 +48,7 @@ with tempfile.TemporaryDirectory() as temporary:
         font = Path(temporary) / f"book-{weight}.ttf"
         subset.main([
             str(root / f"lib/EpdFont/builtinFonts/source/NotoSans/NotoSans-{weight}.ttf"),
-            "--unicodes=U+0020-007E,U+00A0-00FF,U+2013-2014,U+2018-2019,U+2026",
+            "--unicodes=U+0020-007E,U+00A0-00FF,U+0102-0103,U+0110-0111,U+0128-0129,U+0168-0169,U+01A0-01A1,U+01AF-01B0,U+1EA0-1EF9,U+2013-2014,U+2018-2019,U+2026",
             "--output-file=" + str(font),
         ])
         source = re.sub(r" \* Command used:.*",

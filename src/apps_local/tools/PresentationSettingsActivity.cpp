@@ -334,16 +334,16 @@ void PresentationSettingsActivity::activateIndex(int n) {
         return;
       }
       const bool general = kind == Kind::FontOverview && n == 0;
-      const int count = general ? 3 : 4;
+      const int count = general ? int(menufont::Style::Count) : int(menufont::Override::Count);
       const auto current =
           general ? uint8_t(menufont::normalized(fontChoice(n))) : uint8_t(menufont::normalizedOverride(fontChoice(n)));
-      const int selected = general ? int(current) - 1 : current ? int(current) - 1 : 0;
-      const char* names[4];
+      const int selected = current;
+      const char* names[int(menufont::Override::Count)];
       if (!general) names[0] = contentFonts() && n ? tr(STR_MENU_FONT_INHERIT_MENU) : tr(STR_MENU_FONT_INHERIT);
-      for (int j = general ? 0 : 1; j < count; ++j) names[j] = menufontui::choiceName(uint8_t(j + (general ? 2 : 1)));
-      optionPopup.show(fontTargetName(n), names, count, selected, [this, n, general](int selected) {
+      for (int j = general ? 0 : 1; j < count; ++j) names[j] = menufontui::choiceName(uint8_t(j + (general ? 1 : 0)));
+      optionPopup.show(fontTargetName(n), names, count, selected, [this, n](int selected) {
         auto& choice = fontChoice(n);
-        const auto value = uint8_t(general ? selected + 1 : selected ? selected + 1 : 0);
+        const auto value = uint8_t(selected);
         if (choice == value) return;
         const auto previous = choice;
         choice = value;

@@ -3,12 +3,19 @@
 #include <cstdint>
 
 namespace menufont {
-enum class Style : uint8_t { Pixel = 0, Classic = 1, NotoSans = 2, NotoSerif = 3, Count = 4 };
-inline constexpr Style kDefault = Style::Pixel;
-constexpr Style normalized(uint8_t value) {
-  return value < uint8_t(Style::Count) ? Style(value) : kDefault;
-}
-enum class Override : uint8_t { General = 0, Pixel = 1, Classic = 2, NotoSans = 3, NotoSerif = 4, Count = 5 };
+// Append new faces: these values are persisted in settings and section overrides.
+enum class Style : uint8_t { Pixel = 0, Classic = 1, NotoSans = 2, NotoSerif = 3, Daniel = 4, Count = 5 };
+inline constexpr Style kDefault = Style::Daniel;
+constexpr Style normalized(uint8_t value) { return value < uint8_t(Style::Count) ? Style(value) : kDefault; }
+enum class Override : uint8_t {
+  General = 0,
+  Pixel = 1,
+  Classic = 2,
+  NotoSans = 3,
+  NotoSerif = 4,
+  Daniel = 5,
+  Count = 6
+};
 enum class Section : uint8_t {
   General = 0,
   Home = 1,
@@ -37,6 +44,8 @@ constexpr Style resolve(uint8_t general, uint8_t section) {
       return Style::NotoSans;
     case Override::NotoSerif:
       return Style::NotoSerif;
+    case Override::Daniel:
+      return Style::Daniel;
     case Override::General:
       return normalized(general);
     case Override::Count:

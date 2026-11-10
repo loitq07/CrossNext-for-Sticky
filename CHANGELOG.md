@@ -1,5 +1,14 @@
 # CrossNext changes
 
+## Sticky v1.4.10 — 2026-11-10
+
+- Fix overlapping diacritics on Jersey 25: stacked circumflex/breve and tone marks (sắc, huyền, hỏi, ngã) with clear 1px spacing.
+- Full Vietnamese diacritics support across all UI fonts (Jersey 25, Noto Sans, Noto Serif, Classic) preventing font mismatch and ugly fallbacks.
+- Implement robust system fallback font (`kSystemFallbackFontId`) in `ToyboxFonts.cpp`.
+- Restore standard power button behavior (`shortPwrBtn`) and fix Bookshelf theme opening games drawer when drawer is closed.
+
+See [v1.4.10 release notes](docs/releases/CrossNext-Sticky-v1.4.10.md).
+
 ## Sticky v1.4.9 — 2026-11-10
 
 - Integrate Baemin Daniel Bold font family (`baemin_10`, `baemin_12`, `baemin_14`, `baemin_18`) with full Vietnamese diacritics.

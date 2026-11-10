@@ -326,7 +326,7 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
             "homeLayout", StrId::STR_CAT_INTERFACE),
         SettingInfo::Enum(StrId::STR_MENU_FONT, &CrossPointSettings::menuFontStyle,
                           {StrId::STR_MENU_FONT_PIXEL, StrId::STR_MENU_FONT_CLASSIC, StrId::STR_MENU_FONT_NOTO_SANS,
-                           StrId::STR_MENU_FONT_NOTO_SERIF},
+                           StrId::STR_MENU_FONT_NOTO_SERIF, StrId::STR_MENU_FONT_DANIEL},
                           "menuFontStyle"),
         SettingInfo::Enum(StrId::STR_UI_THEME, &CrossPointSettings::uiTheme, homeThemeValues(), "uiTheme",
                           StrId::STR_CAT_DISPLAY),

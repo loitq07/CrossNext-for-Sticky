@@ -124,9 +124,8 @@ void UiListActivity::navigateButtons() {
 
 void UiListActivity::useCompactSettingsRows() {
   compactSettingsRows = true;
-  const bool pixel = toybox::interfaceFontStyle() == menufont::Style::Pixel;
-  uiTarget.setFont(pixelui::kSmall, pixel ? UI_12_FONT_ID : toybox::kButtonFontId);
-  uiTarget.setFont(4, pixel ? UI_10_FONT_ID : toybox::kLibraryFontId);
+  uiTarget.setFont(pixelui::kSmall, toybox::kButtonFontId);
+  uiTarget.setFont(4, toybox::kLibraryFontId);
 }
 
 void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, const int selectionOffset) {

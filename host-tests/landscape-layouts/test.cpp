@@ -241,6 +241,7 @@ struct Canvas {
         b = &reading.font;
         break;
       case menufont::Style::Pixel:
+      case menufont::Style::Daniel:
       case menufont::Style::Classic:
       case menufont::Style::Count:
         break;
@@ -350,15 +351,15 @@ int main(int argc, char** argv) {
   overrideSection.inherit(content);
   CHECK(child.item == content.item && child.section == content.section);
   CHECK(overrideSection.item == menufont::kNoItem && overrideSection.section == menufont::Section::Settings);
-  for (int general = 0; general < 4; ++general)
-    for (int section = 0; section < 5; ++section)
-      for (int item = 0; item < 5; ++item) {
+  for (int general = 0; general < int(menufont::Style::Count); ++general)
+    for (int section = 0; section < int(menufont::Override::Count); ++section)
+      for (int item = 0; item < int(menufont::Override::Count); ++item) {
         const auto resolved = menufont::resolve(general, section, item);
         CHECK(resolved == (item ? menufont::normalized(item - 1) : menufont::resolve(general, section)));
       }
-  CHECK(menufont::kDefault == menufont::Style::NotoSans);
-  CHECK(menufont::normalized(255) == menufont::Style::NotoSans);
-  CHECK(menufont::normalized(0) == menufont::Style::NotoSans);
+  CHECK(menufont::kDefault == menufont::Style::Daniel);
+  CHECK(menufont::normalized(255) == menufont::Style::Daniel);
+  CHECK(menufont::normalized(0) == menufont::Style::Pixel);
   CHECK(menufont::normalized(1) == menufont::Style::Classic);
   for (auto language : {Language::EN, Language::ES}) {
     I18N.setLanguage(language);

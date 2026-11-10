@@ -384,6 +384,9 @@ void HomeActivity::onEnter() {
           base + menuItemToIndex(shelfRow == 0 ? HomeMenuItem::GAMES : HomeMenuItem::APPS, hasLibrarySlot());
     }
   }
+  if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE) {
+    selectorIndex = 0;
+  }
 
   // fork-local seam: boot straight into a named app when the environment asks
   // for one (the site's installer preview, CROSSPLAY_AUTOSTART=chess ./bin/sim).
@@ -532,6 +535,9 @@ void HomeActivity::loop() {
         break;
       case homeui::MenuInput::Kind::Confirm:
         menuInput.clear();
+        if (coverGridUi && SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE && !coverGridUi->isDrawerOpen()) {
+          return;
+        }
         activateSelection();
         return;
       case homeui::MenuInput::Kind::Resume:

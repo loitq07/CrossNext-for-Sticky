@@ -16,7 +16,7 @@ inline UIScaleSpec uiScaleSpec() {
   UIScaleSpec spec{};
   spec.smallFontId = toybox::kButtonFontId;
   spec.bodyFontId = toybox::kUiFontId;
-  // Titles use the Display/Header ALLCAPS font (BM Daniel)
+  // All three aliases follow the active interface font selection.
   spec.titleFontId = toybox::kDisplayFontId;
   return spec;
 }

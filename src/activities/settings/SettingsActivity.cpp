@@ -943,9 +943,8 @@ std::string SettingsActivity::settingValueText(const SettingInfo& setting) {
 
 void SettingsActivity::buildScreen(UiScreen& screen) {
   pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
-  const bool pixel = toybox::interfaceFontStyle() == menufont::Style::Pixel;
-  uiTarget.setFont(0, pixel ? UI_12_FONT_ID : toybox::kButtonFontId);
-  uiTarget.setFont(4, pixel ? UI_10_FONT_ID : toybox::kLibraryFontId);
+  uiTarget.setFont(0, toybox::kButtonFontId);
+  uiTarget.setFont(4, toybox::kLibraryFontId);
   const int hints = mappedInput.hasTouch() ? 0 : UITheme::getInstance().getMetrics().buttonHintsHeight;
   pixelui::begin(screen, hints);
   // rowItems_ (label/actionValue) was built by rebuildRowItems() when the

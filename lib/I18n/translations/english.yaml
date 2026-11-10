@@ -5340,6 +5340,7 @@ STR_PET_GRACE_DAYS: "%u days"
 STR_PET_GRACE_HOURS: "%u hours"
 
 STR_MENU_FONT: "Interface font"
+STR_MENU_FONT_DANIEL: "Daniel"
 STR_MENU_FONT_PIXEL: "Jersey 25"
 STR_MENU_FONT_CLASSIC: "Ubuntu"
 STR_MENU_FONT_VALUE: "Interface font: %s"

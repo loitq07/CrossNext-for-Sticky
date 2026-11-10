@@ -27,6 +27,7 @@ class CoverGridHomeUi final : public UiAppHost {
     drawer = true;
     resetUi();
   }
+  bool isDrawerOpen() const { return drawer; }
   bool closeDrawer() {
     if (!drawer) return false;
     drawer = false;
