@@ -360,7 +360,7 @@ void QuotesActivity::render(RenderLock&&) {
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer);
   static_assert(readingui::kReadingFont < fui::GfxRendererTarget::FONT_SLOTS);
-  target.setFont(readingui::kReadingFont, toybox::kSerifTitleFontId);
+  target.setFont(readingui::kReadingFont, toybox::kUiFontId);
   if (!scanning && view == View::List && cachedCapacity != quotesui::capacity(target.deviceContext())) {
     if (cachedCapacity > 0) listPage = listPage * cachedCapacity / quotesui::capacity(target.deviceContext());
     refresh(false, false);

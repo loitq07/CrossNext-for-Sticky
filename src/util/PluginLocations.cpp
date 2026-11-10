@@ -26,6 +26,8 @@ std::vector<Entry> scanPlugins(bool firstRunnableOnly) {
       Entry e;
       e.name = name;
       e.dir = std::string(ROOTS[r]) + "/" + name;
+      // An interrupted bundle install is not a plugin (see INSTALLING_MARKER).
+      if (Storage.exists((e.dir + "/" + INSTALLING_MARKER).c_str())) continue;
       e.hasPluginJs = Storage.exists((e.dir + "/plugin.js").c_str());
       e.hasDevice = Storage.exists((e.dir + "/device.json").c_str());
       if (firstRunnableOnly) {

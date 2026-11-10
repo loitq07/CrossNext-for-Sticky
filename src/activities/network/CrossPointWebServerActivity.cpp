@@ -270,6 +270,18 @@ void CrossPointWebServerActivity::startAccessPoint() {
   LOG_DBG("WEBACT", "Starting Access Point mode...");
   LOG_DBG("WEBACT", "Free heap before AP start: %d bytes", ESP.getFreeHeap());
 
+  // Developer Mode (or an earlier join) may still own the station side, even in
+  // the middle of a join attempt: WiFi.begin() is asynchronous, so a screen
+  // opened a few seconds after "joining" starts finds the driver half-way
+  // through a connect. Switching it straight to AP-only from there aborts in the
+  // Wi-Fi driver (an ESP_ERROR_CHECK, "abort() was called ... on core 0"), so
+  // drop the station first and give the driver a moment to finish.
+  if (WiFi.getMode() != WIFI_MODE_NULL) {
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+    delay(200);
+  }
+
   // Configure and start the AP
   WiFi.mode(WIFI_AP);
   delay(100);

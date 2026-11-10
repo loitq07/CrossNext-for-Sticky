@@ -34,6 +34,7 @@
 #include "util/PluginHttp.h"
 #include "util/PluginLocations.h"
 #include "util/QrUtils.h"
+#include "activities/util/ConfirmationActivity.h"
 #include "util/StringUtils.h"
 
 namespace fui = freeink::ui;
@@ -56,6 +57,7 @@ constexpr size_t MAX_API_RESPONSE = 48 * 1024;
 constexpr char BROWSE_TMP_PATH[] = "/.pcat_tmp.json";
 constexpr size_t MAX_BROWSE_RESPONSE = 1024 * 1024;
 constexpr int MAX_PAGE_SIZE = 100;
+constexpr size_t MAX_LISTS_RESPONSE = 32 * 1024;  // browse.lists_url index
 
 std::string md5Hex(const std::string& text) {
   MD5Builder md5;
@@ -202,6 +204,24 @@ bool scanCursorAndHasMore(const char* path, const std::string& cursorKey, std::s
 }  // namespace
 
 namespace {
+// Built-in catalog that installs Plugin Hub (an ordinary bundle install of the
+// files listed in the Hub's bootstrap-catalog.json). Used only while the Hub is
+// not on the card; afterwards the Hub's own device.json takes over.
+std::string hubBootstrapManifest() {
+  return std::string(R"({"title":"Plugin Hub","browse":{"format":"json","url":")") + PluginLocations::HUB_BOOTSTRAP_URL +
+         R"(","items":"plugins","page_size":16,"fields":{"title":"title","author":"description","id":"name"}},)"
+         R"("download":{"dest_dir":"/.crosspoint/plugins","bundle":{"base":"base","files":"files","subdir":"{id}"}}})";
+}
+// Notice ids the reader pressed Continue on, for this boot only.
+std::vector<std::string>& acknowledgedNotices() {
+  static std::vector<std::string> ids;
+  return ids;
+}
+bool noticeAcknowledged(const std::string& id) {
+  if (id.empty()) return false;
+  const auto& ids = acknowledgedNotices();
+  return std::find(ids.begin(), ids.end(), id) != ids.end();
+}
 // Reads picker metadata, and classifies device manifests without making an
 // events-only plugin look like an invalid catalog.
 void readPluginMetadata(const std::string& path, PluginRef& ref, const bool classifyDevice = false) {
@@ -291,9 +311,27 @@ bool anyPluginInstalled() {
   return false;
 }
 
+namespace {
+// Optional {id,title,message,confirm,cancel} disclosure on a browse list. A
+// notice without a message shows nothing, so it is dropped.
+template <class Notice>
+void readListNotice(JsonVariantConst src, Notice& out) {
+  out = {};
+  const char* message = src["message"] | "";
+  if (message[0] == '\0') return;
+  out.message = message;
+  out.id = src["id"] | "";
+  out.title = src["title"] | "";
+}
+}  // namespace
+
 bool PluginCatalogActivity::loadManifest() {
   std::string raw;
-  if (!Storage.readFileToString("PCAT", manifestPath, MAX_MANIFEST_SIZE, raw)) return false;
+  if (bootstrapHub) {
+    raw = hubBootstrapManifest();
+  } else if (!Storage.readFileToString("PCAT", manifestPath, MAX_MANIFEST_SIZE, raw)) {
+    return false;
+  }
   JsonDocument doc;
   if (deserializeJson(doc, raw) != DeserializationError::Ok) return false;
 
@@ -331,8 +369,11 @@ bool PluginCatalogActivity::loadManifest() {
     entry.title = l["title"] | "";
     entry.url = l["url"] | "";
     entry.body = l["body"] | "";
+    readListNotice(l["notice"], entry.notice);
     if (!entry.title.empty()) manifest.browseLists.push_back(std::move(entry));
   }
+  // Remote index only when no embedded lists exist (embedded ones win).
+  if (manifest.browseLists.empty()) manifest.listsUrl = browse["lists_url"] | "";
   manifest.searchUrl = browse["search"]["url"] | "";
   manifest.searchBody = browse["search"]["body"] | "";
   manifest.xmlItem = browse["item"] | "";
@@ -381,6 +422,58 @@ bool PluginCatalogActivity::loadManifest() {
   pluginhttp::readRequest(auth["refresh"], "POST", manifest.refreshReq);
 
   return !manifest.browseReq.url.empty();
+}
+
+bool PluginCatalogActivity::loadRemoteLists() {
+  // Same request context as browsing, so a catalog behind a token still works.
+  loadConfig();
+  loadToken();
+  const int status = pluginhttp::requestToFile(session.get(), substituted(manifest.listsUrl, nullptr), "GET", "",
+                                               substitutedHeaders(manifest.browseReq.headers, nullptr),
+                                               BROWSE_TMP_PATH, MAX_LISTS_RESPONSE);
+  std::string raw;
+  const bool read = status >= 200 && status < 300 && Storage.readFileToString("PCAT", BROWSE_TMP_PATH, MAX_LISTS_RESPONSE, raw);
+  Storage.remove(BROWSE_TMP_PATH);
+  JsonDocument doc;
+  if (!read || deserializeJson(doc, raw) != DeserializationError::Ok) {
+    fail(StrId::STR_FETCH_FEED_FAILED);
+    return false;
+  }
+  manifest.browseLists.clear();
+  for (JsonVariantConst l : doc["lists"].as<JsonArrayConst>()) {
+    Manifest::BrowseList entry;
+    entry.title = l["title"] | "";
+    entry.url = l["url"] | "";
+    entry.body = l["body"] | "";
+    readListNotice(l["notice"], entry.notice);
+    if (!entry.title.empty() && !entry.url.empty()) manifest.browseLists.push_back(std::move(entry));
+  }
+  manifest.listsUrl.clear();  // fetched once per open; an empty index falls back to browse.url
+  return true;
+}
+
+void PluginCatalogActivity::openList(const int index) {
+  if (index < 0 || index >= static_cast<int>(manifest.browseLists.size())) return;
+  const auto& list = manifest.browseLists[index];
+  if (list.notice.message.empty() || noticeAcknowledged(list.notice.id)) {
+    currentList = index;
+    startBrowse();
+    return;
+  }
+  // A disclosure that cannot be shown must not be skipped: stay on the picker.
+  auto dialog = makeUniqueNoThrow<ConfirmationActivity>(
+      renderer, mappedInput, list.notice.title.empty() ? list.title : list.notice.title, list.notice.message);
+  if (!dialog) {
+    LOG_ERR("PCAT", "OOM: list notice");
+    return;
+  }
+  startActivityForResult(std::move(dialog), [this, index](const ActivityResult& result) {
+    if (result.isCancelled || index >= static_cast<int>(manifest.browseLists.size())) return;
+    const std::string& id = manifest.browseLists[index].notice.id;
+    if (!id.empty() && !noticeAcknowledged(id)) acknowledgedNotices().push_back(id);
+    currentList = index;
+    startBrowse();
+  });
 }
 
 bool PluginCatalogActivity::saveToken(const std::string& value) {
@@ -514,6 +607,21 @@ void PluginCatalogActivity::enterPluginPicker() {
     plugin.description = plugin.description.empty() ? line : std::string(line) + ". " + plugin.description;
   }
 
+  // Offer to install Plugin Hub until it is on the card. An interrupted install
+  // is hidden from discovery, so this also offers the repair.
+  bootstrapHub = false;
+  if (std::none_of(installedPlugins.begin(), installedPlugins.end(),
+                   [](const PluginRef& p) { return strcasecmp(p.name.c_str(), PluginLocations::HUB_NAME) == 0; })) {
+    PluginRef hub;
+    hub.name = PluginLocations::HUB_NAME;
+    hub.title = tr(STR_PLUGIN_HUB_INSTALL);
+    hub.description = tr(STR_PLUGIN_HUB_INSTALL_DESC);
+    hub.manifestPath = std::string(PluginLocations::ROOTS[0]) + "/" + PluginLocations::HUB_NAME + "/device.json";
+    hub.deviceKind = PluginLocations::DeviceKind::Catalog;
+    hub.bootstrap = true;
+    installedPlugins.push_back(std::move(hub));
+  }
+
   manifestPath.clear();
   manifest = Manifest{};
   catalogTitle = tr(STR_PLUGINS);
@@ -581,6 +689,7 @@ void PluginCatalogActivity::onExit() {
 }
 
 void PluginCatalogActivity::startBrowse() {
+  if (!manifest.listsUrl.empty() && !manifest.isXmlList() && !loadRemoteLists()) return;
   // Browse lists apply to JSON catalogs; XML lists navigate by folder instead.
   if (wantsListPicker()) {
     // Same auth gate as fetchPage: without it a signed-out user is shown the
@@ -1099,6 +1208,14 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& 
     if (result != HttpDownloader::OK) return result;
     staged.push_back(dest);
   }
+  // From here until every file is swapped in the folder is half old, half new:
+  // hide it from discovery. A failed swap leaves the marker, so the broken
+  // plugin is not run and can be reinstalled (the picker re-offers the Hub).
+  const std::string marker = dir + "/" + PluginLocations::INSTALLING_MARKER;
+  if (!Storage.writeFile(marker.c_str(), String("1"))) {
+    LOG_ERR("PCAT", "install marker not writable: %s", marker.c_str());
+    return HttpDownloader::FILE_ERROR;
+  }
   // ponytail: a failed swap mid-loop leaves a mixed old/new bundle; a
   // directory-level swap would close that, at the cost of copying the tree.
   for (size_t i = 0; i < staged.size(); i++) {
@@ -1110,6 +1227,7 @@ HttpDownloader::DownloadError PluginCatalogActivity::downloadBundle(const Item& 
     }
   }
   complete = true;
+  Storage.remove(marker.c_str());
   emitBookDownloaded(manifestPath, staged.empty() ? "" : staged.front(), item.title);
   // Bundles are how plugins install (plugin-store); pick up any new event
   // subscriptions without a restart. Cheap: a few small manifest reads.
@@ -1356,6 +1474,7 @@ void PluginCatalogActivity::activateIndex(const int index) {
     if (action != PluginLocations::PickerAction::Catalog) return;
     app.clearTapFlash();  // the row leaves this screen
     pickerReturnRow = index;
+    bootstrapHub = plugin.bootstrap;
     manifestPath = plugin.manifestPath;
     catalogTitle = plugin.title;
     enterCatalog();
@@ -1364,8 +1483,7 @@ void PluginCatalogActivity::activateIndex(const int index) {
   if (state == State::LIST_PICKER) {
     if (index < 0 || index >= static_cast<int>(manifest.browseLists.size())) return;
     app.clearTapFlash();
-    currentList = index;
-    startBrowse();
+    openList(index);
     return;
   }
   // The pager rows bracket the items: "Previous page" ahead of them past

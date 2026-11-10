@@ -710,7 +710,7 @@ int main(int argc, char** argv) {
         clock.checkHits();
         CHECK(clock.has(toolsui::HourFormat));
         for (const auto& label : clock.target.labels)
-          if (label.font == 4)
+          if (label.font == 2 || label.font == 1 || label.font == 4)
             for (size_t n = 0; n < clock.interactions.count(); ++n) {
               const auto& hit = clock.interactions.data()[n];
               if (hit.action == toolsui::HourFormat) {

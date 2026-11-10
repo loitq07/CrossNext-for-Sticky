@@ -42,6 +42,12 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
     INVERTED_BLACK_AND_WHITE = 2,
     SLEEP_SCREEN_COVER_FILTER_COUNT
   };
+  enum SLEEP_HIGHLIGHT_ALIGN {
+    HIGHLIGHT_ALIGN_LEFT = 0,
+    HIGHLIGHT_ALIGN_CENTER = 1,
+    HIGHLIGHT_ALIGN_RIGHT = 2,
+    SLEEP_HIGHLIGHT_ALIGN_COUNT
+  };
   enum STATUS_BAR_PROGRESS_BAR {
     BOOK_PROGRESS = 0,
     CHAPTER_PROGRESS = 1,
@@ -237,6 +243,10 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t sleepScreen = DARK;
   // 0 keeps one highlight; otherwise rotate every 1..240 minutes during deep sleep.
   uint8_t sleepHighlightMinutes = 5;
+  // SD card font family for book highlights on sleep screen (empty = use built-in Noto Serif 14)
+  char sleepHighlightFontFamily[32] = "";
+  // Highlight quote alignment on sleep screen: Left (0), Center (1), Right (2)
+  uint8_t sleepHighlightAlign = HIGHLIGHT_ALIGN_LEFT;
   // Night mode: inverted output polarity, applied to every activity per
   // render by ActivityManager. The sleep screen opts out itself.
   uint8_t screenInverted = 0;
@@ -476,6 +486,7 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
     return (shortPwrBtn == CrossPointSettings::SHORT_PWRBTN::SLEEP) ? 10 : 400;
   }
   int getReaderFontId() const;
+  int getHighlightFontId() const;
 
   // Drop the SD font selection and fall back to the built-in family. The reader
   // point size comes back into BUILTIN_READER_POINT_SIZES with it, since that is

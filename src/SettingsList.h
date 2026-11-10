@@ -98,6 +98,67 @@ inline SettingInfo buildFontFamilySetting(const SdCardFontRegistry* registry) {
   return s;
 }
 
+inline SettingInfo buildSleepHighlightFontSetting(const SdCardFontRegistry* registry) {
+  std::vector<StrId> enumValues = {StrId::STR_NOTO_SERIF};
+  std::vector<std::string> enumStringValues;
+
+  if (registry) {
+    const auto& families = registry->getFamilies();
+    enumStringValues.reserve(families.size());
+    std::transform(families.begin(), families.end(), std::back_inserter(enumStringValues),
+                   [](const SdCardFontFamilyInfo& f) { return f.name; });
+  }
+
+  const int sdFontCount = static_cast<int>(enumStringValues.size());
+  std::vector<std::string> allStringValues;
+  if (sdFontCount > 0) {
+    allStringValues.push_back(I18N.get(StrId::STR_NOTO_SERIF));
+    allStringValues.insert(allStringValues.end(), enumStringValues.begin(), enumStringValues.end());
+  }
+
+  SettingInfo s;
+  s.nameId = StrId::STR_SLEEP_HIGHLIGHT_FONT;
+  s.type = SettingType::ENUM;
+  s.enumValues = std::move(enumValues);
+  s.enumStringValues = std::move(allStringValues);
+  s.key = "sleepHighlightFontFamily";
+  s.category = StrId::STR_CAT_DISPLAY;
+
+  std::vector<std::string> sdFamilyNames;
+  if (registry) {
+    const auto& families = registry->getFamilies();
+    sdFamilyNames.reserve(families.size());
+    std::transform(families.begin(), families.end(), std::back_inserter(sdFamilyNames),
+                   [](const SdCardFontFamilyInfo& f) { return f.name; });
+  }
+
+  s.valueGetter = [sdFamilyNames]() -> uint8_t {
+    if (SETTINGS.sleepHighlightFontFamily[0] != '\0') {
+      for (int i = 0; i < static_cast<int>(sdFamilyNames.size()); i++) {
+        if (sdFamilyNames[i] == SETTINGS.sleepHighlightFontFamily) {
+          return static_cast<uint8_t>(1 + i);
+        }
+      }
+    }
+    return 0;
+  };
+
+  s.valueSetter = [sdFamilyNames](uint8_t v) {
+    if (v == 0) {
+      SETTINGS.sleepHighlightFontFamily[0] = '\0';
+    } else {
+      int sdIdx = v - 1;
+      if (sdIdx < static_cast<int>(sdFamilyNames.size())) {
+        strncpy(SETTINGS.sleepHighlightFontFamily, sdFamilyNames[sdIdx].c_str(),
+                sizeof(SETTINGS.sleepHighlightFontFamily) - 1);
+        SETTINGS.sleepHighlightFontFamily[sizeof(SETTINGS.sleepHighlightFontFamily) - 1] = '\0';
+      }
+    }
+  };
+
+  return s;
+}
+
 // Build the font size setting dynamically: the options are the point sizes the
 // active family actually ships, so an SD family built at 10/12/14 offers three
 // sizes and a family built at 8..18 offers six. The selected point size persists
@@ -305,6 +366,11 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                           "sleepScreen", StrId::STR_CAT_DISPLAY),
         SettingInfo::Value(StrId::STR_SLEEP_HIGHLIGHT_INTERVAL, &CrossPointSettings::sleepHighlightMinutes,
                            {0, 240, 1}, "sleepHighlightMinutes", StrId::STR_CAT_DISPLAY),
+        SettingInfo::Enum(StrId::STR_SLEEP_HIGHLIGHT_FONT, nullptr, {StrId::STR_NOTO_SERIF},
+                          "sleepHighlightFontFamily", StrId::STR_CAT_DISPLAY),
+        SettingInfo::Enum(StrId::STR_SLEEP_HIGHLIGHT_ALIGN, &CrossPointSettings::sleepHighlightAlign,
+                          {StrId::STR_ALIGN_LEFT, StrId::STR_CENTER, StrId::STR_ALIGN_RIGHT},
+                          "sleepHighlightAlign", StrId::STR_CAT_DISPLAY),
         SettingInfo::Enum(StrId::STR_SLEEP_COVER_MODE, &CrossPointSettings::sleepScreenCoverMode,
                           {StrId::STR_FIT, StrId::STR_CROP}, "sleepScreenCoverMode", StrId::STR_CAT_DISPLAY),
         SettingInfo::Enum(StrId::STR_SLEEP_COVER_FILTER, &CrossPointSettings::sleepScreenCoverFilter,
@@ -788,6 +854,13 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
     auto it = std::find_if(v.begin(), v.end(), [](const SettingInfo& s) { return s.nameId == StrId::STR_FONT_SIZE; });
     if (it != v.end()) {
       *it = buildFontSizeSetting(registry);
+    }
+  }
+  {
+    auto it = std::find_if(v.begin(), v.end(),
+                           [](const SettingInfo& s) { return s.nameId == StrId::STR_SLEEP_HIGHLIGHT_FONT; });
+    if (it != v.end()) {
+      *it = buildSleepHighlightFontSetting(registry);
     }
   }
   if (dictionaries) {

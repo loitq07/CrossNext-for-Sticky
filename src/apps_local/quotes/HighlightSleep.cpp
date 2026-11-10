@@ -122,28 +122,39 @@ static bool draw(GfxRenderer& renderer) {
     const int width = renderer.getScreenWidth();
     const int height = renderer.getScreenHeight();
     const int margin = std::max(20, width / 12);
-    const int bodyFont = NOTOSERIF_14_FONT_ID;
+    const int bodyFont = SETTINGS.getHighlightFontId();
     const int lineHeight = renderer.getLineHeight(bodyFont) + 6;
     const int top = 90;
     const int footer = height - 130;
     auto lines = renderer.wrappedText(bodyFont, work->quote.body, width - margin * 2,
                                       std::max(1, (footer - top - 30) / lineHeight));
     renderer.clearScreen();
-    renderer.drawCenteredText(SMALL_FONT_ID, 28, tr(STR_SLEEP_HIGHLIGHTS));
+    auto drawAligned = [&](int fontId, int y, const char* text, EpdFontFamily::Style style = EpdFontFamily::REGULAR) {
+      if (SETTINGS.sleepHighlightAlign == CrossPointSettings::HIGHLIGHT_ALIGN_CENTER) {
+        renderer.drawCenteredText(fontId, y, text, true, style);
+      } else if (SETTINGS.sleepHighlightAlign == CrossPointSettings::HIGHLIGHT_ALIGN_RIGHT) {
+        const int textW = renderer.getTextWidth(fontId, text, style);
+        renderer.drawText(fontId, width - margin - textW, y, text, true, style);
+      } else {
+        renderer.drawText(fontId, margin, y, text, true, style);
+      }
+    };
+
+    drawAligned(SMALL_FONT_ID, 28, tr(STR_SLEEP_HIGHLIGHTS));
     int y = top + std::max(0, (footer - top - int(lines.size()) * lineHeight) / 2);
     for (const auto& line : lines) {
-      renderer.drawText(bodyFont, margin, y, line.c_str());
+      drawAligned(bodyFont, y, line.c_str());
       y += lineHeight;
     }
     const auto title =
         renderer.wrappedText(UI_10_FONT_ID, work->quote.title, width - margin * 2, 2, EpdFontFamily::BOLD);
     y = footer;
     for (const auto& line : title) {
-      renderer.drawCenteredText(UI_10_FONT_ID, y, line.c_str(), true, EpdFontFamily::BOLD);
+      drawAligned(UI_10_FONT_ID, y, line.c_str(), EpdFontFamily::BOLD);
       y += renderer.getLineHeight(UI_10_FONT_ID) + 3;
     }
     const auto author = renderer.truncatedText(SMALL_FONT_ID, work->quote.author, width - margin * 2);
-    renderer.drawCenteredText(SMALL_FONT_ID, y + 8, author.c_str());
+    drawAligned(SMALL_FONT_ID, y + 8, author.c_str());
     previousKey = entry.key;
     armed = valid > 1;
     return true;
@@ -156,11 +167,22 @@ void render(GfxRenderer& renderer) {
     renderer.clearScreen();
     const int width = renderer.getScreenWidth();
     const int height = renderer.getScreenHeight();
-    renderer.drawCenteredText(UI_10_FONT_ID, height / 3, tr(STR_SLEEP_HIGHLIGHTS));
-    const auto lines = renderer.wrappedText(UI_10_FONT_ID, tr(STR_SLEEP_HIGHLIGHTS_EMPTY), width - 60, 4);
+    const int margin = std::max(20, width / 12);
+    auto drawAligned = [&](int fontId, int y, const char* text) {
+      if (SETTINGS.sleepHighlightAlign == CrossPointSettings::HIGHLIGHT_ALIGN_CENTER) {
+        renderer.drawCenteredText(fontId, y, text);
+      } else if (SETTINGS.sleepHighlightAlign == CrossPointSettings::HIGHLIGHT_ALIGN_RIGHT) {
+        const int textW = renderer.getTextWidth(fontId, text);
+        renderer.drawText(fontId, width - margin - textW, y, text);
+      } else {
+        renderer.drawText(fontId, margin, y, text);
+      }
+    };
+    drawAligned(UI_10_FONT_ID, height / 3, tr(STR_SLEEP_HIGHLIGHTS));
+    const auto lines = renderer.wrappedText(UI_10_FONT_ID, tr(STR_SLEEP_HIGHLIGHTS_EMPTY), width - margin * 2, 4);
     int y = height / 2;
     for (const auto& line : lines) {
-      renderer.drawCenteredText(UI_10_FONT_ID, y, line.c_str());
+      drawAligned(UI_10_FONT_ID, y, line.c_str());
       y += renderer.getLineHeight(UI_10_FONT_ID) + 4;
     }
   }

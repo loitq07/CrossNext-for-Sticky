@@ -19,6 +19,9 @@ class GfxRenderer {
     return {s};
   }
   std::string truncatedText(int, const char* s, int) { return s; }
+  int getTextWidth(int, const char* s, EpdFontFamily::Style = EpdFontFamily::REGULAR) {
+    return s ? static_cast<int>(std::char_traits<char>::length(s)) * 8 : 0;
+  }
   void drawText(int, int, int, const char* s) { text.emplace_back(s); }
   void drawCenteredText(int, int, const char* s, bool = true, EpdFontFamily::Style = EpdFontFamily::REGULAR) {
     text.emplace_back(s);

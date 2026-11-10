@@ -41,6 +41,9 @@ Response:
   "rssi": -45,
   "freeHeap": 123456,
   "uptime": 3600,
+  "firmwareFamily": "crosspoint",
+  "pluginApi": 1,
+  "pluginCapabilities": "catalog.lists,catalog.notices,catalog.bundle_install,catalog.version_tracking",
   "device": "X4"
 }
 ```
@@ -53,6 +56,9 @@ Response:
 | `rssi` | number | Wi-Fi RSSI in dBm; `0` in AP mode |
 | `freeHeap` | number | Free heap in bytes |
 | `uptime` | number | Seconds since boot |
+| `firmwareFamily` | string | Plugin firmware family (`"crosspoint"`); matched against a catalog item's `compatibility.firmware_family` |
+| `pluginApi` | number | Plugin API level; matched against `compatibility.plugin_api_min` |
+| `pluginCapabilities` | string | Comma-separated catalog capabilities this firmware implements; matched against `compatibility.requires` |
 | `deviceId` | string | With `?plugin=<name>`: 64 hex chars, stable per device and plugin (SHA-256 of an on-device NVS secret and the name); omitted if NVS is unavailable |
 | `device` | string | `"X3"` or `"X4"` hardware detection |
 

@@ -127,6 +127,9 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   if (sdFontFamilyName[0] != '\0') {
     doc["sdFontFamilyName"] = sdFontFamilyName;
   }
+  if (sleepHighlightFontFamily[0] != '\0') {
+    doc["sleepHighlightFontFamily"] = sleepHighlightFontFamily;
+  }
   if (*translationDictionaryName) doc["translationDictionaryName"] = translationDictionaryName;
   doc["dictionaryAuto"] = dictionaryAuto;
   doc["translationDictionaryAuto"] = translationDictionaryAuto;
@@ -383,6 +386,9 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   const char* sfn = doc["sdFontFamilyName"] | "";
   strncpy(sdFontFamilyName, sfn, sizeof(sdFontFamilyName) - 1);
   sdFontFamilyName[sizeof(sdFontFamilyName) - 1] = '\0';
+  const char* shf = doc["sleepHighlightFontFamily"] | "";
+  strncpy(sleepHighlightFontFamily, shf, sizeof(sleepHighlightFontFamily) - 1);
+  sleepHighlightFontFamily[sizeof(sleepHighlightFontFamily) - 1] = '\0';
   if (storedFontFamily == LEGACY_OPENDYSLEXIC && sdFontFamilyName[0] == '\0') {
     fontFamily = NOTOSERIF;
     strncpy(sdFontFamilyName, "OpenDyslexic", sizeof(sdFontFamilyName) - 1);
@@ -546,4 +552,12 @@ int CrossPointSettings::getReaderFontId() const {
     default:
       return NOTOSERIF_14_FONT_ID;
   }
+}
+
+int CrossPointSettings::getHighlightFontId() const {
+  if (sleepHighlightFontFamily[0] != '\0' && sdFontIdResolver) {
+    int id = sdFontIdResolver(sdFontResolverCtx, sleepHighlightFontFamily, 14);
+    if (id != 0) return id;
+  }
+  return NOTOSERIF_14_FONT_ID;
 }

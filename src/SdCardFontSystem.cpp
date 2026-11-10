@@ -192,6 +192,33 @@ void SdCardFontSystem::ensureLoaded(GfxRenderer& renderer) {
   }
 }
 
+int SdCardFontSystem::ensureHighlightLoaded(GfxRenderer& renderer) {
+  if (SETTINGS.sleepHighlightFontFamily[0] == '\0') {
+    return NOTOSERIF_14_FONT_ID;
+  }
+
+  const char* wantedFamily = SETTINGS.sleepHighlightFontFamily;
+  const auto* family = registry_.findFamily(wantedFamily);
+  if (!family) {
+    LOG_DBG("SDFS", "Highlight SD font family not found: %s", wantedFamily);
+    return NOTOSERIF_14_FONT_ID;
+  }
+
+#if CROSSPOINT_VECTOR_FONTS
+  if (family->vector) {
+    loadTtfFamily(*family, renderer, false);
+    return ttfFontId_ != 0 ? ttfFontId_ : NOTOSERIF_14_FONT_ID;
+  }
+#endif
+
+  if (manager_.loadFamily(*family, renderer, 14)) {
+    return manager_.getFontId(wantedFamily);
+  }
+
+  LOG_ERR("SDFS", "Failed to load highlight SD font family: %s", wantedFamily);
+  return NOTOSERIF_14_FONT_ID;
+}
+
 void SdCardFontSystem::setupUiFallbacks(GfxRenderer& renderer) {
   const std::string& familyName = manager_.currentFamilyName();
   if (familyName.empty()) return;  // no SD family loaded — nothing to fall back to

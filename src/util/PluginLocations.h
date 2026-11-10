@@ -11,6 +11,24 @@ namespace PluginLocations {
 inline constexpr const char* ROOTS[] = {"/.crosspoint/plugins", "/plugins", "/.plugins"};
 inline constexpr size_t ROOT_COUNT = sizeof(ROOTS) / sizeof(ROOTS[0]);
 
+// What this firmware tells plugins and catalogs it supports (reported by
+// /api/status and matched against a catalog item's `compatibility`). Only list
+// a capability once the generic catalog code really implements it.
+inline constexpr const char* FIRMWARE_FAMILY = "crosspoint";
+inline constexpr int PLUGIN_API = 1;
+inline constexpr const char* PLUGIN_CAPABILITIES = "catalog.lists,catalog.notices,catalog.bundle_install,catalog.version_tracking";
+
+// Plugin Hub (https://github.com/crosspoint-reader/crosspoint-plugin-hub) is an
+// ordinary SD plugin. When it is absent the plugin picker offers a built-in
+// bootstrap catalog (see PluginCatalogActivity) that installs it.
+inline constexpr const char* HUB_NAME = "pluginhub";
+inline constexpr const char* HUB_BOOTSTRAP_URL =
+    "https://raw.githubusercontent.com/crosspoint-reader/crosspoint-plugin-hub/main/bootstrap-catalog.json";
+// A bundle install drops this file in the plugin folder just before swapping
+// files in, and removes it once every file landed. A folder still carrying it
+// is a half-installed plugin and is not discovered.
+inline constexpr const char* INSTALLING_MARKER = ".installing";
+
 enum class DeviceKind { None, Catalog, Background };
 enum class PickerAction { None, Catalog, Readme };
 

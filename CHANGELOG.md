@@ -1,5 +1,17 @@
 # CrossNext changes
 
+## Sticky v1.4.11 — 2026-11-11
+
+- Add Plugin Hub support: Settings → System → Plugins offers "Install Plugin Hub" until the Hub is on the SD card, then lists and installs community plugins from it.
+- Plugin catalogs can load named lists from a remote `browse.lists_url`, and show a one-time notice before opening a list.
+- `/api/status` reports `firmwareFamily`, `pluginApi` and `pluginCapabilities` so browser plugins can check compatibility.
+- A plugin folder that was only partly installed (`.installing` marker) is no longer treated as a plugin.
+- Fix a crash (`ESP_ERROR_CHECK` abort) when starting the hotspot while Developer Mode was still joining Wi-Fi.
+- Book highlights on the sleep screen: choose the font family (including SD fonts) and text alignment.
+- Bluetooth keyboard (BLE HID host) build support and Bluetooth settings updates; haptic feedback in shelf folders.
+
+See [v1.4.11 release notes](docs/releases/CrossNext-Sticky-v1.4.11.md).
+
 ## Sticky v1.4.10 — 2026-11-10
 
 - Fix overlapping diacritics on Jersey 25: stacked circumflex/breve and tone marks (sắc, huyền, hỏi, ngã) with clear 1px spacing.

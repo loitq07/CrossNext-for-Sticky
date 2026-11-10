@@ -180,10 +180,10 @@ void clock(toybox::Screen& s, const Model& m, Work& w, fui::Rect body) {
     const auto weekdayBand = fui::makeRect(content.x, content.y + (wide ? 0 : 48), content.width, 76);
     const auto clockLabel = [&](fui::Rect box, const char* label) {
       fui::TextStyle style;
-      style.font = 4;
-      const auto ink = s.target().inkBounds(4, label, style);
-      const bool fits = s.target().measureText(4, label, style).width <= box.width - 16 && ink.height <= box.height;
-      text(s, box, label, fits ? 4 : 1);
+      style.font = 2;
+      const auto ink = s.target().inkBounds(2, label, style);
+      const bool fits = s.target().measureText(2, label, style).width <= box.width - 16 && ink.height <= box.height;
+      text(s, box, label, fits ? 2 : 1);
     };
     clockLabel(weekdayBand, I18N.get(weekdays[weekday]));
     toolsdigits::draw(s,

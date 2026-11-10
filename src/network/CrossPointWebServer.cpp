@@ -619,6 +619,10 @@ void CrossPointWebServer::handleStatus() const {
   doc["rssi"] = apMode ? 0 : WiFi.RSSI();
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["uptime"] = millis() / 1000;
+  // Plugin contract: browser plugins (Plugin Hub) gate installs on these.
+  doc["firmwareFamily"] = PluginLocations::FIRMWARE_FAMILY;
+  doc["pluginApi"] = PluginLocations::PLUGIN_API;
+  doc["pluginCapabilities"] = PluginLocations::PLUGIN_CAPABILITIES;
   // ?plugin=<name> adds a stable device ID for that plugin: sha256(secret ||
   // name). Not reversible to any hardware ID, and different per plugin.
   String plugin = server->arg("plugin");

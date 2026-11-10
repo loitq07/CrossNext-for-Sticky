@@ -35,6 +35,9 @@ class BluetoothActivity final : public UiListActivity {
     std::string subtitle;
     std::string sectionHeading;
     std::string addr;
+    std::string value;
+    bool isToggle = false;
+    bool toggleChecked = false;
   };
 
   std::vector<RowEntry> rows_;

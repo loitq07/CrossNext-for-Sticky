@@ -24,6 +24,7 @@ struct PluginRef {
   std::string manifestPath;  // device.json path, "" for a web-only plugin
   std::string readmePath;    // README.md path when present
   PluginLocations::DeviceKind deviceKind = PluginLocations::DeviceKind::None;
+  bool bootstrap = false;  // synthetic "Install Plugin Hub" row, not a folder on the card
 };
 
 // Rescan plugin roots on demand; metadata is owned by the picker.
@@ -70,8 +71,16 @@ class PluginCatalogActivity final : public CatalogActivity {
     // Named JSON views override the browse URL/body; Back returns to their picker.
     struct BrowseList {
       std::string title, url, body;
+      // Optional disclosure shown before the list opens. An id acknowledged once
+      // (Continue) is not asked again until the next boot.
+      struct Notice {
+        std::string id, title, message;
+      } notice;
     };
     std::vector<BrowseList> browseLists;
+    // Remote list index (browse.lists_url): fetched when the catalog opens and
+    // used only when no embedded browse.lists are declared.
+    std::string listsUrl;
     // JSON search overrides URL/body independently; empty fields reuse browse.
     std::string searchUrl, searchBody;
     bool hasSearch() const { return (!searchUrl.empty() || !searchBody.empty()) && browseFormat != "xml"; }
@@ -118,6 +127,9 @@ class PluginCatalogActivity final : public CatalogActivity {
   };
 
   std::string manifestPath;  // empty while the picker is showing
+  // The built-in Plugin Hub installer catalog is open instead of a device.json
+  // read from the SD card (the Hub is not installed yet).
+  bool bootstrapHub = false;
   std::string catalogTitle;
   Manifest manifest;
   std::vector<PluginRef> installedPlugins;
@@ -167,6 +179,11 @@ class PluginCatalogActivity final : public CatalogActivity {
   // JSON catalog with named lists and none picked yet.
   bool wantsListPicker() const;
   bool loadManifest();
+  // Fill manifest.browseLists from manifest.listsUrl. False when the index is
+  // unreachable or holds no usable list (the error is already displayed).
+  bool loadRemoteLists();
+  // Open list `index`, first asking its notice (if any) to be acknowledged.
+  void openList(int index);
   bool loadToken();
   bool loadRefreshToken();
   void loadConfig();

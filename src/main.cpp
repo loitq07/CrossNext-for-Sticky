@@ -483,6 +483,7 @@ void enterDeepSleep(bool fromTimeout = false, bool unattended = false) {
   highlightsleep::disarm();
   if (unattended && SETTINGS.sleepScreen == CrossPointSettings::HIGHLIGHTS) {
     // No activity, popup or resume-state capture on a scheduled highlight change.
+    sdFontSystem.ensureHighlightLoaded(renderer);
     highlightsleep::render(renderer);
   } else {
     activityManager.goToSleep(fromTimeout);

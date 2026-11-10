@@ -62,6 +62,8 @@ int settingsGroup(const SettingInfo& s, int category) {
     if (s.valuePtr == &CrossPointSettings::sleepScreen || s.valuePtr == &CrossPointSettings::sleepScreenCoverMode ||
         s.valuePtr == &CrossPointSettings::sleepScreenCoverFilter ||
         s.valuePtr == &CrossPointSettings::sleepHighlightMinutes ||
+        s.nameId == StrId::STR_SLEEP_HIGHLIGHT_FONT ||
+        s.valuePtr == &CrossPointSettings::sleepHighlightAlign ||
         s.valuePtr == &CrossPointSettings::quickResumeSleepScreen)
       return 0;
     if (s.action == SettingAction::UiPresentation) return 2;
@@ -384,7 +386,7 @@ void SettingsActivity::rebuildRowItems() {
         selectedCategoryIndex == 6) {
       const auto& s = settings[i];
       item.icon = s.action == SettingAction::Network                       ? settingsart::Wifi
-                  : s.action == SettingAction::Bluetooth                   ? settingsart::Wifi
+                  : s.action == SettingAction::Bluetooth                   ? settingsart::Bluetooth
                   : s.action == SettingAction::HomeMenu                    ? settingsart::Home
                   : s.action == SettingAction::Language                    ? settingsart::Globe
                   : s.action == SettingAction::ClockSettings               ? settingsart::Clock

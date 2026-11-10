@@ -13,7 +13,7 @@
 namespace fui = freeink::ui;
 
 BluetoothActivity::BluetoothActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
-    : UiListActivity("Bluetooth", renderer, mappedInput) {}
+    : UiListActivity("Bluetooth", renderer, mappedInput, false, true) {}
 
 void BluetoothActivity::onEnter() {
   UiListActivity::onEnter();
@@ -85,7 +85,19 @@ void BluetoothActivity::rebuildRows() {
   RowEntry toggleRow;
   toggleRow.type = RowType::ToggleState;
   toggleRow.label = I18N.get(StrId::STR_BLUETOOTH);
-  toggleRow.subtitle = SETTINGS.bluetooth ? I18N.get(StrId::STR_STATE_ON) : I18N.get(StrId::STR_STATE_OFF);
+  if (SETTINGS.bluetooth) {
+    if (BleHid.isConnected()) {
+      const char* name =
+          SETTINGS.bluetoothDeviceName[0] != '\0' ? SETTINGS.bluetoothDeviceName : SETTINGS.bluetoothDevice;
+      toggleRow.subtitle = std::string(I18N.get(StrId::STR_BLUETOOTH_CONNECTED)) + ": " + name;
+    } else {
+      toggleRow.subtitle = I18N.get(StrId::STR_STATE_ON);
+    }
+  } else {
+    toggleRow.subtitle = I18N.get(StrId::STR_STATE_OFF);
+  }
+  toggleRow.isToggle = true;
+  toggleRow.toggleChecked = (SETTINGS.bluetooth != 0);
   rows_.push_back(std::move(toggleRow));
 
   if (SETTINGS.bluetooth) {
@@ -94,10 +106,13 @@ void BluetoothActivity::rebuildRows() {
     // Row 1: Scan action
     RowEntry scanRow;
     scanRow.type = RowType::ScanAction;
-    scanRow.label = I18N.get(StrId::STR_BLUETOOTH_SCAN);
+    scanRow.label = isScanning ? I18N.get(StrId::STR_BLUETOOTH_SCANNING) : I18N.get(StrId::STR_BLUETOOTH_SCAN);
     scanRow.subtitle = isScanning
-                           ? I18N.get(StrId::STR_BLUETOOTH_SCANNING)
-                           : (I18N.getLanguage() == Language::VI ? "Chạm để quét" : "Tap to scan");
+                           ? (I18N.getLanguage() == Language::VI ? "Đang tìm kiếm thiết bị lân cận..."
+                                                                 : "Searching for nearby devices...")
+                           : (I18N.getLanguage() == Language::VI ? "Chạm để quét tìm thiết bị"
+                                                                 : "Tap to scan for devices");
+    scanRow.value = isScanning ? "..." : ">";
     rows_.push_back(std::move(scanRow));
 
     // Paired device
@@ -105,15 +120,20 @@ void BluetoothActivity::rebuildRows() {
       RowEntry pairedRow;
       pairedRow.type = RowType::PairedDevice;
       pairedRow.sectionHeading = I18N.get(StrId::STR_BLUETOOTH_PAIRED);
-      pairedRow.label = SETTINGS.bluetoothDeviceName[0] != '\0' ? SETTINGS.bluetoothDeviceName : SETTINGS.bluetoothDevice;
+      pairedRow.label =
+          SETTINGS.bluetoothDeviceName[0] != '\0' ? SETTINGS.bluetoothDeviceName : SETTINGS.bluetoothDevice;
       if (BleHid.isConnected()) {
         pairedRow.subtitle = I18N.get(StrId::STR_BLUETOOTH_CONNECTED);
+        pairedRow.value = I18N.getLanguage() == Language::VI ? "Ngắt" : "Disconnect";
       } else if (BleHid.isConnecting()) {
         pairedRow.subtitle = I18N.get(StrId::STR_BLUETOOTH_CONNECTING);
+        pairedRow.value = "...";
       } else if (!lastFailureReason_.empty()) {
         pairedRow.subtitle = (I18N.getLanguage() == Language::VI ? "Lỗi: " : "Error: ") + lastFailureReason_;
+        pairedRow.value = I18N.getLanguage() == Language::VI ? "Thử lại" : "Retry";
       } else {
         pairedRow.subtitle = I18N.get(StrId::STR_BLUETOOTH_DISCONNECTED);
+        pairedRow.value = I18N.getLanguage() == Language::VI ? "Kết nối" : "Connect";
       }
       pairedRow.addr = SETTINGS.bluetoothDevice;
       rows_.push_back(std::move(pairedRow));
@@ -121,7 +141,9 @@ void BluetoothActivity::rebuildRows() {
       RowEntry forgetRow;
       forgetRow.type = RowType::ForgetPaired;
       forgetRow.label = I18N.get(StrId::STR_BLUETOOTH_FORGET);
-      forgetRow.subtitle = I18N.getLanguage() == Language::VI ? "Xóa ghép đôi thiết bị này" : "Remove this paired device";
+      forgetRow.subtitle =
+          I18N.getLanguage() == Language::VI ? "Xóa ghép đôi thiết bị này" : "Remove this paired device";
+      forgetRow.value = ">";
       forgetRow.addr = SETTINGS.bluetoothDevice;
       rows_.push_back(std::move(forgetRow));
     }
@@ -146,7 +168,8 @@ void BluetoothActivity::rebuildRows() {
         firstDiscovered = false;
       }
       devRow.label = dev.name[0] ? dev.name : dev.addr;
-      devRow.subtitle = std::string(dev.addr) + " (" + std::to_string(dev.rssi) + " dBm)";
+      devRow.subtitle = std::string(dev.addr) + " · " + std::to_string(dev.rssi) + " dBm";
+      devRow.value = I18N.getLanguage() == Language::VI ? "Ghép đôi" : "Pair";
       devRow.addr = dev.addr;
       rows_.push_back(std::move(devRow));
       ++addedCount;
@@ -159,14 +182,14 @@ void BluetoothActivity::rebuildRows() {
       emptyRow.sectionHeading = I18N.get(StrId::STR_BLUETOOTH_AVAILABLE);
       if (isScanning) {
         emptyRow.label = I18N.get(StrId::STR_BLUETOOTH_SCANNING);
-        emptyRow.subtitle = I18N.getLanguage() == Language::VI
-                                ? "Vui lòng bật remote ở chế độ ghép đôi..."
-                                : "Turn remote on in pairing mode...";
+        emptyRow.subtitle = I18N.getLanguage() == Language::VI ? "Vui lòng bật remote ở chế độ ghép đôi..."
+                                                               : "Turn remote on in pairing mode...";
+        emptyRow.value = "...";
       } else {
         emptyRow.label = I18N.get(StrId::STR_BLUETOOTH_NO_DEVICES);
-        emptyRow.subtitle = I18N.getLanguage() == Language::VI
-                                ? "Chạm để quét tìm thiết bị"
-                                : "Tap to scan for devices";
+        emptyRow.subtitle =
+            I18N.getLanguage() == Language::VI ? "Chạm để quét tìm thiết bị" : "Tap to scan for devices";
+        emptyRow.value = ">";
       }
       rows_.push_back(std::move(emptyRow));
     }
@@ -176,9 +199,17 @@ void BluetoothActivity::rebuildRows() {
   for (size_t i = 0; i < rows_.size(); ++i) {
     fui::ListItem item;
     item.label = rows_[i].label.c_str();
-    item.subtitle = rows_[i].subtitle.c_str();
+    if (!rows_[i].subtitle.empty()) {
+      item.subtitle = rows_[i].subtitle.c_str();
+    }
     if (!rows_[i].sectionHeading.empty()) {
       item.sectionHeading = rows_[i].sectionHeading.c_str();
+    }
+    if (!rows_[i].value.empty()) {
+      item.value = rows_[i].value.c_str();
+    }
+    if (rows_[i].isToggle) {
+      GUI.setCheckboxRow(item, rows_[i].toggleChecked);
     }
     item.actionValue = static_cast<int16_t>(i);
     rowItems_.push_back(item);
@@ -269,6 +300,13 @@ void BluetoothActivity::buildScreen(UiScreen& screen) {
   props.count = static_cast<uint16_t>(rowItems_.size());
   props.action = ACTION_ROW;
   props.inputMask = fui::InputTouch;
+  pixelui::styleList(props);
+  props.valueInset = 8;
+  props.labelText = screen.theme().smallText;
+  props.labelText.bold = true;
+  props.labelText.maxLines = 2;
+  props.subtitleText.font = 4;
+  props.subtitleText.maxLines = 2;
   syncListViewport(screen, props);
   pixelui::list(screen, props);
 }

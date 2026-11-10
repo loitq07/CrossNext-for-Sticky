@@ -7,6 +7,7 @@
 
 #include "Shelf.h"
 #include "ShelfScreen.h"
+#include "HapticFeedback.h"
 #include "ui/Toybox.h"
 #include "ui/ToyboxFonts.h"
 #include "ui/ToyboxTheme.h"
@@ -225,6 +226,9 @@ void ShelfFolderActivity::loop() {
   if (!input.touchReleased || !interactionsReady) return;
 
   const fui::ActionEvent event = interactions.route(input);
+  if (event) {
+    haptic_feedback::touchAction(event.longPress);
+  }
   if (event.action == shelfui::ActionOpen) {
     selected = event.value;
     const int item = itemAtRow(selected);

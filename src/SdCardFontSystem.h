@@ -37,6 +37,10 @@ class SdCardFontSystem {
   /// Also re-discovers if the registry has been marked dirty (e.g. by web upload).
   void ensureLoaded(GfxRenderer& renderer);
 
+  /// Ensure the font family selected for sleep highlights is loaded.
+  /// Resolves to NOTOSERIF_14_FONT_ID if empty or unavailable.
+  int ensureHighlightLoaded(GfxRenderer& renderer);
+
   /// Resolve an SD card font ID from family name + reader point size.
   /// Returns 0 if not found. Used by CrossPointSettings::getReaderFontId().
   int resolveFontId(const char* familyName, uint8_t pointSize) const;
