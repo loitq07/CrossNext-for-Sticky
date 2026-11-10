@@ -15,8 +15,6 @@ class PresentationSettingsActivity final : public UiListActivity {
   Kind kind;
   OptionPopup optionPopup;
   bool saveFailed = false;
-  bool buttonFocus = false;
-  void navigateButtons() override;
   freeink::ui::ListItem items[menufont::kSectionCount]{};
   char labels[menufont::kSectionCount][64]{};
   bool contentFonts() const { return kind == Kind::GameFonts || kind == Kind::AppFonts; }

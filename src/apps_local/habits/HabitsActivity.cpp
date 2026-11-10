@@ -286,6 +286,14 @@ void HabitsActivity::loop() {
   } else if ((next || prev) && (view_ == View::Today || view_ == View::Presets)) {
     event.action = habitsui::ActionPage;
     event.value = navStep ? navStep : next ? 1 : -1;
+  } else if (interactionsReady_ && view_ != View::Today && view_ != View::Presets && hasNavCommand &&
+             (navStep || navCommand.kind == sectionnav::Input::Kind::Confirm)) {
+    fui::InputSnapshot input;
+    input.focusNext = navStep > 0;
+    input.focusPrev = navStep < 0;
+    input.confirm = navCommand.kind == sectionnav::Input::Kind::Confirm;
+    event = sidebuttons::route(interactions_, input, mappedInput, *this, false);
+    if (navStep && navCommand.kind == sectionnav::Input::Kind::Section) mappedInput.navigationRepeatFeedback();
   } else {
     int x, y;
     if (!sidebuttons::poll(interactions_, mappedInput, x, y, false) || !interactionsReady_) return;
@@ -411,7 +419,7 @@ void HabitsActivity::loop() {
 }
 
 void HabitsActivity::render(RenderLock&&) {
-  interactions_.setFocusedIndex(-1);
+  if (view_ == View::Today || view_ == View::Presets) interactions_.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   target.setFont(4, toybox::kLibraryFontId);

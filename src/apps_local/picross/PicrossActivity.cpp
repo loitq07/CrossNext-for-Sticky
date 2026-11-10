@@ -330,7 +330,7 @@ void PicrossActivity::loop() {
   fui::InputSnapshot input;
   int tapX = 0;
   int tapY = 0;
-  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY, !(view == View::Sizes || view == View::Picker))) {
+  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY, view != View::Picker)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
@@ -343,7 +343,7 @@ void PicrossActivity::loop() {
   const int inputMode = ui::tapMode(mode, touch && mappedInput.tapWasHeldLong());
   const fui::ActionEvent action = touch ? interactions.route(input)
                                         : sidebuttons::route(interactions, input, mappedInput, *this,
-                                                             !(view == View::Sizes || view == View::Picker));
+                                                              view != View::Picker);
   switch (action.action) {
     case ui::ActionBoard:
       if (view == View::Board) routeBoardTap(tapX, tapY, inputMode);
@@ -399,7 +399,7 @@ void PicrossActivity::loop() {
 }
 
 void PicrossActivity::render(RenderLock&&) {
-  if (view == View::Sizes || view == View::Picker) interactions.setFocusedIndex(-1);
+  if (view == View::Picker) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   fui::GfxRendererTarget target = toybox::makeTarget(
       renderer, view == View::Board || view == View::Won ? toybox::toyboxFaces() : toybox::proseMenuFaces());

@@ -205,15 +205,13 @@ void PocketGamesActivity::loop() {
     }
   }
   int x = 0, y = 0;
-  const bool tapped = ready && sidebuttons::poll(interactions, mappedInput, x, y,
-                                                 !(kind == pg::Kind::Othello && view == pocketui::View::Level));
+  const bool tapped = ready && sidebuttons::poll(interactions, mappedInput, x, y);
   if (tapped) {
     freeink::ui::InputSnapshot tap;
     tap.touchReleased = true;
     tap.touchX = x;
     tap.touchY = y;
-    const auto event = sidebuttons::route(interactions, tap, mappedInput, *this,
-                                          !(kind == pg::Kind::Othello && view == pocketui::View::Level));
+    const auto event = sidebuttons::route(interactions, tap, mappedInput, *this);
     if (event.action) {
       action(event.action, event.value);
       return;
@@ -292,7 +290,6 @@ void PocketGamesActivity::loop() {
   changed();
 }
 void PocketGamesActivity::render(RenderLock&&) {
-  if (kind == pg::Kind::Othello && view == pocketui::View::Level) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);

@@ -805,7 +805,7 @@ void books(Context& s, fui::Rect r, const Model& m) {
     s.target().line({int16_t(divider), int16_t(row.y + 12)}, {int16_t(divider), int16_t(row.bottom() - 12)}, 2, black);
     bookMinutes(s, fui::makeRect(divider + 5, row.y, timeW - 30, row.height), b.seconds);
     const auto arrow = fui::makeRect(row.right() - 27, row.y + (row.height - 30) / 2, 22, 30);
-    const bool focused = !s.screen.device().hasTouch && n == m.selected;
+    const bool focused = (!s.screen.device().hasTouch || m.buttonFocus) && n == m.selected;
     if (focused) lightui::surface(s.target(), arrow, black);
     dashboard::chevron(s.target(), arrow, focused);
   }

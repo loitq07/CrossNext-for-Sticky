@@ -35,6 +35,7 @@ inline fui::StyleSet invertedStyles() {
   styles.focused = styles.normal;
   styles.active = styles.normal;
   styles.disabled = styles.normal;
+  cds::focusContrast(styles);
   return styles;
 }
 
@@ -59,6 +60,7 @@ inline fui::StyleSet bandFilledStyles() {
   styles.focused = styles.normal;
   styles.active = styles.normal;
   styles.disabled = styles.normal;
+  cds::focusContrast(styles);
   return styles;
 }
 
@@ -73,6 +75,7 @@ inline fui::StyleSet bandOutlineStyles() {
   styles.focused = styles.normal;
   styles.active = styles.normal;
   styles.disabled = styles.normal;
+  cds::focusContrast(styles);
   return styles;
 }
 

@@ -49,6 +49,9 @@ UiAppHost::TouchRoute UiAppHost::routeTouch(const MappedInputManager& input, con
 fui::ActionEvent UiAppHost::route(const fui::InputSnapshot& snap) {
   if (!uiReady || !revealed()) return {};
   const auto event = app.route(snap);
+  // Entering button mode can keep the same programmatically selected index.
+  // The cursor's visibility still changed and needs a physical repaint.
+  if (snap.focusNext || snap.focusPrev) app.invalidate(fui::RefreshHint::Fast);
   // Releases activate controls; held/pressed frames only highlight or drag.
   // Empty/disabled hit regions produce no event and therefore no feedback.
   if (event && (snap.touchReleased || snap.swipeLeft || snap.swipeRight)) {

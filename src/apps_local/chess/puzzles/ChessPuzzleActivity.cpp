@@ -218,12 +218,12 @@ void ChessPuzzleActivity::loop() {
     }
   }
   int x, y;
-  if (!ready || !sidebuttons::poll(interactions, mappedInput, x, y, view == chesspuzzleui::View::Board)) return;
+  if (!ready || !sidebuttons::poll(interactions, mappedInput, x, y, view != chesspuzzleui::View::Select)) return;
   fui::InputSnapshot tap;
   tap.touchReleased = true;
   tap.touchX = x;
   tap.touchY = y;
-  const auto event = sidebuttons::route(interactions, tap, mappedInput, *this, view == chesspuzzleui::View::Board);
+  const auto event = sidebuttons::route(interactions, tap, mappedInput, *this, view != chesspuzzleui::View::Select);
   if (event.action) {
     action(event.action, event.value);
     return;
@@ -254,7 +254,7 @@ void ChessPuzzleActivity::loop() {
   requestUpdate();
 }
 void ChessPuzzleActivity::render(RenderLock&&) {
-  if (view != chesspuzzleui::View::Board) interactions.setFocusedIndex(-1);
+  if (view == chesspuzzleui::View::Select) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);

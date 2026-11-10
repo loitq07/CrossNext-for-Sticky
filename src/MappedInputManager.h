@@ -87,6 +87,8 @@ class MappedInputManager {
 #endif
   bool wasPressed(Button button) const;
   bool wasReleased(Button button) const;
+  // Held navigation has no fresh GPIO press edge to produce feedback.
+  void navigationRepeatFeedback() const;
   // One-shot threshold event while the button is down; consumes its release.
   bool wasLongPressed(Button button, unsigned long thresholdMs) const;
   // A press action owns the following release as well.

@@ -103,7 +103,7 @@ inline void filterCards(fui::ListProps& props, const fui::DrawTarget& target) {
   props.labelText.maxLines = 2;
   props.rowStyles.normal.borderWidth = 0;
   props.rowStyles.normal.radius = chrome::lightHeader ? 6 : 0;
-  props.rowStyles.selected = props.rowStyles.focused = props.rowStyles.active = props.rowStyles.normal;
+  pixelui::styleListFocus(props);
   props.separatorPaint = fui::Paint::solid(fui::Color::Transparent);
 }
 
@@ -169,8 +169,6 @@ inline void preferenceRows(fui::ListProps& props, fui::ListItem* rows, Preferenc
   props.toggleCheckbox = true;
   props.checkboxCheckmark = true;
   props.rowStyles.normal.borderWidth = chrome::lightHeader ? 0 : 1;
-  props.rowStyles.selected = props.rowStyles.focused = props.rowStyles.active = props.rowStyles.normal;
-  props.selectionMarker = fui::SelectionMarker::Underline;
-  props.markerThickness = 1;
+  pixelui::styleListFocus(props);
 }
 }  // namespace libraryui

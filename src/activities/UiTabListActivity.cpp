@@ -55,6 +55,8 @@ void UiTabListActivity::onRowAction(const fui::ActionEvent& event) {
 }
 
 void UiTabListActivity::moveRingTo(const int ringIndex) {
+  buttonFocus = true;
+  app.clearTapFlash();
   activeNav().requestSelection(ringIndex);
   requestUpdate();
 }

@@ -19,6 +19,7 @@ namespace fui = freeink::ui;
 bool ReadingStatsActivity::beginScan(bool reverse) { return repository.begin(reverse, readAhead, sizeof(readAhead)); }
 void ReadingStatsActivity::onEnter() {
   Activity::onEnter();
+  buttonFocus = !mappedInput.hasTouch();
   source = readingstats::Source::Local;
   navigation.begin(mappedInput.isPressed(MappedInputManager::Button::NavNext) ||
                    mappedInput.isPressed(MappedInputManager::Button::NavPrevious));
@@ -467,6 +468,9 @@ void ReadingStatsActivity::action(fui::ActionId action, int value) {
   }
 }
 void ReadingStatsActivity::loop() {
+  if (mappedInput.wasPressed(MappedInputManager::Button::NavNext) ||
+      mappedInput.wasPressed(MappedInputManager::Button::NavPrevious)) buttonFocus = true;
+  if (mappedInput.wasScreenTouchReleased() && buttonFocus.exchange(false)) requestUpdate();
   if (goalPopup.handleInput(mappedInput, [this] { requestUpdate(); })) return;
   if (!navigation.capture(mappedInput, millis())) LOG_ERR("STATS", "Navigation queue full");
   RenderLock lock(RenderLock::Mode::Try);
@@ -652,6 +656,7 @@ void ReadingStatsActivity::render(RenderLock&&) {
   model.page = page;
   model.count = count;
   model.selected = selected;
+  model.buttonFocus = buttonFocus;
   model.pageSize = pageSize;
   model.loading = (loading != Load::Ready && loading != Load::Failed) ||
                   (tab == 3 && !details && pageSize != readingui::capacity(target.deviceContext()));

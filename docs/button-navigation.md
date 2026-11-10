@@ -4,18 +4,22 @@ The side buttons follow the logical Previous and Next mappings. Most short
 presses finish on release; Library moves on press and repeats while held. Where listed, a hold reaches its alternate action after 500 ms and suppresses
 the short action on release. Touch remains available.
 
-Menus that still support button selection follow their visible reading order.
-The current control has a black background and white text. Touch remains the
-way to change the settings and ratings listed below.
+Menus follow their visible reading order, including nested game setup and
+Flashcards text settings. The current control has a black background and white
+text; header controls invert against their band. Confirm activates the focused
+control. Touch clears button focus. Initial presses click once; held list
+repeats click once per repeat, respecting Key Sound and Buzzer Volume.
 
 | Screen | Short press | Hold |
 | --- | --- | --- |
 | Library | Previous or next file | Continue moving through files; keep the current section |
 | Multi-page game instructions | Previous or next instruction page | No additional selection |
-| Chess, Draughts, Go, Minesweeper, Connect Four and Othello settings | Touch only | Touch only |
-| Solitaire and Hearts setup/settings | Touch only | Touch only |
-| Picross size and Wordle letter count | Touch only | Touch only |
-| Chess problem difficulty/reset menus | Touch only | Touch only |
+| Chess, Draughts, Go, Minesweeper, Connect Four and Othello settings | Select visible settings; Confirm applies the focused action | No separate action |
+| Solitaire and Hearts setup/settings | Select visible settings; Confirm applies the focused action | No separate action |
+| Picross size and Wordle letter count | Select size/length or Apply; Confirm activates | No separate action |
+| Chess problem difficulty/reset menus | Select visible controls; Confirm activates | No separate action |
+| Flashcards/Words text settings | Select visible text controls; Confirm activates | No separate action |
+| Wi-Fi password review and connection details | Select visible controls; Confirm activates | No separate action |
 | Chess problem picker | Change the page | Change the page once; no extra step on release |
 | Chess problem during play | Previous or next problem | No menu selection |
 | Picross puzzle picker, Murdle campaign and Carnivoro cases | Change the page | Change the page |
@@ -29,9 +33,10 @@ way to change the settings and ratings listed below.
 | Carnivoro case | Change the page | Change the page |
 | Reading Quest | Switch Hero, Missions and Equipment | No separate action |
 | Habits Today and Presets | Change the page | Change the page |
+| Habits detail/menu/delete | Select visible controls; Confirm activates | Continue selecting controls |
 | Tasks and task lists | Change the page | Change the page |
 | Pomodoro timer | Start if stopped; keep a running timer running | No stage selection |
-| Other Pomodoro controls | Touch only | Touch only |
+| Pomodoro settings/reset confirmation | Select visible controls; Confirm activates | Continue selecting controls |
 | Quotes | Change the page | Switch section |
 | Flashcards deck library | Change the page | No separate action |
 | Flashcard question | Read pages; Next at the end reveals the answer. Either key reveals a single-page question | No rating selection |

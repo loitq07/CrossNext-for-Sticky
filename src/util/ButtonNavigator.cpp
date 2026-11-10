@@ -67,6 +67,7 @@ void ButtonNavigator::onContinuous(const Buttons& buttons, const Callback& callb
   });
 
   if (isPressed) {
+    mappedInput->navigationRepeatFeedback();
     callback();
     lastContinuousNavTime = millis();
   }

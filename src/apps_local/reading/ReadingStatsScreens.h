@@ -47,6 +47,7 @@ struct Model {
   bool charging = false, showPercent = true;
   bool loading = false, failed = false, damaged = false;
   bool bookOnly = false;
+  bool buttonFocus = false;
   unsigned goalMinutes = 0;
   bool goalCalendarVisible = false;
   bool pickerVisible = false, periodFromPicker = false;

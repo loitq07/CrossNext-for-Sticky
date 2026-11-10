@@ -7,6 +7,7 @@
 
 #include "../Shelf.h"
 #include "../ui/PixelMenuTheme.h"
+#include "components/SideButtonNavigation.h"
 #include "util/LoopDeadline.h"
 std::unique_ptr<Activity> PomodoroActivity::create(GfxRenderer& renderer, MappedInputManager& input) {
   // The activity stack owns the fixed UI/save workspace for this screen's lifetime.
@@ -162,6 +163,17 @@ void PomodoroActivity::loop() {
       return;
     }
   }
+  if (ready && view != pomodoroui::View::Timer && hasNavCommand &&
+      (navStep || navCommand.kind == sectionnav::Input::Kind::Confirm)) {
+    freeink::ui::InputSnapshot input;
+    input.focusNext = navStep > 0;
+    input.focusPrev = navStep < 0;
+    input.confirm = navCommand.kind == sectionnav::Input::Kind::Confirm;
+    const auto event = sidebuttons::route(interactions, input, mappedInput, *this, false);
+    if (navStep && navCommand.kind == sectionnav::Input::Kind::Section) mappedInput.navigationRepeatFeedback();
+    if (event) action(event.action, event.value);
+    return;
+  }
   int x = 0, y = 0;
   if (ready && pendingTap.take(viewRevision, x, y)) {
     interactions.setFocusedIndex(-1);
@@ -199,7 +211,7 @@ std::optional<uint32_t> PomodoroActivity::nextLoopWakeDelayMs(const uint32_t now
 }
 
 void PomodoroActivity::render(RenderLock&&) {
-  interactions.setFocusedIndex(-1);
+  if (view == pomodoroui::View::Timer) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);

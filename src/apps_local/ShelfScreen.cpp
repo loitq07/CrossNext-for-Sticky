@@ -185,10 +185,8 @@ void buildMenu(toybox::Screen& screen, const MenuModel& model) {
     props.rowStyles.normal.borderWidth = 0;
     props.rowStyles.normal.background = fui::Paint::solid(fui::Color::White);
     props.rowStyles.normal.foreground = fui::Paint::solid(fui::Color::Black);
-    props.rowStyles.selected = props.rowStyles.focused = props.rowStyles.active = props.rowStyles.normal;
+    pixelui::styleListFocus(props);
     props.separatorPaint = fui::Paint::dither(fui::Color::DarkGray);
-    props.selectionMarker = fui::SelectionMarker::Underline;
-    props.markerThickness = 1;
     fui::list(screen.frame(), screen.body(), props);
   } else
     pixelui::list(screen, props);
@@ -196,11 +194,11 @@ void buildMenu(toybox::Screen& screen, const MenuModel& model) {
     const auto body = screen.body();
     for (int n = 0; n < model.count; ++n)
       if (model.icons[n]) {
-        const bool selected = n == props.selectedIndex;
+        const bool selected = screen.frame().buttonSelected(props.action, n, n == props.selectedIndex);
         screen.target().bitmap(
             fui::makeRect(body.right() - 46, body.y + n * rowHeight() + (rowHeight() - 32) / 2, 32, 32),
             fui::bitmapFromIcon(*model.icons[n]), fui::BitmapMode::Contain,
-            fui::Paint::solid(selected && !chrome::lightHeader ? fui::Color::White : fui::Color::Black));
+            fui::Paint::solid(selected ? fui::Color::White : fui::Color::Black));
       }
   }
 }

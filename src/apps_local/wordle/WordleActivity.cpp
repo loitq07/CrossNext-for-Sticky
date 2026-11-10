@@ -96,13 +96,13 @@ void WordleActivity::loop() {
   }
   int x = 0, y = 0;
   if (ready && sidebuttons::poll(interactions, mappedInput, x, y,
-                                 view != View::Game && view != View::HowTo && view != View::Lengths)) {
+                                 view != View::Game && view != View::HowTo)) {
     freeink::ui::InputSnapshot tap;
     tap.touchReleased = true;
     tap.touchX = x;
     tap.touchY = y;
     const auto event = sidebuttons::route(interactions, tap, mappedInput, *this,
-                                          view != View::Game && view != View::HowTo && view != View::Lengths);
+                                          view != View::Game && view != View::HowTo);
     if (event.action == wordleui::ActionKeyboard && view == View::Game) {
       const auto key = wordleui::keyAt(keys, x, y);
       if (key != wordleui::kEnter) message = nullptr;
@@ -150,7 +150,6 @@ void WordleActivity::loop() {
   if (dirty && millis() - lastSave >= 2000) save();
 }
 void WordleActivity::render(RenderLock&&) {
-  if (view == View::Lengths) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, false);

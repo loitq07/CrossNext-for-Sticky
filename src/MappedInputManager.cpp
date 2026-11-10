@@ -143,6 +143,8 @@ uint32_t MappedInputManager::nextActionDelayMs(const uint32_t now, const uint32_
   return gpio.hasHomeKey() ? homeButtonInput.nextActionDelayMs(now, maximum) : maximum;
 }
 
+void MappedInputManager::navigationRepeatFeedback() const { haptic_feedback::touchAction(); }
+
 bool MappedInputManager::isNavDirectionSwapped() const {
   // Touch boards always follow the rendered orientation; button-only boards keep the user toggle.
   // Home and settings render in portrait, so neither path swaps them.

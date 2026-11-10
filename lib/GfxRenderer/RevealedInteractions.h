@@ -124,7 +124,21 @@ class RevealedInteractions {
   uint32_t focusPosition() const { return buffer_.focusPosition(); }
   bool hasButtonFocus() const { return buffer_.hasButtonFocus(); }
   bool buttonFocusRect(freeink::ui::Rect& rect) const { return buffer_.buttonFocusRect(rect); }
-  void paintButtonFocus(freeink::ui::DrawTarget& target) const { buffer_.paintButtonFocus(target); }
+  void paintButtonFocus(freeink::ui::DrawTarget& target) const {
+    // Custom-painted controls often register only a hit rectangle and never
+    // consult stateFor(). The SDK outlines coordinate grids only; provide the
+    // same visible cursor for every ordinary control on these screens too.
+    freeink::ui::Rect cell;
+    if (!buffer_.buttonFocusRect(cell)) return;
+    const int edge = cell.width < cell.height ? cell.width : cell.height;
+    if (edge <= 0) return;
+    const int16_t inset = edge > 4 ? 2 : edge > 2 ? 1 : 0;
+    const auto rect = cell.inset({inset, inset, inset, inset});
+    const int width = rect.width < rect.height ? rect.width : rect.height;
+    if (width <= 0) return;
+    target.stroke(rect, freeink::ui::Paint::solid(freeink::ui::Color::White), width > 4 ? 4 : width);
+    target.stroke(rect, freeink::ui::Paint::solid(freeink::ui::Color::Black), width > 2 ? 2 : width);
+  }
   void setFocusedIndex(const int16_t index) { buffer_.setFocusedIndex(index); }
 
   // For tests, for anyone reasoning about a dropped tap, and for a caller that

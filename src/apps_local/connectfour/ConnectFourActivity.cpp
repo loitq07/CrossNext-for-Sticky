@@ -236,7 +236,7 @@ void ConnectFourActivity::loop() {
   int tapX = 0;
   int tapY = 0;
   if (sidebuttons::poll(interactions, mappedInput, tapX, tapY,
-                        screen != c4::Screen::Board && screen != c4::Screen::Settings)) {
+                        screen != c4::Screen::Board)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
@@ -265,7 +265,7 @@ void ConnectFourActivity::loop() {
   }
 
   const fui::ActionEvent event = sidebuttons::route(interactions, input, mappedInput, *this,
-                                                    screen != c4::Screen::Board && screen != c4::Screen::Settings);
+                                                    screen != c4::Screen::Board);
   switch (event.action) {
     case matchsettings::Opponent:
       preferredLocal = event.value == 1;
@@ -340,7 +340,6 @@ void ConnectFourActivity::loop() {
 }
 
 void ConnectFourActivity::render(RenderLock&&) {
-  if (screen == c4::Screen::Settings) interactions.setFocusedIndex(-1);
   namespace fui = freeink::ui;
 
   renderer.clearScreen();

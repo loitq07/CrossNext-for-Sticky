@@ -116,6 +116,7 @@ void WifiSelectionActivity::onPromptEvent(const fui::ActionEvent& event, void* u
 
 void WifiSelectionActivity::onEnter() {
   Activity::onEnter();
+  buttonCursorVisible = !mappedInput.hasTouch();
 
   // This screen's whole job is to take the radio: it disconnects and then
   // sweeps every channel scanning. Dev mode, still holding an association,
@@ -754,15 +755,15 @@ void WifiSelectionActivity::loop() {
 
   if (state == WifiSelectionState::PASSWORD_ENTRY) return;
   if (state == WifiSelectionState::PASSWORD_REVIEW || state == WifiSelectionState::NETWORK_DETAILS) {
-    const auto route = routeTouch(mappedInput);
+    const auto route = routeTouch(mappedInput, false, false, mappedInput.hasTouch());
     if (route.routed && app.invalidated()) requestUpdate();
-    if (route) return;
+    if (route.routed) return;
     if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
       passwordVisible = false;
       state = WifiSelectionState::NETWORK_LIST;
       closeRouting();
       requestUpdate();
-    } else if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+    } else if (!mappedInput.hasTouch() && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
       if (state == WifiSelectionState::PASSWORD_REVIEW) {
         if (enteredPassword.empty())
           promptPasswordEntry();
@@ -773,13 +774,13 @@ void WifiSelectionActivity::loop() {
         closeRouting();
         requestUpdate();
       }
-    } else if (state == WifiSelectionState::NETWORK_DETAILS &&
+    } else if (!mappedInput.hasTouch() && state == WifiSelectionState::NETWORK_DETAILS &&
                (mappedInput.wasPressed(MappedInputManager::Button::Left) ||
                 mappedInput.wasPressed(MappedInputManager::Button::Right))) {
       fui::ActionEvent action;
       action.value = mappedInput.wasPressed(MappedInputManager::Button::Left) ? Forget : Disconnect;
       onReferenceEvent(action, this);
-    } else if (state == WifiSelectionState::PASSWORD_REVIEW &&
+    } else if (!mappedInput.hasTouch() && state == WifiSelectionState::PASSWORD_REVIEW &&
                mappedInput.wasPressed(MappedInputManager::Button::Right)) {
       promptPasswordEntry();
     }
@@ -943,6 +944,7 @@ void WifiSelectionActivity::loop() {
     // rects; route the snapshot and let onRowEvent dispatch. Long-press on a
     // network row fires "forget" while the finger is down.
     const auto route = routeTouch(mappedInput, /*withLongPress=*/true);
+    if (route.routed && route.snap.touchReleased && buttonCursorVisible.exchange(false)) requestUpdate();
     if (route.routed && app.invalidated()) requestUpdate();
     if (route) return;  // dispatched to onRowEvent
 
@@ -959,6 +961,8 @@ void WifiSelectionActivity::loop() {
     }
 
     const auto moveSelection = [this](const int index) {
+      if (networks.empty()) return;
+      buttonCursorVisible = true;
       selectedNetworkIndex = static_cast<size_t>(index);
       listNav.selected = index;
       listNav.follow(static_cast<int>(networks.size()));
@@ -1208,12 +1212,12 @@ void WifiSelectionActivity::buildReferenceScreen(UiScreen& screen) {
     }
     ws::text(screen.target(), fui::makeRect(field.x + 12, field.y + 8, field.width - 24, field.height - 16),
              referenceText);
-    screen.frame().hit(field, ACTION_REFERENCE, EditPassword, fui::InputTouch);
+    screen.frame().hit(field, ACTION_REFERENCE, EditPassword, fui::InputTouch | fui::InputCoordinates);
     const auto reveal = screen.takeTop(44, wide ? 0 : 14);
     ws::check(screen.target(), fui::makeRect(reveal.x + 2, reveal.y + 6, 30, 30), passwordVisible);
     ws::text(screen.target(), fui::makeRect(reveal.x + 46, reveal.y + 4, reveal.width - 46, 36), tr(STR_SR_WIFI_SHOW),
              false, 4);
-    screen.frame().hit(reveal, ACTION_REFERENCE, RevealPassword, fui::InputTouch);
+    screen.frame().hit(reveal, ACTION_REFERENCE, RevealPassword, fui::InputTouch | fui::InputCoordinates);
     if (screen.body().height > 36) ws::text(screen.target(), screen.takeTop(42), tr(STR_SR_WIFI_ENTER), false, 4);
     return;
   }
@@ -1324,8 +1328,10 @@ void WifiSelectionActivity::buildReferenceScreen(UiScreen& screen) {
                  network.isEncrypted);
     } else
       ws::text(screen.target(), fui::makeRect(row.right() - 42, row.y + 12, 28, 38), ">", true);
-    if (index == static_cast<int>(selectedNetworkIndex) && !mappedInput.hasTouch())
-      screen.target().stroke(row.inset(fui::Insets{3, 3, 3, 3}), ink, 2);
+    if (index == static_cast<int>(selectedNetworkIndex) && (!mappedInput.hasTouch() || buttonCursorVisible)) {
+      screen.target().stroke(row.inset(fui::Insets{2, 2, 2, 2}), fui::Paint::solid(fui::Color::White), 5);
+      screen.target().stroke(row.inset(fui::Insets{3, 3, 3, 3}), ink, 3);
+    }
     screen.frame().hit(row, ACTION_ROW, index, fui::InputTouch | fui::InputLongPress);
   }
   listNav.drawnCount = static_cast<int>(networks.size());

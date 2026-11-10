@@ -406,7 +406,7 @@ void HeartsActivity::loop() {
   int tapX = 0;
   int tapY = 0;
   if (sidebuttons::poll(interactions, mappedInput, tapX, tapY,
-                        view != View::Board && view != View::Settings && view != View::Setup)) {
+                        view != View::Board)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
@@ -417,7 +417,7 @@ void HeartsActivity::loop() {
   }
   if (input.touchReleased && interactionsReady) {
     const fui::ActionEvent action = sidebuttons::route(
-        interactions, input, mappedInput, *this, view != View::Board && view != View::Settings && view != View::Setup);
+        interactions, input, mappedInput, *this, view != View::Board);
     // Every routed tap, with what it resolved to. This is not debug residue:
     // the rules button routed correctly for a whole render cycle while the
     // menu's switch had no case for it, so the control was live, drawn, hit,
@@ -657,7 +657,6 @@ const char* HeartsActivity::subStatusLine() {
 }
 
 void HeartsActivity::render(RenderLock&&) {
-  if (view == View::Settings || view == View::Setup) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   fui::GfxRendererTarget target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);

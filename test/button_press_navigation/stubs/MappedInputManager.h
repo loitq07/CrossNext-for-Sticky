@@ -18,4 +18,6 @@ class MappedInputManager {
   bool wasReleased(Button button) const { return frame.released & (1u << static_cast<unsigned>(button)); }
   bool isPressed(Button button) const { return frame.held & (1u << static_cast<unsigned>(button)); }
   unsigned long getHeldTime() const { return frame.heldMs; }
+  mutable int repeatFeedbacks = 0;
+  void navigationRepeatFeedback() const { ++repeatFeedbacks; }
 };

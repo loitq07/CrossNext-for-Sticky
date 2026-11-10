@@ -37,6 +37,7 @@ TEST_F(ButtonPressNavigationTest, PressStepsImmediatelyAndReleaseDoesNotStep) {
   navigate();
   EXPECT_EQ(selected, 1);
   EXPECT_EQ(pages, 0);
+  EXPECT_EQ(input.repeatFeedbacks, 0);
 }
 
 TEST_F(ButtonPressNavigationTest, HoldPagesAfterThresholdAndStopsOnRelease) {
@@ -47,10 +48,12 @@ TEST_F(ButtonPressNavigationTest, HoldPagesAfterThresholdAndStopsOnRelease) {
   navigate();
   EXPECT_EQ(selected, 1);
   EXPECT_EQ(pages, 1);
+  EXPECT_EQ(input.repeatFeedbacks, 1);
   testNowMs += 100;
   input.frame.heldMs += 100;
   navigate();
   EXPECT_EQ(pages, 1);
+  EXPECT_EQ(input.repeatFeedbacks, 1);
   testNowMs += 1000;
   input.frame = {1601, 0, NEXT, 0};
   navigate();

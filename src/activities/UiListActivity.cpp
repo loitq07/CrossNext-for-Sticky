@@ -1,7 +1,6 @@
 #include "UiListActivity.h"
 
 #include <GfxRenderer.h>
-#include <HalBuzzer.h>
 #include <I18n.h>
 #include <Logging.h>
 
@@ -25,6 +24,7 @@ UiListActivity::UiListActivity(const char* name, GfxRenderer& renderer, MappedIn
 void UiListActivity::onEnter() {
   Activity::onEnter();
   activeNav().reset();
+  buttonFocus = !mappedInput.hasTouch();
   resetUi();
   app.on(ACTION_ROW, &UiListActivity::rowActionTrampoline, this);
   app.setScreen(&UiListActivity::screenTrampoline, this);
@@ -67,6 +67,7 @@ bool UiListActivity::routeListTouch() {
   // Touch goes through the FreeInkApp: render() registered the row hit rects;
   // route the snapshot and let the action trampoline dispatch.
   const auto route = UiAppHost::routeTouch(mappedInput, wantsTouchLongPress);
+  if (route.routed && route.snap.touchReleased && buttonFocus.exchange(false)) requestUpdate();
   // No pressed-state repaint: the render it triggers would drop a slow tap's
   // release inside the uiReady window (tap-to-activate needed two taps), and
   // it costs a second e-ink refresh per tap.
@@ -75,9 +76,8 @@ bool UiListActivity::routeListTouch() {
 }
 
 void UiListActivity::moveSelectionTo(const int index) {
-  if (SETTINGS.keySound) {
-    HalBuzzer::click(SETTINGS.buzzerVolume);
-  }
+  buttonFocus = true;
+  app.clearTapFlash();
   activeNav().requestSelection(index);
   requestUpdate();
 }
@@ -153,6 +153,12 @@ void UiListActivity::syncListViewport(UiScreen& screen, fui::ListProps& props, c
       n.top = prevTop;
       props.topIndex = static_cast<uint16_t>(prevTop);
     }
+  }
+  // Keep the logical selection for ListNav's measured viewport feedback.
+  // Hiding the index itself makes onListRendered think it is off-screen.
+  if (mappedInput.hasTouch() && !buttonFocus) {
+    props.rowStyles.selected = props.rowStyles.normal;
+    props.selectionMarker = fui::SelectionMarker::None;
   }
 }
 

@@ -54,7 +54,7 @@ void button(Screen& screen, fui::ButtonProps& props, fui::Rect box, const char* 
   props.styles = pixelui::buttonStyles();
   props.styles.normal.borderWidth = 2;
   props.minTouchSize = 0;
-  if (primary) props.state = fui::StateSelected;
+  if (screen.frame().buttonSelected(action, value, primary)) props.state = fui::StateSelected;
   screen.button(props, box);
 }
 inline void detail(fui::DrawTarget& target, fui::Rect box, const char* title, const char* value) {

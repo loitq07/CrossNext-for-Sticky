@@ -73,4 +73,5 @@ class ReadingStatsActivity final : public Activity {
   bool pickerVisible = false, periodFromPicker = false;
   bool clockKnown = false;
   bool details = false, damaged = false, ready = false;
+  std::atomic<bool> buttonFocus{false};
 };

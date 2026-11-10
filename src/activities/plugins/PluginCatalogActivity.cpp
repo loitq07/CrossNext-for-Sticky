@@ -6,7 +6,6 @@
 #include <FreeInkUIIcon.h>
 #include <GfxRenderer.h>
 #include <HalStorage.h>
-#include <HalBuzzer.h>
 #include <I18n.h>
 #include <JsonListParser.h>
 #include <Logging.h>
@@ -1324,9 +1323,6 @@ void PluginCatalogActivity::onBackButton() {
 }
 
 void PluginCatalogActivity::activateIndex(const int index) {
-  if (SETTINGS.keySound) {
-    HalBuzzer::click(SETTINGS.buzzerVolume);
-  }
   if (state == State::PLUGIN_PICKER) {
     if (index < 0 || index >= rowCount()) return;
     if (showOpds && index == 0) {

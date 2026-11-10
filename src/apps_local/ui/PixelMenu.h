@@ -50,6 +50,16 @@ void text(fui::DrawTarget& target, fui::Rect box, const char* label, fui::FontId
 fui::StyleSet rowStyles();
 fui::StyleSet buttonStyles();
 void styleList(fui::ListProps& props, bool dense = false);
+// Apply after a screen customizes normal rows. Keep the cursor distinct from
+// separators and from the value/checkmark identifying the saved setting.
+inline void styleListFocus(fui::ListProps& props) {
+  props.rowStyles.explicitlySet = true;
+  props.rowStyles.selected = props.rowStyles.normal;
+  props.rowStyles.selected.background = fui::Paint::solid(fui::Color::Black);
+  props.rowStyles.selected.foreground = fui::Paint::solid(fui::Color::White);
+  props.rowStyles.focused = props.rowStyles.active = props.rowStyles.selected;
+  props.selectionMarker = fui::SelectionMarker::None;
+}
 fui::Rect rowArea(fui::Rect band, const fui::ListProps& props);
 void fitLabel(const fui::DrawTarget& target, char* text, int width, fui::TextStyle& style);
 

@@ -55,12 +55,12 @@ void FlashSettingsActivity::loop() {
   }
   if (!ready) return;
   int x = 0, y = 0;
-  if (!sidebuttons::poll(interactions, mappedInput, x, y, false)) return;
+  if (!sidebuttons::poll(interactions, mappedInput, x, y)) return;
   freeink::ui::InputSnapshot tap;
   tap.touchReleased = true;
   tap.touchX = x;
   tap.touchY = y;
-  const auto event = sidebuttons::route(interactions, tap, mappedInput, *this, false);
+  const auto event = sidebuttons::route(interactions, tap, mappedInput, *this);
   if (event.action == flashui::SettingsBack) {
     back();
     return;

@@ -83,6 +83,8 @@ class UiListActivity : public Activity, protected UiAppHost {
   // activeNav() in shared code; `nav` is the single-list default storage.
   freeink::ui::ListNav nav;
   ButtonNavigator buttonNavigator;
+  // Input modality, independent of whether the device also has a touchscreen.
+  std::atomic<bool> buttonFocus{false};
 
  private:
   static void screenTrampoline(UiScreen& screen, void* user);

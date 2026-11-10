@@ -245,13 +245,13 @@ void SolitaireActivity::loop() {
   fui::InputSnapshot input;
   int x = 0, y = 0;
   if (!interactionsReady || !sidebuttons::poll(interactions, mappedInput, x, y,
-                                               view != View::Board && view != View::Settings && view != View::Setup))
+                                               view != View::Board))
     return;
   input.touchReleased = true;
   input.touchX = x;
   input.touchY = y;
   const auto event = sidebuttons::route(interactions, input, mappedInput, *this,
-                                        view != View::Board && view != View::Settings && view != View::Setup);
+                                        view != View::Board);
   if (view == View::Board && event.action == ui::ActionPile) {
     routePile(event.value, y);
     return;
@@ -356,7 +356,6 @@ void SolitaireActivity::loop() {
 }
 
 void SolitaireActivity::render(RenderLock&&) {
-  if (view == View::Settings || view == View::Setup) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   fui::GfxRendererTarget target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);

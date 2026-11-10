@@ -88,6 +88,7 @@ fui::StyleSet bandOutlineStyles() {
   styles.selected = styles.normal;
   styles.focused = styles.normal;
   styles.active = styles.normal;
+  cds::focusContrast(styles);
   return styles;
 }
 

@@ -141,10 +141,8 @@ inline void lightRows(fui::ListProps& props) {
   props.rowStyles.normal.borderWidth = 0;
   props.rowStyles.normal.background = fui::Paint::solid(fui::Color::White);
   props.rowStyles.normal.foreground = fui::Paint::solid(fui::Color::Black);
-  props.rowStyles.selected = props.rowStyles.focused = props.rowStyles.active = props.rowStyles.normal;
+  pixelui::styleListFocus(props);
   props.separatorPaint = fui::Paint::dither(fui::Color::DarkGray);
-  props.selectionMarker = fui::SelectionMarker::Underline;
-  props.markerThickness = 1;
 }
 inline void fitPortraitRows(fui::ListProps& props, const fui::DeviceContext& device, fui::Rect viewport) {
   if (!chrome::lightHeader || device.width >= device.height) return;

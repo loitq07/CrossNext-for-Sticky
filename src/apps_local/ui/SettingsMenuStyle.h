@@ -36,10 +36,7 @@ inline void styleRows(freeink::ui::ListProps& p) {
     p.rowStyles.normal.borderWidth = 0;
     p.rowStyles.normal.background = freeink::ui::Paint::solid(freeink::ui::Color::White);
     p.rowStyles.normal.foreground = freeink::ui::Paint::solid(freeink::ui::Color::Black);
-    p.rowStyles.selected = p.rowStyles.focused = p.rowStyles.active = p.rowStyles.normal;
-    p.selectionMarker = freeink::ui::SelectionMarker::Underline;
-    p.markerThickness = 1;
-    p.markerPaint = lightui::rule;
+    pixelui::styleListFocus(p);
   }
 }
 }  // namespace settingsui

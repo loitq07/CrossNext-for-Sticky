@@ -545,7 +545,7 @@ void GoActivity::loop() {
   fui::InputSnapshot input;
   int tapX = 0;
   int tapY = 0;
-  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY, !(screen == go::Screen::Settings))) {
+  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
@@ -571,7 +571,7 @@ void GoActivity::loop() {
   }
 
   const fui::ActionEvent event =
-      sidebuttons::route(interactions, input, mappedInput, *this, !(screen == go::Screen::Settings));
+      sidebuttons::route(interactions, input, mappedInput, *this);
   switch (event.action) {
     case goui::ActionMenuRow:
       switch (static_cast<goui::MenuRow>(event.value)) {
@@ -745,7 +745,6 @@ void GoActivity::loop() {
 }
 
 void GoActivity::render(RenderLock&&) {
-  if (screen == go::Screen::Settings) interactions.setFocusedIndex(-1);
   namespace fui = freeink::ui;
 
   renderer.clearScreen();

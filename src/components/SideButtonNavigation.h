@@ -104,8 +104,9 @@ freeink::ui::ActionEvent route(Buffer& buffer, freeink::ui::InputSnapshot snapsh
   }
   if (enabled) append(input, snapshot);
   const auto before = buffer.focusPosition();
+  const bool hadFocus = buffer.hasButtonFocus();
   const auto event = buffer.route(snapshot);
-  if (before != buffer.focusPosition()) owner.requestUpdate();
+  if (before != buffer.focusPosition() || hadFocus != buffer.hasButtonFocus()) owner.requestUpdate();
   return event;
 }
 }  // namespace sidebuttons

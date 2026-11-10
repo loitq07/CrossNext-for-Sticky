@@ -226,7 +226,7 @@ void DraughtsActivity::loop() {
     }
   }
   int x, y;
-  if (!ready || !sidebuttons::poll(interactions, mappedInput, x, y, !(view == draughtsui::View::Settings))) return;
+  if (!ready || !sidebuttons::poll(interactions, mappedInput, x, y)) return;
   if (draughtsui::canPlay(view, surfaceRevealed(), legal.ready(), gameLocal, game.turn, game.draw, legal.count(),
                           gameHumanBlack)) {
     const int square =
@@ -246,11 +246,10 @@ void DraughtsActivity::loop() {
   input.touchReleased = true;
   input.touchX = x;
   input.touchY = y;
-  const auto event = sidebuttons::route(interactions, input, mappedInput, *this, !(view == draughtsui::View::Settings));
+  const auto event = sidebuttons::route(interactions, input, mappedInput, *this);
   action(event.action, event.value);
 }
 void DraughtsActivity::render(RenderLock&&) {
-  if (view == draughtsui::View::Settings) interactions.setFocusedIndex(-1);
   renderer.clearScreen();
   auto target = toybox::makeTarget(renderer);
   pixelui::bindFonts(target, renderer);

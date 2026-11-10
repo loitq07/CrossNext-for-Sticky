@@ -120,7 +120,6 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     props.selectedIndex = activeNav().selected;
     menufontui::styleSections(props, screen.device().width > screen.device().height);
     syncListViewport(screen, props);
-    if (chrome::lightHeader && mappedInput.hasTouch() && !buttonFocus) props.selectedIndex = -1;
     pixelui::list(screen, props);
     if (saveFailed) {
       const auto safe = screen.device().safeRect();
@@ -225,7 +224,6 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     activeNav().followPending = false;
     p.topIndex = 0;
   }
-  if (kind == Kind::Theme && mappedInput.hasTouch() && !buttonFocus) p.selectedIndex = -1;
   if (kind == Kind::Theme)
     settingsui::appearanceList(screen, p);
   else
@@ -362,12 +360,6 @@ void PresentationSettingsActivity::activateIndex(int n) {
   if (kind == Kind::Theme) UITheme::getInstance().reload();
   resetUi();
   requestUpdate();
-}
-
-void PresentationSettingsActivity::navigateButtons() {
-  const int previous = activeNav().selected;
-  UiListActivity::navigateButtons();
-  if (previous != activeNav().selected) buttonFocus = true;
 }
 
 void PresentationSettingsActivity::loop() {

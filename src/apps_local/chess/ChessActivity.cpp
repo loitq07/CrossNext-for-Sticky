@@ -867,17 +867,14 @@ void ChessActivity::routeSettings() {
   fui::InputSnapshot input;
   int tapX = 0;
   int tapY = 0;
-  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY, false)) {
+  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
   }
-  // No focusNext/focusPrev/confirm. Rows are tapped. Confirm does not exist on
-  // this device, so a row selection only a button could open was a dead end.
-
   if (!input.touchReleased || !interactionsReady) return;
 
-  const fui::ActionEvent event = sidebuttons::route(interactions, input, mappedInput, *this, false);
+  const fui::ActionEvent event = sidebuttons::route(interactions, input, mappedInput, *this);
   if (event.action == chessui::ActionSettingValue) {
     switch (static_cast<chessui::SettingValue>(event.value)) {
       case chessui::SettingValue::Computer:
@@ -971,7 +968,6 @@ void ChessActivity::drawSettings() {
 // the player out to the apps hub, which is where they came from two taps ago.
 
 void ChessActivity::render(RenderLock&&) {
-  if (view == View::Settings) interactions.setFocusedIndex(-1);
   if (view == View::Menu) {
     drawStartMenu();
     renderer.displayBuffer();

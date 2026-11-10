@@ -272,11 +272,15 @@ void TextSettingsActivity::buildScreen(UiScreen& screen) {
     props.markerThickness = 2;
     props.checkboxCheckmark = true;
     props.trailingCentered = true;
-    props.rowStyles.selected = props.rowStyles.normal;
+    pixelui::styleListFocus(props);
   }
   // Call Screen directly to retain this screen's compact, explicit geometry.
   screen.syncListViewport(activeNav(), props, listCount(), 1);
   props.selectedIndex = activeNav().selected - 1;
+  if (mappedInput.hasTouch() && !buttonFocus) {
+    props.rowStyles.selected = props.rowStyles.normal;
+    props.selectionMarker = fui::SelectionMarker::None;
+  }
   pixelui::list(screen, props);
 }
 

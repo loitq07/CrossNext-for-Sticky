@@ -31,11 +31,8 @@ inline void styleSections(freeink::ui::ListProps& props, bool wide) {
   if (chrome::lightHeader) {
     props.rowStyles = lightui::controlStyles(true);
     props.rowStyles.normal.borderWidth = 0;
-    props.rowStyles.selected = props.rowStyles.focused = props.rowStyles.active = props.rowStyles.normal;
+    pixelui::styleListFocus(props);
     props.separatorPaint = lightui::rule;
-    props.selectionMarker = freeink::ui::SelectionMarker::Underline;
-    props.markerThickness = 1;
-    props.markerPaint = lightui::rule;
     props.labelText.maxLines = 2;
   }
 }

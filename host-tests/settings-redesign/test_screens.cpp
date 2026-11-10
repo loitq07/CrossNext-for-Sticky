@@ -298,10 +298,12 @@ int main(int argc, char** argv) {
     props.action = 1;
     props.inputMask = fui::InputTouch;
     CHECK(props.toggleCheckbox && props.checkboxCheckmark);
-    CHECK(props.selectionMarker == fui::SelectionMarker::Underline);
+    CHECK(props.selectionMarker == fui::SelectionMarker::None);
     pixelui::list(c.screen, props);
+    bool focusedRow = false;
     for (const auto& fill : c.target.blackFills)
-      CHECK(fill.width < c.screen.body().width || fill.height < props.rowHeight);
+      focusedRow |= fill.width >= c.screen.body().width - 10 && fill.height >= props.rowHeight;
+    CHECK(focusedRow);
     CHECK(!choices[0].toggleChecked && choices[int(quickui::Shortcut::Rotate)].toggleChecked);
     c.checkHits();
   }

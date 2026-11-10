@@ -160,6 +160,16 @@ inline fui::Rect inkCentred(const fui::DrawTarget& target, fui::Rect box, const 
 // ============================================================================
 
 // Standard interactive button styles
+inline void focusContrast(fui::StyleSet& styles) {
+  styles.focused = styles.normal;
+  const bool dark = styles.normal.background.color == fui::Color::Black;
+  styles.focused.background = dark ? paper : ink;
+  styles.focused.foreground = dark ? ink : paper;
+  styles.focused.border = paper;
+  styles.focused.borderWidth = kStrokeBorder;
+  styles.active = styles.focused;
+}
+
 inline fui::StyleSet buttonStyles(const bool light = chrome::lightHeader) {
   fui::StyleSet s;
   s.explicitlySet = true;
@@ -193,19 +203,11 @@ inline fui::StyleSet listRowStyles(const bool light = chrome::lightHeader) {
   s.normal.borderWidth = kStrokeHairline;
   s.normal.radius = light ? cornerRadius(4) : kRadiusNone;
 
-  if (light) {
-    // Light theme: gentle dither highlight on selection
-    s.selected = s.normal;
-    s.selected.background = ditherLight;
-    s.selected.foreground = ink;
-  } else {
-    // Dark theme: e-ink outline selection avoids full-black repainting/ghosting
-    s.selected = s.normal;
-    s.selected.background = paper;
-    s.selected.foreground = ink;
-    s.selected.border = ink;
-    s.selected.borderWidth = kStrokeBorder;
-  }
+  // Match the button focus treatment in both themes. A thin outline or the
+  // normal row separator is too easy to lose on an e-ink partial refresh.
+  s.selected = s.normal;
+  s.selected.background = ink;
+  s.selected.foreground = paper;
   s.focused = s.selected;
   s.active = s.selected;
 

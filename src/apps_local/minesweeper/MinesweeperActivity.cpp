@@ -269,7 +269,7 @@ void MinesweeperActivity::loop() {
   int tapX = 0;
   int tapY = 0;
   const bool hadButtonFocus = interactions.hasButtonFocus();
-  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY, !settings)) {
+  if (sidebuttons::poll(interactions, mappedInput, tapX, tapY)) {
     input.touchReleased = true;
     input.touchX = static_cast<int16_t>(tapX);
     input.touchY = static_cast<int16_t>(tapY);
@@ -304,7 +304,7 @@ void MinesweeperActivity::loop() {
     }
   }
 
-  const fui::ActionEvent event = sidebuttons::route(interactions, input, mappedInput, *this, !settings);
+  const fui::ActionEvent event = sidebuttons::route(interactions, input, mappedInput, *this);
   switch (event.action) {
     case mineui::ActionSettings:
       settingsReturn = screen;
@@ -393,7 +393,6 @@ void MinesweeperActivity::loop() {
 }
 
 void MinesweeperActivity::render(RenderLock&&) {
-  if (settings) interactions.setFocusedIndex(-1);
   namespace fui = freeink::ui;
 
   renderer.clearScreen();

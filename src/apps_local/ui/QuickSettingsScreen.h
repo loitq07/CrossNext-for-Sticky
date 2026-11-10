@@ -17,11 +17,7 @@
 namespace quickui {
 namespace fui = freeink::ui;
 inline void styleConfiguration(fui::ListProps& props) {
-  props.rowStyles.selected = props.rowStyles.normal;
-  props.rowStyles.focused = props.rowStyles.normal;
-  props.rowStyles.active = props.rowStyles.normal;
-  props.selectionMarker = fui::SelectionMarker::Underline;
-  props.markerThickness = 2;
+  pixelui::styleListFocus(props);
   props.toggleCheckbox = true;
   props.checkboxCheckmark = true;
 }
