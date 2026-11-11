@@ -36,6 +36,7 @@
 #include "components/icons/search32.h"
 #include "fontIds.h"
 #include "util/BookCacheUtils.h"
+#include "util/BookProgress.h"
 
 namespace fui = freeink::ui;
 
@@ -312,24 +313,23 @@ bool LibraryListActivity::deleteEligible() const { return !groupsCollapsed && (f
 
 void LibraryListActivity::onRowLongPress(const int index) {
   if (view != View::Books) return;
-  if (isRecentSort(sortOrder)) {
+  if (isRecentSort(sortOrder) || gridView() || deleteEligible()) {
     showRecentBookOptions(index);
-  } else if (deleteEligible()) {
-    promptDeleteBook(index);
   } else if (!groupsCollapsed && groupable()) {
     collapseGroups(index);
   } else {
-    activateIndex(index);
+    showRecentBookOptions(index);
   }
 }
 
-// Recently opened retains its Open, Remove from recents, Delete and Refresh actions.
+// Book options menu: open / mark read or unread / remove from recents / delete / rebuild.
 void LibraryListActivity::showRecentBookOptions(const int entry) {
   RenderLock lock;
   if (entry < 0 || entry >= listCount()) return;
 
   std::string path;
   std::string title;
+  std::string author;
   const int store = storeIndexFor(entry);
   const bool isStoreRow = store >= 0;
   if (isStoreRow) {
@@ -337,45 +337,76 @@ void LibraryListActivity::showRecentBookOptions(const int entry) {
     if (store >= static_cast<int>(books.size())) return;
     path = books[static_cast<size_t>(store)].path;
     title = books[static_cast<size_t>(store)].title;
+    author = books[static_cast<size_t>(store)].author;
   } else {
     if (!index.isOpen()) return;
     const uint16_t ordinal = index.ordinalForRow(sortOrder, static_cast<uint16_t>(rowFor(entry)));
     library::ClixRecord record{};
-    std::string author;
     if (ordinal == 0xFFFF || !index.readRecord(ordinal, record) || !index.readPath(record, path) ||
         !rowTextFor(entry, title, author)) {
-      LOG_ERR("LIB", "cannot resolve Recent row %d", entry);
+      LOG_ERR("LIB", "cannot resolve row %d", entry);
       return;
     }
   }
 
-  const char* STORE_OPTIONS[] = {tr(STR_OPEN), tr(STR_REMOVE_FROM_RECENTS), tr(STR_DELETE), tr(STR_LIBRARY_REBUILD)};
-  const char* INDEX_OPTIONS[] = {tr(STR_OPEN), tr(STR_DELETE), tr(STR_LIBRARY_REBUILD)};
+  const bool read = isBookRead(path);
+
+  enum class Action {
+    Open,
+    ToggleRead,
+    RemoveRecent,
+    Delete,
+    Rebuild
+  };
+
+  std::vector<std::string> options;
+  std::vector<Action> actions;
+
+  options.push_back(tr(STR_OPEN));
+  actions.push_back(Action::Open);
+
+  options.push_back(read ? tr(STR_MARK_AS_UNREAD) : tr(STR_MARK_AS_READ));
+  actions.push_back(Action::ToggleRead);
+
+  if (isStoreRow) {
+    options.push_back(tr(STR_REMOVE_FROM_RECENTS));
+    actions.push_back(Action::RemoveRecent);
+  }
+
+  options.push_back(tr(STR_DELETE));
+  actions.push_back(Action::Delete);
+
+  if (isRecentSort(sortOrder)) {
+    options.push_back(tr(STR_LIBRARY_REBUILD));
+    actions.push_back(Action::Rebuild);
+  }
+
   app.clearTapFlash();
-  optionPopup.show(tr(STR_LIBRARY), title.c_str(), isStoreRow ? STORE_OPTIONS : INDEX_OPTIONS, isStoreRow ? 4 : 3, 0,
-                   [this, path, title, isStoreRow](const int choice) {
+  optionPopup.show(tr(STR_LIBRARY), title.c_str(), options, 0,
+                   [this, path, title, author, read, actions](const int choice) {
                      swallowHeldReleases();
-                     switch (choice) {
-                       case 0:
+                     if (choice < 0 || choice >= static_cast<int>(actions.size())) return;
+                     switch (actions[choice]) {
+                       case Action::Open:
                          openBookByPath(path);
                          break;
-                       case 1:
-                         if (isStoreRow) {
-                           promptRemoveRecentBook(path, title);
-                         } else {
-                           promptDeleteBookByPath(path, title);
-                         }
+                       case Action::ToggleRead: {
+                         setBookReadStatus(path, title, author, !read);
+                         resolvePinned();
+                         applyFilter();
+                         invalidateGrid();
+                         windowTop = -1;
+                         requestUpdate();
                          break;
-                       case 2:
-                         if (isStoreRow)
-                           promptDeleteBookByPath(path, title);
-                         else
-                           promptRebuildIndex();
+                       }
+                       case Action::RemoveRecent:
+                         promptRemoveRecentBook(path, title);
                          break;
-                       case 3:
-                         if (isStoreRow) promptRebuildIndex();
+                       case Action::Delete:
+                         promptDeleteBookByPath(path, title);
                          break;
-                       default:
+                       case Action::Rebuild:
+                         promptRebuildIndex();
                          break;
                      }
                    });
@@ -1438,14 +1469,12 @@ bool LibraryListActivity::handleButtons() {
   if (mappedInput.wasLongPressed(MappedInputManager::Button::Confirm, LONG_PRESS_MS)) {
     if (tabsFocused()) {
       if (!degraded) toggleSortDirection();
-    } else if (isRecentSort(sortOrder)) {
+    } else if (isRecentSort(sortOrder) || gridView() || deleteEligible()) {
       showRecentBookOptions(selectedEntry());
-    } else if (deleteEligible()) {
-      if (count > 0) promptDeleteBook(selectedEntry());
     } else if (!groupsCollapsed && groupable()) {
       collapseGroups(selectedEntry());
     } else {
-      activateIndex(selectedEntry());
+      showRecentBookOptions(selectedEntry());
     }
     return true;
   }
@@ -1817,10 +1846,8 @@ const char* LibraryListActivity::headerTitle() const {
 void LibraryListActivity::drawHoldHelp() const {
   if (mappedInput.hasTouch() || groupsCollapsed || view != View::Books) return;
   const char* help = nullptr;
-  if (!tabsFocused() && isRecentSort(sortOrder) && listCount() > 0)
-    help = tr(STR_LIBRARY_HOLD_OPTIONS);  // recent rows: hold opens the row menu
-  else if (!tabsFocused() && deleteEligible() && listCount() > 0)
-    help = tr(STR_HOLD_OPEN_TO_DELETE);
+  if (!tabsFocused() && (isRecentSort(sortOrder) || gridView() || deleteEligible()) && listCount() > 0)
+    help = tr(STR_LIBRARY_HOLD_OPTIONS);  // rows: hold opens the options menu
   else if (!tabsFocused() && groupable())
     help = tr(STR_LIBRARY_HOLD_GROUPS);
   if (!help) return;

@@ -171,12 +171,15 @@ void CoverGridHomeUi::noteThumbHeight(int slotHeight) {
 void CoverGridHomeUi::onAction(const fui::ActionEvent& event, void* user) {
   auto& self = *static_cast<CoverGridHomeUi*>(user);
   self.pending = event.value;
+  self.pendingLongPress = event.longPress;
   self.app.clearTapFlash();
 }
 
-int CoverGridHomeUi::selectedAction(const MappedInputManager& input) {
+int CoverGridHomeUi::selectedAction(const MappedInputManager& input, bool* isLongPress) {
   pending = -1;
-  const auto touch = routeTouch(input);
+  pendingLongPress = false;
+  const auto touch = routeTouch(input, true);
+  if (isLongPress) *isLongPress = pendingLongPress;
   if (touch.snap.touchReleased && pending == MENU_TOGGLE) {
     drawer = !drawer;
     return MENU_TOGGLE;
@@ -326,7 +329,7 @@ void CoverGridHomeUi::drawLicorice(UiScreen& screen) {
     const int x = gridArea.x + n % columns * (cellWidth + gap);
     const int y = gridArea.y + n / columns * (artHeight + 34 + gap);
     const auto art = fui::makeRect(x + (cellWidth - artHeight * 2 / 3) / 2, y, artHeight * 2 / 3, artHeight);
-    screen.frame().hit(fui::makeRect(x, y, cellWidth, artHeight + 32), SELECT, index, fui::InputTouch);
+    screen.frame().hit(fui::makeRect(x, y, cellWidth, artHeight + 32), SELECT, index, fui::InputTouch | fui::InputLongPress);
     if (cached) continue;
     coverCache.paint(art, index, coverPaths[index], true, true);
     if (!coverCache.hasImage(index)) {
@@ -383,7 +386,7 @@ void CoverGridHomeUi::drawLicorice(UiScreen& screen) {
     const auto track = fui::makeRect(x, footer.bottom() - 16, footer.right() - x, 3);
     target.fill(track, fui::Paint::dither(fui::Color::LightGray));
     target.fill(fui::makeRect(track.x, track.y, track.width * std::clamp(progress, 0, 100) / 100, track.height), ink);
-    screen.frame().hit(footer, SELECT, 0, fui::InputTouch);
+    screen.frame().hit(footer, SELECT, 0, fui::InputTouch | fui::InputLongPress);
   }
   if (!drawer) return;
   const int count = homemenu::count(hasOpds);
@@ -507,6 +510,9 @@ void CoverGridHomeUi::drawCurrent(UiScreen& screen, fui::Rect rect, const int co
     return static_cast<CoverGridHomeUi*>(user)->paintFramedCover(target, cover, 0);
   };
   fui::bookCard(screen.frame(), rect, card);
+  screen.frame().hit(
+      fui::makeRect(rect.x + card.padding.left, rect.y + card.padding.top, card.coverSize.width, card.coverSize.height),
+      SELECT, 0, fui::InputTouch | fui::InputLongPress);
 
   if (selected == 0 && !BoardConfig::hasTouch()) {
     // Button boards only: a vertical accent bar left of the card, cover-height
@@ -539,7 +545,7 @@ void CoverGridHomeUi::drawGrid(UiScreen& screen) {
   grid.columns = GRID_COLUMNS;
   grid.columnLayout = fui::CoverGridColumnLayout::SpaceBetween;
   grid.action = SELECT;
-  grid.inputMask = fui::InputTouch;
+  grid.inputMask = fui::InputTouch | fui::InputLongPress;
   grid.selectedIndex = selected > 0 && selected < static_cast<int>(books->size()) ? selected - 1 : -1;
   // Same thick cover ring as the featured card; the dithered Cell background
   // was easy to miss behind a dark cover.

@@ -4903,6 +4903,8 @@ STR_READING_SYNC_NEWER: "Một phần mềm mới hơn đã tạo lịch sử đ
 STR_READING_SYNC_LOCAL_CHANGED: "Nhật ký đã lưu cũ hơn lịch sử đã đồng bộ hoặc đã thay đổi. Khôi phục bản sao lưu đầy đủ trước khi đồng bộ. Không có dữ liệu đọc sách cục bộ nào bị xóa."
 STR_READER_FINISH_BOOK: "Hoàn thành sách"
 STR_READER_MARK_UNFINISHED: "Đánh dấu chưa hoàn thành"
+STR_MARK_AS_READ: "Đánh dấu đã đọc"
+STR_MARK_AS_UNREAD: "Đánh dấu chưa đọc"
 STR_READER_UNFINISH_CONFIRM: "Đánh dấu sách này là chưa hoàn thành? Thời gian đọc và số trang đã ghi sẽ được giữ lại."
 STR_READER_FINISH_CONFIRM: "Giữ lại thời gian đọc và số trang đã ghi. Đánh dấu sách này là đã hoàn thành và đặt tiến độ thành 100%?"
 STR_READER_RETRY_FINISH_POSITION: "Thử lại lưu vị trí đã hoàn thành"

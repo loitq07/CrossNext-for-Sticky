@@ -75,6 +75,14 @@ class OptionPopup {
     activate(currentIndex, std::move(onSelect));
   }
 
+  void show(const char* titleStr, const char* headlineStr, const std::vector<std::string>& options,
+            int currentIndex, std::function<void(int)> onSelect) {
+    title = titleStr ? titleStr : "";
+    headline = headlineStr ? headlineStr : "";
+    ownedStrings = options;
+    activate(currentIndex, std::move(onSelect));
+  }
+
   bool handleInput(MappedInputManager& input, const std::function<void()>& requestUpdate) {
     if (!active) return false;
 

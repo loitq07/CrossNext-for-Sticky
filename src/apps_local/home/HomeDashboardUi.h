@@ -23,7 +23,7 @@ class HomeDashboardUi : public UiAppHost {
   void finishCover();
   bool canRepaintSelection(int selected);
   bool repaintSelection(int selected);
-  int selectedAction(const MappedInputManager& input);
+  int selectedAction(const MappedInputManager& input, bool* isLongPress = nullptr);
   const homeui::Layout& geometry() const { return layout; }
 
  private:
@@ -34,6 +34,7 @@ class HomeDashboardUi : public UiAppHost {
   freeink::ui::ButtonProps hit;
   BookCoverPainter covers;
   int pending = -1;
+  bool pendingLongPress = false;
   const RecentBook* neighbors[4]{};
   std::string progressPath;
 

@@ -722,16 +722,20 @@ void WifiSelectionActivity::loop() {
 
   // Check connection progress
   if (state == WifiSelectionState::CONNECTING || state == WifiSelectionState::AUTO_CONNECTING) {
-    if (state == WifiSelectionState::AUTO_CONNECTING) {
-      if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
-        WiFi.disconnect();
+    if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
+      WiFi.disconnect();
+      if (state == WifiSelectionState::AUTO_CONNECTING) {
         onComplete(false);
-        return;
+      } else {
+        state = WifiSelectionState::NETWORK_LIST;
+        closeRouting();
+        requestUpdate();
       }
-      if (mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
-        showNetworkListFromAutoConnect();
-        return;
-      }
+      return;
+    }
+    if (state == WifiSelectionState::AUTO_CONNECTING && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+      showNetworkListFromAutoConnect();
+      return;
     }
     checkConnectionStatus();
     return;
@@ -755,15 +759,17 @@ void WifiSelectionActivity::loop() {
 
   if (state == WifiSelectionState::PASSWORD_ENTRY) return;
   if (state == WifiSelectionState::PASSWORD_REVIEW || state == WifiSelectionState::NETWORK_DETAILS) {
-    const auto route = routeTouch(mappedInput, false, false, mappedInput.hasTouch());
-    if (route.routed && app.invalidated()) requestUpdate();
-    if (route.routed) return;
     if (mappedInput.wasPressed(MappedInputManager::Button::Back)) {
       passwordVisible = false;
       state = WifiSelectionState::NETWORK_LIST;
       closeRouting();
       requestUpdate();
-    } else if (!mappedInput.hasTouch() && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
+      return;
+    }
+    const auto route = routeTouch(mappedInput, false, false, mappedInput.hasTouch());
+    if (route.routed && app.invalidated()) requestUpdate();
+    if (route) return;
+    if (!mappedInput.hasTouch() && mappedInput.wasPressed(MappedInputManager::Button::Confirm)) {
       if (state == WifiSelectionState::PASSWORD_REVIEW) {
         if (enteredPassword.empty())
           promptPasswordEntry();
@@ -774,15 +780,20 @@ void WifiSelectionActivity::loop() {
         closeRouting();
         requestUpdate();
       }
-    } else if (!mappedInput.hasTouch() && state == WifiSelectionState::NETWORK_DETAILS &&
-               (mappedInput.wasPressed(MappedInputManager::Button::Left) ||
-                mappedInput.wasPressed(MappedInputManager::Button::Right))) {
+      return;
+    }
+    if (!mappedInput.hasTouch() && state == WifiSelectionState::NETWORK_DETAILS &&
+        (mappedInput.wasPressed(MappedInputManager::Button::Left) ||
+         mappedInput.wasPressed(MappedInputManager::Button::Right))) {
       fui::ActionEvent action;
       action.value = mappedInput.wasPressed(MappedInputManager::Button::Left) ? Forget : Disconnect;
       onReferenceEvent(action, this);
-    } else if (!mappedInput.hasTouch() && state == WifiSelectionState::PASSWORD_REVIEW &&
-               mappedInput.wasPressed(MappedInputManager::Button::Right)) {
+      return;
+    }
+    if (!mappedInput.hasTouch() && state == WifiSelectionState::PASSWORD_REVIEW &&
+        mappedInput.wasPressed(MappedInputManager::Button::Right)) {
       promptPasswordEntry();
+      return;
     }
     return;
   }
@@ -1558,10 +1569,13 @@ void WifiSelectionActivity::renderConnectionFailed(const Rect* screen, const The
 }
 
 void WifiSelectionActivity::onComplete(const bool connected) {
+  const bool isConnected = connected || WiFi.status() == WL_CONNECTED;
   ActivityResult result;
-  result.isCancelled = !connected;
-  if (connected) {
-    result.data = WifiResult{true, selectedSSID, connectedIP};
+  result.isCancelled = !isConnected;
+  if (isConnected) {
+    const std::string& ssid = !currentSSID.empty() ? currentSSID : selectedSSID;
+    const std::string ip = !connectedIP.empty() ? connectedIP : WiFi.localIP().toString().c_str();
+    result.data = WifiResult{true, ssid, ip};
   }
   setResult(std::move(result));
   finish();

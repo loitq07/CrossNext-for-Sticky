@@ -216,11 +216,14 @@ bool HomeDashboardUi::repaintSelection(int selected) {
 void HomeDashboardUi::onAction(const fui::ActionEvent& event, void* user) {
   auto& self = *static_cast<HomeDashboardUi*>(user);
   self.pending = event.value;
+  self.pendingLongPress = event.longPress;
   self.app.clearTapFlash();
 }
 
-int HomeDashboardUi::selectedAction(const MappedInputManager& input) {
+int HomeDashboardUi::selectedAction(const MappedInputManager& input, bool* isLongPress) {
   pending = -1;
-  const auto touch = routeTouch(input);
+  pendingLongPress = false;
+  const auto touch = routeTouch(input, true);
+  if (isLongPress) *isLongPress = pendingLongPress;
   return touch.snap.touchReleased ? pending : -1;
 }

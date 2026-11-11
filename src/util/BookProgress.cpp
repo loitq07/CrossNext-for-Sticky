@@ -3,19 +3,35 @@
 #include <Epub.h>
 #include <FsHelpers.h>
 #include <HalStorage.h>
+#include <KOReaderDocumentId.h>
 #include <Logging.h>
 #include <Memory.h>
+#include <TrustedTime.h>
 #include <Xtc.h>
 
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <ctime>
 #include <functional>
+
+#include "CrossPointSettings.h"
+#include "RecentBooksStore.h"
+#include "activities/reader/EpubReaderUtils.h"
+#include "apps_local/reading/ReadingStatsStore.h"
 
 namespace {
 uint32_t readLe32(const uint8_t* p) {
   return uint32_t(p[0]) | (uint32_t(p[1]) << 8) | (uint32_t(p[2]) << 16) | (uint32_t(p[3]) << 24);
 }
+
+struct ProgressCache {
+  char path[512]{};
+  uint8_t progress[10]{};
+  uint64_t sourceBytes = 0, metadataBytes = 0;
+  uint32_t sourceModified = 0, metadataModified = 0;
+  int progressBytes = 0, percent = -1;
+} cached;
 }  // namespace
 
 static int loadBookProgressUncached(const std::string& path) {
@@ -60,14 +76,6 @@ static int loadBookProgressUncached(const std::string& path) {
 }
 
 int loadBookProgress(const std::string& path) {
-  // One bounded result survives Home recreation; no parser or book data stays resident.
-  static struct {
-    char path[512]{};
-    uint8_t progress[10]{};
-    uint64_t sourceBytes = 0, metadataBytes = 0;
-    uint32_t sourceModified = 0, metadataModified = 0;
-    int progressBytes = 0, percent = -1;
-  } cached;
   const bool epub = FsHelpers::hasReflowableBookExtension(path);
   if ((!epub && !FsHelpers::hasXtcExtension(path)) || path.size() >= sizeof(cached.path))
     return loadBookProgressUncached(path);
@@ -114,4 +122,86 @@ int loadBookProgress(const std::string& path) {
     cached.percent = percent;
   }
   return percent;
+}
+
+bool isBookRead(const std::string& path) {
+  const int progress = loadBookProgress(path);
+  if (progress >= 100) return true;
+  const auto doc = KOReaderDocumentId::calculate(path);
+  bool completed = false, manuallyUnfinished = false;
+  if (readingstats::validDocument(doc.c_str()) &&
+      readingstats::completionStatus(doc.c_str(), completed, manuallyUnfinished)) {
+    return completed;
+  }
+  return false;
+}
+
+bool setBookReadStatus(const std::string& path, const std::string& title, const std::string& author, bool markAsRead) {
+  cached.percent = -1;
+  cached.path[0] = '\0';
+
+  const bool isEpub = FsHelpers::hasReflowableBookExtension(path);
+  const bool isXtc = FsHelpers::hasXtcExtension(path);
+
+  if (markAsRead) {
+    if (isEpub) {
+      auto epub = makeUniqueNoThrow<Epub>(path, "/.crosspoint");
+      if (epub && epub->load(false, true) && epub->getSpineItemsCount() > 0) {
+        EpubReaderUtils::saveProgress(*epub, epub->getSpineItemsCount(), 0, 0);
+      }
+    } else if (isXtc) {
+      auto xtc = makeUniqueNoThrow<Xtc>(path, "/.crosspoint");
+      if (xtc && xtc->load() && xtc->getPageCount() > 0) {
+        const uint32_t page = xtc->getPageCount();
+        uint8_t data[4];
+        for (int n = 0; n < 4; ++n) data[n] = static_cast<uint8_t>(page >> (8 * n));
+        ProgressFile::writeAtomic(xtc->getCachePath(), data, sizeof(data));
+      }
+    }
+
+    const auto doc = KOReaderDocumentId::calculate(path);
+    auto now = trustedtime::trustedNow();
+    if (!now) now = static_cast<int64_t>(std::time(nullptr));
+    if (readingstats::validDocument(doc.c_str())) {
+      readingstats::recordCompletion(doc.c_str(), title.c_str(), author.c_str(), now);
+    }
+
+    if (SETTINGS.removeReadBooksFromRecents) {
+      if (RECENT_BOOKS.removeByPath(path)) {
+        RECENT_BOOKS.saveToFile();
+      }
+    }
+  } else {
+    // Mark as unread
+    if (isEpub) {
+      auto epub = makeUniqueNoThrow<Epub>(path, "/.crosspoint");
+      if (epub && epub->load(false, true)) {
+        EpubReaderUtils::saveProgress(*epub, 0, 0, 0);
+      } else {
+        const auto hash = static_cast<unsigned long>(std::hash<std::string>{}(path));
+        char progressPath[96];
+        std::snprintf(progressPath, sizeof(progressPath), "/.crosspoint/epub_%lu/progress.bin", hash);
+        Storage.remove(progressPath);
+      }
+    } else if (isXtc) {
+      auto xtc = makeUniqueNoThrow<Xtc>(path, "/.crosspoint");
+      if (xtc && xtc->load()) {
+        uint8_t data[4]{0, 0, 0, 0};
+        ProgressFile::writeAtomic(xtc->getCachePath(), data, sizeof(data));
+      } else {
+        const auto hash = static_cast<unsigned long>(std::hash<std::string>{}(path));
+        char progressPath[96];
+        std::snprintf(progressPath, sizeof(progressPath), "/.crosspoint/xtc_%lu/progress.bin", hash);
+        Storage.remove(progressPath);
+      }
+    }
+
+    const auto doc = KOReaderDocumentId::calculate(path);
+    auto now = trustedtime::trustedNow();
+    if (!now) now = static_cast<int64_t>(std::time(nullptr));
+    if (readingstats::validDocument(doc.c_str())) {
+      readingstats::recordReopening(doc.c_str(), title.c_str(), author.c_str(), now, 0);
+    }
+  }
+  return true;
 }

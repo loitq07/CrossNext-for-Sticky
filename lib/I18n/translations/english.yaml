@@ -5275,6 +5275,8 @@ STR_READING_SYNC_LOCAL_CHANGED: "The saved journal is older than its synced hist
 
 STR_READER_FINISH_BOOK: "Finish book"
 STR_READER_MARK_UNFINISHED: "Mark as not finished"
+STR_MARK_AS_READ: "Mark as read"
+STR_MARK_AS_UNREAD: "Mark as unread"
 STR_READER_UNFINISH_CONFIRM: "Mark this book as not finished? Your recorded reading time and pages will be kept."
 STR_READER_FINISH_CONFIRM: "Keep your recorded reading time and pages. Mark this book as finished and set its progress to 100%?"
 STR_READER_RETRY_FINISH_POSITION: "Retry saving finished position"

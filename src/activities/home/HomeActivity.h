@@ -14,11 +14,13 @@
 // and the host simulator build (libc++) instantiates it in every including TU.
 #include "RecentBooksStore.h"
 #include "components/CoverGridHomeUi.h"
+#include "components/OptionPopup.h"
 #include "util/ButtonNavigator.h"
 
 struct Rect;
 
 class HomeActivity final : public Activity {
+  OptionPopup optionPopup;
   std::unique_ptr<CoverGridHomeUi> coverGridUi;
   ButtonNavigator buttonNavigator{140, 400};
   homeui::MenuInput menuInput;
@@ -75,6 +77,8 @@ class HomeActivity final : public Activity {
     return homemenu::item(homemenu::at(homemenu::config(), idx, hasOpdsUrl));
   }
   void onSelectBook(const std::string& path);
+  void showBookOptions(const RecentBook& book);
+  void promptDeleteBook(const std::string& path, const std::string& title);
   void onFileBrowserOpen();
   void onLibraryOpen();
   void onSettingsOpen();

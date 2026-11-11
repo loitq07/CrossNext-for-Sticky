@@ -5272,6 +5272,8 @@ STR_READING_SYNC_LOCAL_CHANGED: "El registro guardado es anterior al historial s
 
 STR_READER_FINISH_BOOK: "Terminar libro"
 STR_READER_MARK_UNFINISHED: "Marcar como no terminado"
+STR_MARK_AS_READ: "Marcar como leído"
+STR_MARK_AS_UNREAD: "Marcar como no leído"
 STR_READER_UNFINISH_CONFIRM: "¿Marcar este libro como no terminado? Se conservarán el tiempo de lectura y las páginas registrados."
 STR_READER_FINISH_CONFIRM: "¿Terminar al 100 %? Se conservan el tiempo y las páginas leídas."
 STR_READER_RETRY_FINISH_POSITION: "Reintentar guardar la posición final"

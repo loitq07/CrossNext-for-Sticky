@@ -88,7 +88,7 @@ void build(Screen& screen, const Model& model, const Layout& geometry, fui::Butt
   if (model.style == Style::Boox) {
     screen.frame().hit(geometry.settingsButton, kSelect, int(QuickAction::Settings), fui::InputTouch);
     if (model.hasBook) {
-      screen.frame().hit(geometry.cover, kSelect, 0, fui::InputTouch);
+      screen.frame().hit(geometry.cover, kSelect, 0, fui::InputTouch | fui::InputLongPress);
       if (model.canPrevious) screen.frame().hit(geometry.sides[1], kSelect, kPreviousBook, fui::InputTouch);
       if (model.canNext) screen.frame().hit(geometry.sides[2], kSelect, kNextBook, fui::InputTouch);
     }
@@ -108,15 +108,15 @@ void build(Screen& screen, const Model& model, const Layout& geometry, fui::Butt
         fui::makeRect(next.right(), previous.y, card.right() - next.right(), previous.height)};
     for (int n = 0; n < 5; ++n)
       if (!geometry.badge.empty() && (model.style == Style::Framed || n != 1) && !regions[n].empty())
-        screen.frame().hit(regions[n], kSelect, 0, fui::InputTouch);
+        screen.frame().hit(regions[n], kSelect, 0, fui::InputTouch | fui::InputLongPress);
     if (model.style != Style::Framed) {
       const auto art = geometry.coverRegion;
       const int controlsBottom = geometry.badge.empty() ? card.y : previous.bottom();
       const auto above = fui::makeRect(card.x, controlsBottom, card.width, art.y - controlsBottom);
       const auto below = fui::makeRect(card.x, art.bottom(), card.width, card.bottom() - art.bottom());
-      if (!above.empty()) screen.frame().hit(above, kSelect, 0, fui::InputTouch);
-      if (!below.empty()) screen.frame().hit(below, kSelect, 0, fui::InputTouch);
-      screen.frame().hit(geometry.cover, kSelect, 0, fui::InputTouch);
+      if (!above.empty()) screen.frame().hit(above, kSelect, 0, fui::InputTouch | fui::InputLongPress);
+      if (!below.empty()) screen.frame().hit(below, kSelect, 0, fui::InputTouch | fui::InputLongPress);
+      screen.frame().hit(geometry.cover, kSelect, 0, fui::InputTouch | fui::InputLongPress);
       if (model.canPrevious)
         screen.frame().hit(fui::makeRect(art.x, art.y, geometry.cover.x - art.x, art.height), kSelect, kPreviousBook,
                            fui::InputTouch);

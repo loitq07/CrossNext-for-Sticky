@@ -34,7 +34,7 @@ class CoverGridHomeUi final : public UiAppHost {
     resetUi();
     return true;
   }
-  int selectedAction(const MappedInputManager& input);
+  int selectedAction(const MappedInputManager& input, bool* isLongPress = nullptr);
   // Exact generation height, shared by every slot and recorded during draw.
   // Thumbs must be generated at the drawn size: rescaling a dithered 1-bit
   // image aliases badly.
@@ -80,6 +80,7 @@ class CoverGridHomeUi final : public UiAppHost {
   int progressCount = 0;
   int shelfProgress(const RecentBook& book);
   int pending = -1;
+  bool pendingLongPress = false;
   int progress = -1;
   uint64_t readingSeconds = 0;
   bool readingTimeLoaded = false, readingTimeKnown = false;

@@ -31,8 +31,11 @@
 #include "OpdsServerStore.h"
 #include "RecentBooksStore.h"
 #include "activities/plugins/PluginCatalogActivity.h"  // anyPluginInstalled()
+#include "activities/util/ConfirmationActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
+#include "util/BookCacheUtils.h"
+#include "util/BookProgress.h"
 
 int HomeActivity::getMenuItemCount() const {
   // The persisted registry defines the same rows for drawing and activation.
@@ -444,6 +447,11 @@ void HomeActivity::freeCoverBuffer() {
 }
 
 void HomeActivity::loop() {
+  if (optionPopup.isActive()) {
+    optionPopup.handleInput(mappedInput, [this] { requestUpdate(); });
+    return;
+  }
+
   const int options =
       SETTINGS.homeLayout == CrossPointSettings::HOME_BOOX ? homeui::kPiccoActions : homemenu::count(hasLibrarySlot());
   const auto move = [this, options](int direction) {
@@ -451,6 +459,13 @@ void HomeActivity::loop() {
   };
   buttonNavigator.onNext([&move] { move(1); });
   buttonNavigator.onPrevious([&move] { move(-1); });
+  if (mappedInput.wasLongPressed(MappedInputManager::Button::Confirm, 1000)) {
+    if (selectorIndex >= 0 && selectorIndex < displayBookCount() && !recentBooks.empty()) {
+      menuInput.clear();
+      showBookOptions(recentBooks[selectorIndex]);
+      return;
+    }
+  }
   if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) &&
       !menuInput.push({homeui::MenuInput::Kind::Confirm}))
     LOG_ERR("HOME", "Menu confirm queue full");
@@ -564,7 +579,12 @@ void HomeActivity::loop() {
   }
 
   if (coverGridUi) {
-    const int touched = coverGridUi->selectedAction(mappedInput);
+    bool isLongPress = false;
+    const int touched = coverGridUi->selectedAction(mappedInput, &isLongPress);
+    if (isLongPress && touched >= 0 && touched < displayBookCount() && !recentBooks.empty()) {
+      showBookOptions(recentBooks[touched]);
+      return;
+    }
     if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE) {
       const int direction = swipe == MappedInputManager::SwipeDir::Left || touched == CoverGridHomeUi::PAGE_NEXT ? 1
                             : swipe == MappedInputManager::SwipeDir::Right || touched == CoverGridHomeUi::PAGE_PREVIOUS
@@ -596,9 +616,14 @@ void HomeActivity::loop() {
 
   const bool carouselNext = swipe == MappedInputManager::SwipeDir::Left;
   const bool carouselPrevious = swipe == MappedInputManager::SwipeDir::Right;
+  bool isLongPress = false;
   const int touched = carouselNext       ? homeui::kNextBook
                       : carouselPrevious ? homeui::kPreviousBook
-                                         : dashboard.selectedAction(mappedInput);
+                                         : dashboard.selectedAction(mappedInput, &isLongPress);
+  if (isLongPress && touched == 0 && !recentBooks.empty()) {
+    showBookOptions(recentBooks[0]);
+    return;
+  }
   const int picco = homeui::piccoIndex(static_cast<homeui::QuickAction>(touched));
   if (SETTINGS.homeLayout == CrossPointSettings::HOME_BOOX && picco >= 0) {
     selectorIndex = displayBookCount() + picco;
@@ -627,7 +652,12 @@ void HomeActivity::loop() {
   }
 }
 
-void HomeActivity::render(RenderLock&&) {
+void HomeActivity::render(RenderLock&& lock) {
+  if (optionPopup.isActive()) {
+    optionPopup.render(renderer);
+    renderer.displayBuffer();
+    return;
+  }
   // Another activity/popup may have used the single framebuffer while Home was stacked.
   if (!coverGridUi && firstRenderDone && !dashboardDirty && lastHomePaint == paintclock::counter() &&
       dashboard.canRepaintSelection(selectorIndex)) {
@@ -727,3 +757,54 @@ void HomeActivity::onFileTransferOpen() { activityManager.goToFileTransfer(); }
 void HomeActivity::onOpdsBrowserOpen() { activityManager.goToBrowser(); }
 
 void HomeActivity::onPluginsOpen() { activityManager.goToPlugins(hasOpdsServers); }
+
+void HomeActivity::showBookOptions(const RecentBook& book) {
+  const bool read = isBookRead(book.path);
+  const char* OPTIONS[] = {
+      tr(STR_OPEN),
+      read ? tr(STR_MARK_AS_UNREAD) : tr(STR_MARK_AS_READ),
+      tr(STR_DELETE)
+  };
+  optionPopup.show(tr(STR_BOOK), book.title.c_str(), OPTIONS, 3, 0,
+                   [this, book, read](const int choice) {
+                     if (choice == 0) {
+                       onSelectBook(book.path);
+                     } else if (choice == 1) {
+                       setBookReadStatus(book.path, book.title, book.author, !read);
+                       freeCoverBuffer();
+                       recentsLoaded = false;
+                       dashboardDirty = true;
+                       loadRecentBooks(SETTINGS.homeRecentBookCount);
+                       requestUpdate();
+                     } else if (choice == 2) {
+                       promptDeleteBook(book.path, book.title);
+                     }
+                   });
+  requestUpdate();
+}
+
+void HomeActivity::promptDeleteBook(const std::string& path, const std::string& title) {
+  auto confirmation =
+      makeUniqueNoThrow<ConfirmationActivity>(renderer, mappedInput, tr(STR_DELETE) + std::string("? "), title);
+  if (!confirmation) {
+    LOG_ERR("HOME", "OOM: delete confirmation");
+    return;
+  }
+  startActivityForResult(std::move(confirmation), [this, path](const ActivityResult& result) {
+    if (!result.isCancelled) {
+      LOG_DBG("HOME", "Deleting %s", path.c_str());
+      removeBookFile(path);
+      RECENT_BOOKS.removeByPath(path);
+      RECENT_BOOKS.saveToFile();
+      if (APP_STATE.openEpubPath == path) {
+        APP_STATE.openEpubPath.clear();
+        APP_STATE.saveToFile();
+      }
+      freeCoverBuffer();
+      recentsLoaded = false;
+      dashboardDirty = true;
+      loadRecentBooks(SETTINGS.homeRecentBookCount);
+    }
+    requestUpdate();
+  });
+}
