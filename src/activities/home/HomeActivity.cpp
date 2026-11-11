@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "../../apps_local/Shelf.h"  // fork-local seam
+#include "../../apps_local/home/CoverSceneCache.h"
 #include "../../apps_local/home/HomeShelfOrder.h"
 #include "../../apps_local/reading/ReadingStatsActivity.h"
 #include "CrossPointSettings.h"
@@ -316,6 +317,37 @@ bool HomeActivity::loadRecentCovers(int coverHeight) {
   return changed;
 }
 
+void HomeActivity::reloadHomeBooks() {
+  freeCoverBuffer();
+  recentsLoaded = false;
+  dashboardDirty = true;
+  homecover::invalidateScenes();
+
+  loadRecentBooks(coverGridUi && SETTINGS.homeLayout != CrossPointSettings::HOME_LICORICE ? CoverGridHomeUi::MAX_BOOKS
+                                                                                          : 1);
+  dashboard.begin();
+  hasContinueReading = !recentBooks.empty();
+  if (coverGridUi) {
+    if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE)
+      loadShelfPage();
+    else
+      fillCoverGridFromLibrary();
+    resolveGridCoverPaths();
+    coverGridUi->begin(recentBooks, hasLibrarySlot(), hasContinueReading, hasPlugins);
+    if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE) {
+      loadRecentCovers(coverGridUi->thumbHeightFor());
+      coverGridUi->refreshCoverPaths();
+      coverGridUi->takeThumbHeightChanged();
+    }
+    coverGridUi->setPage(shelfPage, shelfPages);
+  }
+
+  const int total = getMenuItemCount();
+  if (selectorIndex >= total && total > 0) {
+    selectorIndex = total - 1;
+  }
+}
+
 void HomeActivity::onEnter() {
   Activity::onEnter();
   setEdgeBackEnabled(false);
@@ -354,24 +386,8 @@ void HomeActivity::onEnter() {
     coverGridUi = makeUniqueNoThrow<CoverGridHomeUi>(renderer);
     if (!coverGridUi) LOG_ERR("HOME", "OOM: cover grid UI; using standard home");
   }
-  loadRecentBooks(coverGridUi && SETTINGS.homeLayout != CrossPointSettings::HOME_LICORICE ? CoverGridHomeUi::MAX_BOOKS
-                                                                                          : 1);
-  dashboard.begin();
-  hasContinueReading = !recentBooks.empty();
-  if (coverGridUi) {
-    if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE)
-      loadShelfPage();
-    else
-      fillCoverGridFromLibrary();
-    resolveGridCoverPaths();
-    coverGridUi->begin(recentBooks, hasLibrarySlot(), hasContinueReading, hasPlugins);
-    if (SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE) {
-      loadRecentCovers(coverGridUi->thumbHeightFor());
-      coverGridUi->refreshCoverPaths();
-      coverGridUi->takeThumbHeightChanged();
-    }
-    coverGridUi->setPage(shelfPage, shelfPages);
-  }
+
+  reloadHomeBooks();
 
   const auto base = displayBookCount();
   selectorIndex =
@@ -771,10 +787,7 @@ void HomeActivity::showBookOptions(const RecentBook& book) {
                        onSelectBook(book.path);
                      } else if (choice == 1) {
                        setBookReadStatus(book.path, book.title, book.author, !read);
-                       freeCoverBuffer();
-                       recentsLoaded = false;
-                       dashboardDirty = true;
-                       loadRecentBooks(SETTINGS.homeRecentBookCount);
+                       reloadHomeBooks();
                        requestUpdate();
                      } else if (choice == 2) {
                        promptDeleteBook(book.path, book.title);
@@ -784,6 +797,7 @@ void HomeActivity::showBookOptions(const RecentBook& book) {
 }
 
 void HomeActivity::promptDeleteBook(const std::string& path, const std::string& title) {
+  if (path.empty()) return;
   auto confirmation =
       makeUniqueNoThrow<ConfirmationActivity>(renderer, mappedInput, tr(STR_DELETE) + std::string("? "), title);
   if (!confirmation) {
@@ -800,10 +814,12 @@ void HomeActivity::promptDeleteBook(const std::string& path, const std::string& 
         APP_STATE.openEpubPath.clear();
         APP_STATE.saveToFile();
       }
-      freeCoverBuffer();
-      recentsLoaded = false;
-      dashboardDirty = true;
-      loadRecentBooks(SETTINGS.homeRecentBookCount);
+      GUI.drawPopup(renderer, tr(STR_LIBRARY_REBUILDING));
+      library::BuildStats stats;
+      library::buildLibraryIndex("/", stats, SETTINGS.libraryUseMetadata != 0);
+      library_sync::syncIndexToRecents(10);
+
+      reloadHomeBooks();
     }
     requestUpdate();
   });

@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "CrossPointSettings.h"
+#include "CrossPointState.h"
 #include "MappedInputManager.h"
 #include "RecentBooksStore.h"
 #include "activities/util/ConfirmationActivity.h"
@@ -521,8 +522,13 @@ void LibraryListActivity::promptDeleteBookByPath(const std::string& path, const 
         LOG_DBG("LIB", "deleting %s", path.c_str());
         if (!removeBookFile(path)) LOG_ERR("LIB", "cannot delete %s", path.c_str());
         if (RECENT_BOOKS.removeByPath(path)) RECENT_BOOKS.saveToFile();
+        if (APP_STATE.openEpubPath == path) {
+          APP_STATE.openEpubPath.clear();
+          APP_STATE.saveToFile();
+        }
         GUI.drawPopup(renderer, tr(STR_LIBRARY_REBUILDING));
         rebuildIndex();
+        library_sync::syncIndexToRecents(10);
       }
       if (!index.open(library::libraryIndexPath())) LOG_ERR("LIB", "cannot reopen library index");
       if (!result.isCancelled) {

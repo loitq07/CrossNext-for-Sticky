@@ -113,6 +113,8 @@ bool HomeDashboardUi::draw(const RecentBook* book, bool librarySlot, bool plugin
   model.battery = status.status.battery.percent;
   model.charging = status.status.battery.charging;
   model.showPercent = status.status.battery.label != nullptr;
+  model.wifi = status.status.showWifi;
+  model.bluetooth = status.status.showBluetooth;
 
   if (model.style == homeui::Style::Boox && book) {
     std::snprintf(model.title, sizeof(model.title), "%s", book->title.c_str());
@@ -204,7 +206,8 @@ bool HomeDashboardUi::canRepaintSelection(int selected) {
   status.status.battery.label = nullptr;
   GUI.applyHeaderStatus(renderer, status);
   return model.battery == status.status.battery.percent && model.charging == status.status.battery.charging &&
-         model.showPercent == (status.status.battery.label != nullptr);
+         model.showPercent == (status.status.battery.label != nullptr) &&
+         model.wifi == status.status.showWifi && model.bluetooth == status.status.showBluetooth;
 }
 
 bool HomeDashboardUi::repaintSelection(int selected) {

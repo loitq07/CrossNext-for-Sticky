@@ -33,6 +33,8 @@ struct Model {
   bool charging = false;
   bool showPercent = true;
   bool unicode = false;
+  bool wifi = false;
+  bool bluetooth = false;
   bool canPrevious = false, canNext = false;
 };
 struct Layout {

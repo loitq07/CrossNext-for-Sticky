@@ -9,6 +9,7 @@
 
 #include "../../components/icons/blocks.h"
 #include "../../components/icons/folder.h"
+#include "../../components/icons/listIcons.h"
 #include "../../components/icons/settings2.h"
 #include "../../components/icons/transfer.h"
 #include "../ui/PixelText.h"
@@ -333,11 +334,25 @@ void drawBoox(fui::DrawTarget& target, const Model& model, const Layout& g) {
                                      top + (44 - cds::kBatteryHeight) / 2,
                                      cds::kBatteryWidth, cds::kBatteryHeight);
   cds::paintBattery(target, battery, {model.battery, model.charging, fui::Color::White});
+  int statusRight = battery.x;
   if (model.showPercent) {
     char value[8];
     std::snprintf(value, sizeof(value), "%d%%", std::clamp(model.battery, 0, 100));
     text(target, fui::makeRect(battery.x - cds::kBatteryPercentGap - 76, top, 76, 44), value, kSmall, 1,
          fui::Color::White, fui::TextAlign::Right);
+    statusRight = battery.x - cds::kBatteryPercentGap - 76;
+  }
+  if (model.wifi) {
+    const int iconY = top + (44 - 20) / 2;
+    const auto iconRect = fui::makeRect(statusRight - 6 - 20, iconY, 20, 20);
+    target.bitmap(iconRect, freeink::ui::bitmapFromIcon(icon_wifi_24), fui::BitmapMode::Contain, fui::Paint::solid(fui::Color::White));
+    statusRight = iconRect.x;
+  }
+  if (model.bluetooth) {
+    const int iconY = top + (44 - 20) / 2;
+    const auto iconRect = fui::makeRect(statusRight - 6 - 20, iconY, 20, 20);
+    target.bitmap(iconRect, freeink::ui::bitmapFromIcon(icon_bluetooth_24), fui::BitmapMode::Contain, fui::Paint::solid(fui::Color::White));
+    statusRight = iconRect.x;
   }
   const int selected = model.selected - (model.hasBook ? 1 : 0);
   icon(target, g.settingsButton.inset({8, 8, 8, 8}), Icon::Gear, true);
@@ -394,11 +409,25 @@ void draw(fui::DrawTarget& target, const Model& model, const Layout& geometry) {
        fui::Color::White);
   text(target, fui::makeRect(third, headerY + 4, third, 64), model.time[0] ? model.time : "--:--", kBody, 1,
        fui::Color::White, fui::TextAlign::Center);
+  int statusX = battery.x;
   if (model.showPercent) {
     char label[8];
     std::snprintf(label, sizeof(label), "%d%%", std::clamp(model.battery, 0, 100));
     text(target, fui::makeRect(battery.x - cds::kBatteryPercentGap - 76, headerY + 8, 76, 56), label, kSmall, 1,
          fui::Color::White, fui::TextAlign::Right);
+    statusX = battery.x - cds::kBatteryPercentGap - 76;
+  }
+  if (model.wifi) {
+    const int wIconY = headerY + (72 - 24) / 2;
+    const auto wIcon = fui::makeRect(statusX - 6 - 24, wIconY, 24, 24);
+    target.bitmap(wIcon, freeink::ui::bitmapFromIcon(icon_wifi_24), fui::BitmapMode::Contain, fui::Paint::solid(fui::Color::White));
+    statusX = wIcon.x;
+  }
+  if (model.bluetooth) {
+    const int bIconY = headerY + (72 - 24) / 2;
+    const auto bIcon = fui::makeRect(statusX - 6 - 24, bIconY, 24, 24);
+    target.bitmap(bIcon, freeink::ui::bitmapFromIcon(icon_bluetooth_24), fui::BitmapMode::Contain, fui::Paint::solid(fui::Color::White));
+    statusX = bIcon.x;
   }
   if (model.style != Style::Carousel) target.stroke(geometry.card, black, kBorder);
   if (model.hasBook) {

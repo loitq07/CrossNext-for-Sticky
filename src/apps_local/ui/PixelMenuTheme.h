@@ -61,6 +61,8 @@ inline void drawHeader(GfxRenderer& renderer, const char* title, bool unicode = 
   model.battery = status.status.battery.percent;
   model.charging = status.status.battery.charging;
   model.showPercent = status.status.battery.label != nullptr;
+  model.wifi = status.status.showWifi;
+  model.bluetooth = status.status.showBluetooth;
   header(target, target.deviceContext(), model);
   const auto back = geometry(target.deviceContext()).back;
   if (model.back)

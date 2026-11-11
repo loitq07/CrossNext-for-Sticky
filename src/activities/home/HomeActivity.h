@@ -96,6 +96,7 @@ class HomeActivity final : public Activity {
   void loadShelfPage();
   void resolveGridCoverPaths();
   void loadGridCover(RecentBook& book, int height, bool& showingLoading, Rect& popupRect);
+  void reloadHomeBooks();
 
  public:
   explicit HomeActivity(GfxRenderer& renderer, MappedInputManager& mappedInput,

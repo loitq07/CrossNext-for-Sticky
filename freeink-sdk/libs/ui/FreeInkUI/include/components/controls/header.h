@@ -1,4 +1,5 @@
 #pragma once
+#include <algorithm>
 
 #include "../../FreeInkUICore.h"
 #include "../bars/battery-indicator.h"
@@ -24,6 +25,10 @@ struct HeaderStatusProps {
   // Center the clock on the band (both axes) instead of anchoring it to the
   // corner opposite the battery. A non-centered title truncates before it.
   bool clockCentered = false;
+  bool showWifi = false;
+  bool showBluetooth = false;
+  BitmapRef wifiIcon{};
+  BitmapRef bluetoothIcon{};
 };
 
 struct HeaderProps {
@@ -128,6 +133,14 @@ void header(Frame<MaxInteractions>& frame, Rect rect, const HeaderProps& props) 
       batteryReserve = static_cast<int16_t>(
           batteryReserve + status.battery.gap +
           frame.target().measureText(status.battery.text.font, status.battery.label, status.battery.text).width);
+    }
+    if (status.showWifi && status.wifiIcon) {
+      const int16_t iconW = std::min<int16_t>(status.wifiIcon.width, statusStripH > 0 ? statusStripH : status.wifiIcon.width);
+      batteryReserve = static_cast<int16_t>(batteryReserve + iconW + 6);
+    }
+    if (status.showBluetooth && status.bluetoothIcon) {
+      const int16_t iconW = std::min<int16_t>(status.bluetoothIcon.width, statusStripH > 0 ? statusStripH : status.bluetoothIcon.width);
+      batteryReserve = static_cast<int16_t>(batteryReserve + iconW + 6);
     }
   }
   int16_t clockWidth = 0;
@@ -278,7 +291,24 @@ void header(Frame<MaxInteractions>& frame, Rect rect, const HeaderProps& props) 
   if (status.showBattery) {
     const int16_t batteryX = status.batteryLeft ? static_cast<int16_t>(rect.x + statusInset)
                                                 : static_cast<int16_t>(rect.right() - statusInset - batteryReserve);
-    batteryIndicator(frame, Rect{batteryX, rect.y, batteryReserve, statusStripH}, status.battery);
+    int16_t iconX = batteryX;
+    const Paint iconPaint = Paint::solid(status.battery.color);
+    if (status.showBluetooth && status.bluetoothIcon) {
+      const int16_t iconH = std::min<int16_t>(status.bluetoothIcon.height, statusStripH > 0 ? statusStripH : status.bluetoothIcon.height);
+      const int16_t iconY = static_cast<int16_t>(rect.y + (statusStripH - iconH) / 2);
+      frame.target().bitmap(Rect{iconX, iconY, iconH, iconH},
+                            status.bluetoothIcon, BitmapMode::Contain, iconPaint);
+      iconX = static_cast<int16_t>(iconX + iconH + 6);
+    }
+    if (status.showWifi && status.wifiIcon) {
+      const int16_t iconH = std::min<int16_t>(status.wifiIcon.height, statusStripH > 0 ? statusStripH : status.wifiIcon.height);
+      const int16_t iconY = static_cast<int16_t>(rect.y + (statusStripH - iconH) / 2);
+      frame.target().bitmap(Rect{iconX, iconY, iconH, iconH},
+                            status.wifiIcon, BitmapMode::Contain, iconPaint);
+      iconX = static_cast<int16_t>(iconX + iconH + 6);
+    }
+    const int16_t remainingReserve = static_cast<int16_t>(batteryX + batteryReserve - iconX);
+    batteryIndicator(frame, Rect{iconX, rect.y, remainingReserve, statusStripH}, status.battery);
   }
   if (clockWidth > 0) {
     // Centered or in a corner, the clock's ink centers on the status strip,

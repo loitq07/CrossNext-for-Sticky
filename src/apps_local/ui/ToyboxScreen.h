@@ -32,6 +32,7 @@
 #include <Icon.h>
 
 #include "../../../lib/GfxRenderer/RevealedInteractions.h"
+#include "../../components/icons/listIcons.h"
 #include "BackButton.h"
 #include "ToyboxText.h"
 #include "ToyboxTokens.h"
@@ -41,8 +42,14 @@ namespace toybox {
 struct HeaderStatus {
   int percent = -1;
   bool charging = false, showPercent = true;
+  bool wifi = false, bluetooth = false;
   char clock[10]{};
-  int reserve() const { return percent < 0 ? 0 : showPercent ? 106 : 46; }
+  int reserve() const {
+    int res = percent < 0 ? 0 : showPercent ? 106 : 46;
+    if (wifi) res += 24 + 8;
+    if (bluetooth) res += 24 + 8;
+    return res;
+  }
 };
 
 // One size for every screen in this fork, sized for the largest: the
@@ -401,6 +408,7 @@ inline void headerBand(Screen& screen, const freeink::ui::HeaderProps& props) {
     const auto icon = fui::makeRect(safe.right() - 20 - cds::kBatteryWidth - cds::kBatteryCapWidth, iconY,
                                     cds::kBatteryWidth, cds::kBatteryHeight);
     cds::paintBattery(screen.target(), icon, {battery.percent, battery.charging, fgColor});
+    int right = icon.x;
     if (battery.showPercent) {
       char value[8];
       std::snprintf(value, sizeof(value), "%d%%", std::clamp(battery.percent, 0, 100));
@@ -409,6 +417,20 @@ inline void headerBand(Screen& screen, const freeink::ui::HeaderProps& props) {
       style.color = fgColor;
       style.align = fui::TextAlign::Right;
       screen.target().text(fui::makeRect(icon.x - cds::kBatteryPercentGap - 58, ink.y, 58, ink.height), value, style);
+      right = icon.x - cds::kBatteryPercentGap - 58;
+    }
+    const auto fgPaint = chrome::lightHeader ? fui::Paint::solid(fui::Color::Black) : fui::Paint::solid(fui::Color::White);
+    if (battery.wifi) {
+      const int wIconY = ink.y + (ink.height - 24) / 2;
+      const auto wIcon = fui::makeRect(right - 8 - 24, wIconY, 24, 24);
+      screen.target().bitmap(wIcon, freeink::ui::bitmapFromIcon(icon_wifi_24), fui::BitmapMode::Contain, fgPaint);
+      right = wIcon.x;
+    }
+    if (battery.bluetooth) {
+      const int bIconY = ink.y + (ink.height - 24) / 2;
+      const auto bIcon = fui::makeRect(right - 8 - 24, bIconY, 24, 24);
+      screen.target().bitmap(bIcon, freeink::ui::bitmapFromIcon(icon_bluetooth_24), fui::BitmapMode::Contain, fgPaint);
+      right = bIcon.x;
     }
   }
 }

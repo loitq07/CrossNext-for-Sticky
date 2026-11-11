@@ -42,6 +42,8 @@ struct Header {
   fui::ActionId secondaryMarkAction = 0;
   uint16_t actionInputMask = fui::InputTouch;
   bool compactPercent = false;
+  bool wifi = false;
+  bool bluetooth = false;
 };
 void header(toybox::Screen& screen, Header model);
 void header(fui::DrawTarget& target, const fui::DeviceContext& device, const Header& model);

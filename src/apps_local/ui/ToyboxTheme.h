@@ -129,7 +129,8 @@ inline HeaderStatus headerStatus(const GfxRenderer& renderer) {
   props.status.battery.label = nullptr;
   GUI.applyHeaderStatus(renderer, props);
   HeaderStatus result{props.status.battery.percent, props.status.battery.charging,
-                      props.status.battery.label != nullptr};
+                      props.status.battery.label != nullptr,
+                      props.status.showWifi, props.status.showBluetooth};
   if (SETTINGS.clockShowInHeader) halClock.formatTime(result.clock, sizeof(result.clock), SETTINGS.clockFormat == 1);
   return result;
 }

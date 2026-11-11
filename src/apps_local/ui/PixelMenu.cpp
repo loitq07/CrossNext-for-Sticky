@@ -7,7 +7,9 @@
 #include <cstring>
 
 #include "../../../lib/GfxRenderer/ChromeRegion.h"
+#include "../../components/icons/listIcons.h"
 #include "BackButton.h"
+#include "FreeInkUIIcon.h"
 #include "LightUi.h"
 #include "ToyboxScreen.h"
 #include "ToyboxTokens.h"
@@ -94,6 +96,8 @@ void header(toybox::Screen& screen, Header model) {
     model.charging = status.charging;
     model.showPercent = status.showPercent;
   }
+  model.wifi = status.wifi;
+  model.bluetooth = status.bluetooth;
   model.compactBattery = true;
   if (!model.clockText && status.clock[0]) model.clockText = status.clock;
   fui::Rect secondary;
@@ -150,6 +154,18 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
       right -= width + 10;
     }
   }
+  if (model.wifi) {
+    const int iconY = top + (72 - 24) / 2;
+    const auto icon = fui::makeRect(right - 24, iconY, 24, 24);
+    target.bitmap(icon, freeink::ui::bitmapFromIcon(icon_wifi_24), fui::BitmapMode::Contain, fgPaint);
+    right = icon.x - 8;
+  }
+  if (model.bluetooth) {
+    const int iconY = top + (72 - 24) / 2;
+    const auto icon = fui::makeRect(right - 24, iconY, 24, 24);
+    target.bitmap(icon, freeink::ui::bitmapFromIcon(icon_bluetooth_24), fui::BitmapMode::Contain, fgPaint);
+    right = icon.x - 8;
+  }
   if (model.trailingLabel) {
     fui::TextStyle style;
     style.font = kSmall;
@@ -185,12 +201,12 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
   }
   right -= model.titleReserve;
   fui::TextStyle titleStyle;
-  titleStyle.font = kTitle;
+  titleStyle.font = kBody;
   titleStyle.bold = !chrome::lightHeader;
   char title[192];
   copyCaps(title, sizeof(title), model.title);
   if (target.measureText(titleStyle.font, title, titleStyle).width > std::max(0, right - left)) {
-    titleStyle.font = kBody;
+    titleStyle.font = kSmall;
   }
   const int titleEnd = left + target.measureText(titleStyle.font, title, titleStyle).width + 14;
   fui::TextStyle clockStyle;

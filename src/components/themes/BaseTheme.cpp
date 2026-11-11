@@ -28,6 +28,10 @@
 #include "components/icons/bookmark.h"
 #include "components/icons/cover.h"
 #include "components/icons/headerIcons.h"
+#include "components/icons/listIcons.h"
+#ifdef ARDUINO
+#include <WiFi.h>
+#endif
 #include "fontIds.h"
 
 freeink::ui::BitmapRef BaseTheme::checkboxIcon(const bool checked) {
@@ -334,6 +338,17 @@ void BaseTheme::applyHeaderStatus(const GfxRenderer& renderer, freeink::ui::Head
   status.battery.text.font = freeink::ui::GfxRendererTarget::FONT_LABEL;
 
   status.showBattery = true;
+#ifdef ARDUINO
+  const bool wifiOn = (WiFi.getMode() != WIFI_OFF && WiFi.getMode() != WIFI_MODE_NULL) || WiFi.status() == WL_CONNECTED;
+#else
+  const bool wifiOn = false;
+#endif
+  const bool btOn = SETTINGS.bluetooth != 0;
+  status.showWifi = wifiOn;
+  status.showBluetooth = btOn;
+  if (wifiOn) status.wifiIcon = freeink::ui::bitmapFromIcon(icon_wifi_24);
+  if (btOn) status.bluetoothIcon = freeink::ui::bitmapFromIcon(icon_bluetooth_24);
+
   const uint16_t percentage = powerManager.getBatteryPercentage();
   status.battery.percent = static_cast<uint8_t>(percentage > 100 ? 100 : percentage);
   status.battery.charging = gpio.isUsbConnected();
@@ -443,6 +458,8 @@ void BaseTheme::drawHeader(const GfxRenderer& renderer, Rect rect, const char* t
       if (status.battery.label != nullptr) {
         batteryWidth += renderer.getTextWidth(SMALL_FONT_ID, status.battery.label) + status.battery.gap;
       }
+      if (status.showWifi) batteryWidth += 24 + 6;
+      if (status.showBluetooth) batteryWidth += 24 + 6;
       const int headerPadding = UITheme::getInstance().getMetrics().headerSidePadding;
       const int available = rect.width - headerPadding - batteryWidth - headerPadding;
       if (available > 0 && renderer.getTextWidth(spec.titleFontId, title, EpdFontFamily::BOLD) > available) {

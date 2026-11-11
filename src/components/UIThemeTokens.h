@@ -54,6 +54,7 @@ inline freeink::ui::ThemeTokens uiThemeTokens(const freeink::ui::GfxRendererTarg
   tokens.bodyText.bold = metrics.listTitleBold;
   if (chrome::lightHeader) {
     tokens.bodyText.bold = tokens.smallText.bold = tokens.titleText.bold = false;
+    tokens.titleText.font = fui::FONT_SLOT_BODY;
     tokens.headerUnderline = 0;
     tokens.listRow = cds::listRowStyles(true);
     tokens.button = cds::buttonStyles(true);

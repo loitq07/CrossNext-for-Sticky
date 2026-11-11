@@ -32,6 +32,7 @@
 #include "icons/book.h"
 #include "icons/folder.h"
 #include "icons/library.h"
+#include "icons/listIcons.h"
 #include "icons/settings2.h"
 #include "icons/shelfIcons.h"  // fork-local seam
 #include "icons/transfer.h"
@@ -81,6 +82,9 @@ void CoverGridHomeUi::begin(const std::vector<RecentBook>& recent, bool opds, bo
   hasContinueReading = continuing;
   if (!recent.empty()) coverCache.begin(SETTINGS.homeLayout == CrossPointSettings::HOME_LICORICE);
   resetUi();
+  readingTimeLoaded = false;
+  readingTimeKnown = false;
+  progressCount = 0;
   app.on(SELECT, &CoverGridHomeUi::onAction, this);
   app.setScreen(&CoverGridHomeUi::screenFn, this);
   refreshCoverPaths();
@@ -142,6 +146,10 @@ int CoverGridHomeUi::shelfProgress(const RecentBook& book) {
 void CoverGridHomeUi::refreshCoverPaths() {
   coverCache.invalidate();
   for (size_t i = 0; i < books->size() && i < coverPaths.size(); ++i) refreshCoverPath(i);
+  for (size_t i = books->size(); i < coverPaths.size(); ++i) {
+    coverCache.invalidate(i);
+    coverPaths[i].clear();
+  }
 }
 
 void CoverGridHomeUi::refreshCoverPath(size_t index) {
@@ -275,10 +283,22 @@ void CoverGridHomeUi::drawLicorice(UiScreen& screen) {
     target.line({int16_t(x + 1), int16_t(y + 9)}, {int16_t(x + 6), int16_t(y + 7)}, 2, ink);
     target.line({int16_t(x + 6), int16_t(y + 7)}, {int16_t(x + 2), int16_t(y + 16)}, 2, ink);
   }
+  int statusLeft = battery.x;
   if (shelfStatus.status.battery.label) {
     char value[8];
     std::snprintf(value, sizeof(value), "%d%%", int(shelfStatus.status.battery.percent));
     label(fui::makeRect(battery.x - 60, safe.y, 56, 44), value, 0, true, fui::TextAlign::Right);
+    statusLeft = battery.x - 60;
+  }
+  if (shelfStatus.status.showWifi) {
+    const auto wIcon = fui::makeRect(statusLeft - 6 - 20, safe.y + 12, 20, 20);
+    target.bitmap(wIcon, freeink::ui::bitmapFromIcon(icon_wifi_24), fui::BitmapMode::Contain, paper);
+    statusLeft = wIcon.x;
+  }
+  if (shelfStatus.status.showBluetooth) {
+    const auto bIcon = fui::makeRect(statusLeft - 6 - 20, safe.y + 12, 20, 20);
+    target.bitmap(bIcon, freeink::ui::bitmapFromIcon(icon_bluetooth_24), fui::BitmapMode::Contain, paper);
+    statusLeft = bIcon.x;
   }
   struct tm local{};
   const time_t now = std::time(nullptr);
