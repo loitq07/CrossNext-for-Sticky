@@ -48,6 +48,7 @@
 #include "toybattle/ToyBattleActivity.h"
 #include "ui/ExtraIcons.h"
 #include "ui/ToyboxIcons.h"
+#include "voicenotes/VoiceNotesActivity.h"
 #include "wallpapers/WallpapersActivity.h"
 #include "wikipedia/WikipediaActivity.h"
 #include "wordle/WordleActivity.h"
@@ -83,6 +84,7 @@ constexpr shelf::Item kApps[] = {
     {"HABITS", &icon_tick_24, &HabitsActivity::create},
     {"TO DO LIST", &icon_murdle_face_clues_32, &NotesActivity::createTodo},
     {"NOTES", &extra_notes_32, &NotesActivity::create},
+    {"VOICE NOTES", &extra_mic_32, &voicenotes::VoiceNotesActivity::create},
     {"POMODORO", &pomodoro::timerIcon, &PomodoroActivity::create},
     {"WALLPAPERS", &icon_wallpapers_32, &WallpapersActivity::create},
     {"QUOTES", &icon_library_32, &QuotesActivity::create},
