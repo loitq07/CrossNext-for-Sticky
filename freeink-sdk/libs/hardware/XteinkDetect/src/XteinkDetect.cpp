@@ -18,7 +18,7 @@
 //     safe on the S3 X4 Pro too.
 #define FREEINK_XTEINK_C3 (FREEINK_DEVICE_X4 || FREEINK_DEVICE_X3)
 #define FREEINK_XTEINK_DISPLAY_PROBE \
-  (FREEINK_DEVICE_X3 || FREEINK_DEVICE_X4 || FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC)
+  (FREEINK_DEVICE_X3 || FREEINK_DEVICE_X4 || FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC || FREEINK_DEVICE_STICKY)
 
 namespace freeink {
 
@@ -422,7 +422,71 @@ bool probeSaysUltraChip(uint8_t verOut[5]) {
 
 }  // namespace
 
+EpdIcModel detect_ic_model() {
+  const auto& d = BoardConfig::ACTIVE.display;
+  const EpdProbePins p{d.sclk, d.mosi, d.cs, d.dc, d.rst, d.busy};
+
+  if (p.sclk < 0 || p.mosi < 0 || p.cs < 0 || p.dc < 0) {
+    return EpdIcModel::SSD1677;
+  }
+
+  // Ensure EPD power rail is active so the controller can respond
+  if (d.powerEnable >= 0) {
+    pinMode(d.powerEnable, OUTPUT);
+    digitalWrite(d.powerEnable, HIGH);
+    delay(10);
+  }
+
+  pinMode(p.cs, OUTPUT);
+  digitalWrite(p.cs, HIGH);
+  pinMode(p.sclk, OUTPUT);
+  digitalWrite(p.sclk, LOW);
+  pinMode(p.dc, OUTPUT);
+  digitalWrite(p.dc, HIGH);
+  pinMode(p.mosi, OUTPUT);
+  if (p.busy >= 0) pinMode(p.busy, INPUT);
+
+  // Hardware reset pulse matching Seeed SSD2677 detection: 20 ms low, 10 ms high
+  if (p.rst >= 0) {
+    gpio_hold_dis(static_cast<gpio_num_t>(p.rst));
+    pinMode(p.rst, OUTPUT);
+    digitalWrite(p.rst, LOW);
+    delay(20);
+    digitalWrite(p.rst, HIGH);
+    delay(10);
+  }
+
+  // Read ID via command 0x70 (SSD2677 responds 0x07)
+  uint8_t chip_id = 0;
+  epdCmdRead(p, 0x70, &chip_id, 1);
+  releaseDisplayPins(p);
+
+  if (Serial) {
+    Serial.printf("[%lu] [ICDET] detect_ic_model: read chip_id=0x%02X\n", millis(), chip_id);
+  }
+
+  // 0x07 confirms SSD2677; default gracefully to SSD1677 on anything else
+  if (chip_id == 0x07) {
+    return EpdIcModel::SSD2677;
+  }
+  return EpdIcModel::SSD1677;
+}
+
 bool applyXteinkDisplayController() {
+#if FREEINK_DEVICE_STICKY
+  if (BoardConfig::isSticky()) {
+    const EpdIcModel model = detect_ic_model();
+    if (model == EpdIcModel::SSD2677) {
+      BoardConfig::ACTIVE.displayController = BoardConfig::DisplayController::SSD2677;
+      g_probeDiag.promoted = true;
+      if (Serial) Serial.printf("[%lu] [XTDET] Sticky: SSD2677 auto-detected and selected\n", millis());
+      return true;
+    }
+    BoardConfig::ACTIVE.displayController = BoardConfig::DisplayController::SSD1677;
+    if (Serial) Serial.printf("[%lu] [XTDET] Sticky: SSD1677 active (default)\n", millis());
+    return false;
+  }
+#endif
   // Decide from the live display-bus probe — the ground truth. The OEM NVS
   // hw_calib/screenType is read only for diagnostics: it's unreliable in the
   // field (a full-flash from another unit overwrites it, so it can name the wrong
@@ -542,6 +606,7 @@ DisplayControllerVerdict detectXteinkDisplayController(uint8_t verBytes[5], uint
   return DisplayControllerVerdict::PrimaryAssumed;
 }
 bool applyXteinkDisplayController() { return false; }
+EpdIcModel detect_ic_model() { return EpdIcModel::SSD1677; }
 
 const XteinkDisplayProbeDiag& getXteinkDisplayProbeDiag() {
   static const XteinkDisplayProbeDiag empty;

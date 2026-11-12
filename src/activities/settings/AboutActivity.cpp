@@ -44,6 +44,8 @@ const char* displayControllerName(const BoardConfig::DisplayController c) {
   switch (c) {
     case BoardConfig::DisplayController::SSD1677:
       return "SSD1677";
+    case BoardConfig::DisplayController::SSD2677:
+      return "SSD2677";
     case BoardConfig::DisplayController::UC8253:
       return "UC8253";
     case BoardConfig::DisplayController::ED2208:

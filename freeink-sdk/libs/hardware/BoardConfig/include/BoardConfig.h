@@ -123,6 +123,11 @@
 #else
 #define FREEINK_DRIVER_SSD1677 0
 #endif
+#if FREEINK_DEVICE_STICKY
+#define FREEINK_DRIVER_SSD2677 1
+#else
+#define FREEINK_DRIVER_SSD2677 0
+#endif
 #if FREEINK_DEVICE_X3
 #define FREEINK_DRIVER_UC8253_X3 1
 #else
@@ -439,6 +444,7 @@ enum class InputStyle : uint8_t {
 // waveforms, so its profile reports the actual controller here.
 enum class DisplayController : uint8_t {
   SSD1677 = 0,
+  SSD2677 = 1,
   UC8253 = 2,
   ED2208 = 3,
   LgfxEpd = 4,

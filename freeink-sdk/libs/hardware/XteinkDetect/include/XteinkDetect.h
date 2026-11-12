@@ -72,6 +72,15 @@ enum class DisplayControllerVerdict : uint8_t { PrimaryAssumed, Uc81xxConfirmed,
 
 DisplayControllerVerdict detectXteinkDisplayController(uint8_t verBytes[5] = nullptr, uint8_t* flg = nullptr);
 
+// --- SSD IC model detection (SSD1677 vs SSD2677) ---
+enum class EpdIcModel : uint8_t {
+  SSD1677 = 0,
+  SSD2677 = 1,
+  Unknown = 255
+};
+
+EpdIcModel detect_ic_model();
+
 // Diagnostics snapshot of the most recent display-controller probe, for
 // firmware to persist somewhere a user can retrieve WITHOUT serial access
 // (locked units): e.g. a file on the SD card. Populated by
