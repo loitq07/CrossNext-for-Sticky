@@ -16,19 +16,19 @@ TranscribeResult transcribeAudio(const Config& config, const int16_t* pcmData, s
 
   if (pcmBytes < 3200) {  // less than 0.1s
     result.status = TranscribeStatus::AUDIO_TOO_SHORT;
-    result.errorMessage = "Recording is too short";
+    result.errorMessage = "Bản ghi âm quá ngắn (dưới 0.1 giây)";
     return result;
   }
 
   if (config.apiKey.empty()) {
     result.status = TranscribeStatus::NO_API_KEY;
-    result.errorMessage = "Missing Groq API Key in /settings/voice_ai.json";
+    result.errorMessage = "Chưa có Groq API Key trong /settings/voice_ai.json";
     return result;
   }
 
   if (WiFi.status() != WL_CONNECTED) {
     result.status = TranscribeStatus::NO_WIFI;
-    result.errorMessage = "Wi-Fi not connected";
+    result.errorMessage = "Chưa kết nối Wi-Fi";
     return result;
   }
 
@@ -42,7 +42,7 @@ TranscribeResult transcribeAudio(const Config& config, const int16_t* pcmData, s
   if (!client.connect(config.host.c_str(), config.port)) {
     LOG_ERR("VOICE", "Connection failed to %s:%d", config.host.c_str(), config.port);
     result.status = TranscribeStatus::CONNECT_FAIL;
-    result.errorMessage = "Failed to connect to API server";
+    result.errorMessage = "Không thể kết nối tới máy chủ Groq AI";
     return result;
   }
 
@@ -62,6 +62,14 @@ TranscribeResult transcribeAudio(const Config& config, const int16_t* pcmData, s
   bodyStart += "--" + boundary + "\r\n";
   bodyStart += "Content-Disposition: form-data; name=\"response_format\"\r\n\r\n";
   bodyStart += "json\r\n";
+
+  bodyStart += "--" + boundary + "\r\n";
+  bodyStart += "Content-Disposition: form-data; name=\"temperature\"\r\n\r\n";
+  bodyStart += "0.0\r\n";
+
+  bodyStart += "--" + boundary + "\r\n";
+  bodyStart += "Content-Disposition: form-data; name=\"prompt\"\r\n\r\n";
+  bodyStart += "Ghi chú công việc, hội thoại tiếng Việt.\r\n";
 
   bodyStart += "--" + boundary + "\r\n";
   bodyStart += "Content-Disposition: form-data; name=\"file\"; filename=\"speech.wav\"\r\n";
@@ -123,44 +131,101 @@ TranscribeResult transcribeAudio(const Config& config, const int16_t* pcmData, s
   result.httpCode = statusCode;
   LOG_INF("VOICE", "HTTP status: %d", statusCode);
 
-  // Skip HTTP headers
+  bool isChunked = false;
+  int contentLength = -1;
+
+  // Read HTTP headers
   while (client.connected()) {
     String line = client.readStringUntil('\n');
-    if (line == "\r" || line.isEmpty()) break;
+    line.trim();
+    if (line.isEmpty()) break;
+    String lower = line;
+    lower.toLowerCase();
+    if (lower.startsWith("transfer-encoding:") && lower.indexOf("chunked") >= 0) {
+      isChunked = true;
+    }
+    if (lower.startsWith("content-length:")) {
+      contentLength = line.substring(15).toInt();
+    }
   }
 
-  // Read response body
+  LOG_INF("VOICE", "Headers parsed: code=%d chunked=%d len=%d", statusCode, isChunked ? 1 : 0, contentLength);
+
   String body;
-  while (client.connected() || client.available()) {
-    while (client.available()) {
-      char c = static_cast<char>(client.read());
-      body += c;
+  const uint32_t readTimeout = 15000;
+  const uint32_t startRead = millis();
+
+  if (isChunked) {
+    while ((client.connected() || client.available()) && (millis() - startRead < readTimeout)) {
+      String hexLine = client.readStringUntil('\n');
+      hexLine.trim();
+      if (hexLine.isEmpty()) continue;
+      long chunkSize = strtol(hexLine.c_str(), nullptr, 16);
+      if (chunkSize <= 0) break;
+
+      while (chunkSize > 0 && (client.connected() || client.available()) && (millis() - startRead < readTimeout)) {
+        if (client.available()) {
+          body += static_cast<char>(client.read());
+          chunkSize--;
+        } else {
+          delay(1);
+        }
+      }
+      client.readStringUntil('\n');  // trailing \r\n
     }
-    delay(10);
+  } else if (contentLength > 0) {
+    while (body.length() < static_cast<size_t>(contentLength) && (client.connected() || client.available()) &&
+           (millis() - startRead < readTimeout)) {
+      if (client.available()) {
+        body += static_cast<char>(client.read());
+      } else {
+        delay(1);
+      }
+    }
+  } else {
+    while ((client.connected() || client.available()) && (millis() - startRead < readTimeout)) {
+      if (client.available()) {
+        body += static_cast<char>(client.read());
+      } else {
+        delay(5);
+      }
+    }
   }
   client.stop();
 
-  LOG_DBG("VOICE", "Response body: %s", body.c_str());
+  LOG_INF("VOICE", "Raw response body (%u bytes): %s", static_cast<unsigned>(body.length()), body.c_str());
+
+  // Extract pure JSON { ... } to prevent chunk bytes / carriage returns from breaking parsing
+  int firstBrace = body.indexOf('{');
+  int lastBrace = body.lastIndexOf('}');
+  String jsonStr = (firstBrace >= 0 && lastBrace > firstBrace) ? body.substring(firstBrace, lastBrace + 1) : body;
 
   JsonDocument doc;
-  DeserializationError err = deserializeJson(doc, body);
+  DeserializationError err = deserializeJson(doc, jsonStr);
   if (err) {
-    LOG_ERR("VOICE", "JSON parse error: %s", err.c_str());
+    LOG_ERR("VOICE", "JSON parse error: %s (raw body: %s)", err.c_str(), body.c_str());
     result.status = TranscribeStatus::PARSE_ERROR;
-    result.errorMessage = "Failed to parse API response";
+    result.errorMessage = "Không thể phân tích phản hồi từ Groq API (Mã: " + std::to_string(statusCode) + ")";
     return result;
   }
 
   if (statusCode == 200) {
     const char* text = doc["text"] | "";
     result.text = text;
+    if (result.text.empty()) {
+      result.text = "(Không nhận diện được giọng nói trong bản ghi âm)";
+    }
     result.status = TranscribeStatus::SUCCESS;
     LOG_INF("VOICE", "Transcription success! (%u chars)", static_cast<unsigned>(result.text.length()));
   } else {
     result.status = TranscribeStatus::HTTP_ERROR;
-    const char* errMsg = doc["error"]["message"] | "HTTP error";
-    result.errorMessage = errMsg;
-    LOG_ERR("VOICE", "API Error %d: %s", statusCode, errMsg);
+    const char* errMsg = doc["error"]["message"] | "";
+    if (strlen(errMsg) > 0) {
+      result.errorMessage = std::string(errMsg);
+    } else {
+      result.errorMessage = "Lỗi máy chủ Groq (HTTP " + std::to_string(statusCode) + ")";
+    }
+    LOG_ERR("VOICE", "API Error %d: %s", statusCode, result.errorMessage.c_str());
   }
 
   return result;

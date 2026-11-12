@@ -41,6 +41,9 @@ bool loadConfig(Config& out) {
   }
 
   const char* apiKey = doc["api_key"] | "";
+  if (strlen(apiKey) == 0) {
+    apiKey = doc["groq_api_key"] | "";
+  }
   out.apiKey = apiKey;
 
   const char* model = doc["model"] | "whisper-large-v3-turbo";

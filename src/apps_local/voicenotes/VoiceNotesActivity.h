@@ -4,6 +4,7 @@
 #include <string>
 
 #include "../../activities/Activity.h"
+#include "../ui/ToyboxScreen.h"
 #include "GroqTranscriber.h"
 #include "VoiceConfig.h"
 #include "VoiceRecorder.h"
@@ -32,10 +33,12 @@ class VoiceNotesActivity final : public Activity {
   };
 
   void handleInput();
+  void handleAction(freeink::ui::ActionId action);
   void startRecording();
   void finishRecordingAndTranscribe();
   void cancelRecording();
   void saveTranscribedNote();
+  void handleReloadConfig();
 
   Config config_;
   VoiceRecorder recorder_;
@@ -47,8 +50,11 @@ class VoiceNotesActivity final : public Activity {
   std::string errorMessage_;
 
   uint32_t lastRenderMs_ = 0;
+  uint32_t recordingStartMs_ = 0;
   int lastRenderedSec_ = -1;
   int lastRenderedLevel_ = -1;
+
+  toybox::Interactions interactions_;
 };
 
 }  // namespace voicenotes

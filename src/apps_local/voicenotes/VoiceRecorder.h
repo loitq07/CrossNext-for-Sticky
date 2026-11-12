@@ -36,6 +36,9 @@ class VoiceRecorder {
   // Real-time audio activity level (0 to 100) for UI VU meter
   int audioLevel() const { return currentLevel_; }
 
+  // Maximum sample peak amplitude recorded in current session
+  int32_t maxPeak() const { return maxRecordedPeak_; }
+
   // Access the raw PCM samples
   const int16_t* pcmData() const { return pcmBuffer_; }
 
@@ -54,6 +57,7 @@ class VoiceRecorder {
   uint32_t startMs_ = 0;
   uint32_t elapsedMs_ = 0;
   int currentLevel_ = 0;
+  int32_t maxRecordedPeak_ = 0;
 };
 
 }  // namespace voicenotes

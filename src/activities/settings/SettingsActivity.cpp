@@ -208,6 +208,18 @@ void SettingsActivity::rebuildSettingsLists() {
           (BoardConfig::isX4Pro() || BoardConfig::isX4Classic())) {
         continue;
       }
+      if ((setting.valuePtr == &CrossPointSettings::sleepHighlightMinutes ||
+           setting.nameId == StrId::STR_SLEEP_HIGHLIGHT_FONT ||
+           setting.valuePtr == &CrossPointSettings::sleepHighlightAlign) &&
+          SETTINGS.sleepScreen != CrossPointSettings::SLEEP_SCREEN_MODE::HIGHLIGHTS) {
+        continue;
+      }
+      if ((setting.valuePtr == &CrossPointSettings::sleepScreenCoverMode ||
+           setting.valuePtr == &CrossPointSettings::sleepScreenCoverFilter) &&
+          SETTINGS.sleepScreen != CrossPointSettings::SLEEP_SCREEN_MODE::COVER &&
+          SETTINGS.sleepScreen != CrossPointSettings::SLEEP_SCREEN_MODE::COVER_CUSTOM) {
+        continue;
+      }
       displaySettings.push_back(setting);
     } else if (setting.category == StrId::STR_CAT_READER) {
       // Settings merged into "Text Settings"
@@ -218,6 +230,18 @@ void SettingsActivity::rebuildSettingsLists() {
       if (BoardConfig::hasHomeKey() && setting.nameId == StrId::STR_LONG_PRESS_MENU) continue;
       if (setting.valuePtr == &CrossPointSettings::pwrBtnFootnoteBack &&
           SETTINGS.shortPwrBtn != CrossPointSettings::SHORT_PWRBTN::FOOTNOTES) {
+        continue;
+      }
+      if (setting.valuePtr == &CrossPointSettings::hapticIntensity &&
+          SETTINGS.vibration == CrossPointSettings::VIBRATION_OFF) {
+        continue;
+      }
+      if (setting.valuePtr == &CrossPointSettings::buzzerVolume && !SETTINGS.keySound) {
+        continue;
+      }
+      if ((setting.valuePtr == &CrossPointSettings::pageTurnGesture ||
+           setting.valuePtr == &CrossPointSettings::previousPageGesture) &&
+          !SETTINGS.touchReaderControls) {
         continue;
       }
       controlsSettings.push_back(setting);

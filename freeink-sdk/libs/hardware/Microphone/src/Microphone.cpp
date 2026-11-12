@@ -8,6 +8,13 @@
 
 #include <driver/gpio.h>
 #include <driver/i2s_pdm.h>
+#include <algorithm>
+#include <cstdlib>
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+#include <hal/usb_serial_jtag_ll.h>
+#include <soc/usb_serial_jtag_reg.h>
+#include <soc/rtc_cntl_reg.h>
+#endif
 #if FREEINK_DEVICE_METALIO_EINK4
 #include <MetalioAudio.h>
 #endif
@@ -44,9 +51,24 @@ bool Microphone::begin(uint32_t sampleRate) {
     return false;
   }
 
+#if defined(CONFIG_IDF_TARGET_ESP32S3)
+  // On ESP32-S3, GPIO 19 and 20 default to the internal USB-Serial-JTAG controller.
+  // We must release the physical pads and disable DP_PULLUP so GPIO 19 (CLK) and 20 (DATA)
+  // work as I2S PDM peripheral lines.
+  CLEAR_PERI_REG_MASK(USB_SERIAL_JTAG_CONF0_REG, USB_SERIAL_JTAG_USB_PAD_ENABLE | USB_SERIAL_JTAG_DP_PULLUP);
+  CLEAR_PERI_REG_MASK(RTC_CNTL_USB_CONF_REG,
+                      RTC_CNTL_SW_HW_USB_PHY_SEL | RTC_CNTL_SW_USB_PHY_SEL | RTC_CNTL_USB_PAD_ENABLE);
+#endif
+
+  // Reset GPIOs from USB-JTAG or previous state
+  gpio_reset_pin(static_cast<gpio_num_t>(mic.clk));
+  gpio_reset_pin(static_cast<gpio_num_t>(mic.data));
+
+  setMicPower(mic, false);
+  delay(20);
   setMicPower(mic, true);
   // PDM mics need a brief settle after the rail comes up before the clock runs.
-  delay(10);
+  delay(50);
 
   i2s_chan_handle_t rx = nullptr;
   i2s_chan_config_t chanCfg = I2S_CHANNEL_DEFAULT_CONFIG(I2S_NUM_AUTO, I2S_ROLE_MASTER);
@@ -57,7 +79,7 @@ bool Microphone::begin(uint32_t sampleRate) {
 
   i2s_pdm_rx_config_t pdmCfg = {
       .clk_cfg = I2S_PDM_RX_CLK_DEFAULT_CONFIG(sampleRate),
-      .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_MONO),
+      .slot_cfg = I2S_PDM_RX_SLOT_DEFAULT_CONFIG(I2S_DATA_BIT_WIDTH_16BIT, I2S_SLOT_MODE_STEREO),
       .gpio_cfg =
           {
               .clk = static_cast<gpio_num_t>(mic.clk),
@@ -65,6 +87,12 @@ bool Microphone::begin(uint32_t sampleRate) {
               .invert_flags = {.clk_inv = false},
           },
   };
+#if SOC_I2S_SUPPORTS_PDM_RX_HP_FILTER
+  pdmCfg.slot_cfg.hp_en = true;
+  pdmCfg.slot_cfg.hp_cut_off_freq_hz = 35.5f;
+  pdmCfg.slot_cfg.amplify_num = 5;  // Hardware 5x digital amplification
+#endif
+
   if (i2s_channel_init_pdm_rx_mode(rx, &pdmCfg) != ESP_OK || i2s_channel_enable(rx) != ESP_OK) {
     i2s_del_channel(rx);
     setMicPower(mic, false);
@@ -93,12 +121,33 @@ int Microphone::read(int16_t* dst, size_t maxSamples, uint32_t timeoutMs) {
     return static_cast<int>(count);
   }
 #endif
-  size_t bytesRead = 0;
-  const esp_err_t err = i2s_channel_read(static_cast<i2s_chan_handle_t>(rxChan_), dst,
-                                         maxSamples * sizeof(int16_t), &bytesRead, pdMS_TO_TICKS(timeoutMs));
-  if (err == ESP_ERR_TIMEOUT) return 0;
-  if (err != ESP_OK) return -1;
-  return static_cast<int>(bytesRead / sizeof(int16_t));
+  constexpr size_t kChunk = 128;
+  int16_t stereo[kChunk * 2];
+  size_t total = 0;
+  while (total < maxSamples) {
+    const size_t toRead = std::min<size_t>(kChunk, maxSamples - total);
+    size_t bytesRead = 0;
+    const esp_err_t err = i2s_channel_read(static_cast<i2s_chan_handle_t>(rxChan_), stereo,
+                                           toRead * 2 * sizeof(int16_t), &bytesRead, pdMS_TO_TICKS(timeoutMs));
+    if (err == ESP_ERR_TIMEOUT) {
+      if (total > 0) break;
+      return 0;
+    }
+    if (err != ESP_OK) {
+      if (total > 0) break;
+      return -1;
+    }
+    const size_t frames = bytesRead / (2 * sizeof(int16_t));
+    if (frames == 0) break;
+    for (size_t i = 0; i < frames; ++i) {
+      const int16_t l = stereo[i * 2];
+      const int16_t r = stereo[i * 2 + 1];
+      dst[total + i] = (std::abs(static_cast<int>(l)) >= std::abs(static_cast<int>(r))) ? l : r;
+    }
+    total += frames;
+    if (frames < toRead) break;
+  }
+  return static_cast<int>(total);
 }
 
 void Microphone::end() {

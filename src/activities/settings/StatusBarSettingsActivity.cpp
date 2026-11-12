@@ -69,10 +69,29 @@ const int verticalPreviewTextPadding = 40;
 StatusBarSettingsActivity::StatusBarSettingsActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("StatusBarSettings", renderer, mappedInput, false, true) {}
 
+void StatusBarSettingsActivity::rebuildItems() {
+  visibleItemCount = 0;
+  activeItems_[visibleItemCount++] = ITEM_CHAPTER_PAGE_COUNT;
+  activeItems_[visibleItemCount++] = ITEM_BOOK_PROGRESS_PERCENTAGE;
+  activeItems_[visibleItemCount++] = ITEM_PROGRESS_BAR;
+  if (SETTINGS.statusBarProgressBar != CrossPointSettings::STATUS_BAR_PROGRESS_BAR::HIDE_PROGRESS) {
+    activeItems_[visibleItemCount++] = ITEM_PROGRESS_BAR_THICKNESS;
+  }
+  activeItems_[visibleItemCount++] = ITEM_TITLE;
+  activeItems_[visibleItemCount++] = ITEM_BATTERY;
+  activeItems_[visibleItemCount++] = ITEM_XTC_STATUS_BAR;
+  if (halClock.isAvailable()) {
+    activeItems_[visibleItemCount++] = ITEM_CLOCK;
+  }
+
+  for (int i = 0; i < visibleItemCount; i++) {
+    rowItems_[i].label = I18N.get(menuNames[activeItems_[i]]);
+    rowItems_[i].actionValue = static_cast<int16_t>(activeItems_[i]);
+  }
+}
+
 void StatusBarSettingsActivity::onEnter() {
   UiListActivity::onEnter();
-
-  visibleItemCount = halClock.isAvailable() ? FULL_MENU_ITEMS : BASE_MENU_ITEMS;
 
   // Clamp statusBarProgressBar and statusBarTitle in case of corrupt/migrated data
   if (SETTINGS.statusBarProgressBar >= PROGRESS_BAR_ITEMS) {
@@ -95,12 +114,7 @@ void StatusBarSettingsActivity::onEnter() {
     SETTINGS.statusBarClock = CrossPointSettings::STATUS_BAR_CLOCK_MODE::STATUS_BAR_CLOCK_HIDE;
   }
 
-  // Labels never change (unlike the values, which track live SETTINGS
-  // state), so they're set once here rather than every buildScreen() call.
-  for (int i = 0; i < visibleItemCount; i++) {
-    rowItems_[i].label = I18N.get(menuNames[i]);
-    rowItems_[i].actionValue = static_cast<int16_t>(i);
-  }
+  rebuildItems();
 }
 
 bool StatusBarSettingsActivity::handleCustomInput() {
@@ -118,7 +132,9 @@ void StatusBarSettingsActivity::activateIndex(const int index) {
 }
 
 void StatusBarSettingsActivity::handleSelection() {
-  switch (nav.selected) {
+  if (nav.selected < 0 || nav.selected >= visibleItemCount) return;
+  const int selectedItem = activeItems_[nav.selected];
+  switch (selectedItem) {
     case ITEM_CHAPTER_PAGE_COUNT:
       SETTINGS.statusBarChapterPageCount = (SETTINGS.statusBarChapterPageCount + 1) % 2;
       break;
@@ -130,6 +146,11 @@ void StatusBarSettingsActivity::handleSelection() {
                        [this](int idx) {
                          SETTINGS.statusBarProgressBar = idx;
                          SETTINGS.saveToFile();
+                         rebuildItems();
+                         if (nav.selected >= visibleItemCount) {
+                           nav.selected = visibleItemCount - 1;
+                         }
+                         requestUpdate();
                        });
       return;
     case ITEM_PROGRESS_BAR_THICKNESS:
@@ -194,17 +215,25 @@ void StatusBarSettingsActivity::buildScreen(UiScreen& screen) {
       static_cast<int16_t>(statusBarHeight + verticalPreviewTextPadding + metrics.verticalSpacing);
   pixelui::begin(screen, mappedInput.hasTouch() ? previewFooter : metrics.buttonHintsHeight + previewFooter);
 
-  // rowItems_'s labels/actionValue were set once in onEnter(); only the live
+  // rowItems_'s labels/actionValue were set in rebuildItems(); only the live
   // value text needs refreshing here, by assigning into the existing
   // rowValues_ strings (no array growth) rather than building a new
   // items/values vector on every render.
   for (int i = 0; i < visibleItemCount; i++) {
-    rowValues_[i] = rowValueText(i);
+    const int item = activeItems_[i];
+    rowValues_[i] = rowValueText(item);
     rowItems_[i].subtitle = rowValues_[i].empty() ? nullptr : rowValues_[i].c_str();
+    if (item == ITEM_CHAPTER_PAGE_COUNT) {
+      GUI.setCheckboxRow(rowItems_[i], SETTINGS.statusBarChapterPageCount);
+    } else if (item == ITEM_BOOK_PROGRESS_PERCENTAGE) {
+      GUI.setCheckboxRow(rowItems_[i], SETTINGS.statusBarBookProgressPercentage);
+    } else if (item == ITEM_BATTERY) {
+      GUI.setCheckboxRow(rowItems_[i], SETTINGS.statusBarBattery);
+    } else {
+      rowItems_[i].toggle = false;
+      rowItems_[i].toggleChecked = false;
+    }
   }
-  GUI.setCheckboxRow(rowItems_[ITEM_CHAPTER_PAGE_COUNT], SETTINGS.statusBarChapterPageCount);
-  GUI.setCheckboxRow(rowItems_[ITEM_BOOK_PROGRESS_PERCENTAGE], SETTINGS.statusBarBookProgressPercentage);
-  GUI.setCheckboxRow(rowItems_[ITEM_BATTERY], SETTINGS.statusBarBattery);
 
   fui::ListProps props;
   props.items = rowItems_;

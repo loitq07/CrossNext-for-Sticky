@@ -465,10 +465,18 @@ bool MappedInputManager::wasBackGesture() const {
       return true;
     }
   }
-  // Back = left-to-right swipe starting near the left edge. Edge-anchored so that
+  // Back = swipe from left edge (inwards) or right edge (inwards). Edge-anchored so that
   // mid-screen horizontal swipes stay available to activities that consume
   // SwipeDir::Left/Right (e.g. percent selection, image viewer).
-  return edgeBackEnabled && wasEdgeSwipe(fui::ScreenEdge::Left);
+  if (edgeBackEnabled && (wasEdgeSwipe(fui::ScreenEdge::Left) || wasEdgeSwipe(fui::ScreenEdge::Right))) {
+    static unsigned long lastEdgeSwipeFeedback = 0;
+    if (millis() - lastEdgeSwipeFeedback > 250) {
+      lastEdgeSwipeFeedback = millis();
+      haptic_feedback::touchAction();
+    }
+    return true;
+  }
+  return false;
 }
 
 bool MappedInputManager::wasTopEdgeDownSwipe() const { return wasEdgeSwipe(fui::ScreenEdge::Top); }

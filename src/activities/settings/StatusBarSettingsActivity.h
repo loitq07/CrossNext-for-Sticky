@@ -30,10 +30,13 @@ class StatusBarSettingsActivity final : public UiListActivity {
   std::string rowValueText(int index);
 
   void handleSelection();
+  void rebuildItems();
+
+  int activeItems_[MAX_STATUS_BAR_ITEMS]{};
 
   // Row storage: MAX_STATUS_BAR_ITEMS is a compile-time constant, so
   // fixed-capacity storage avoids any heap allocation for the row list.
-  // Labels are set once in onEnter() (visibleItemCount is decided there);
+  // Labels are set in rebuildItems() (visibleItemCount is decided there);
   // buildScreen() only refreshes the live value text (rowValues_) by
   // assigning into the existing strings (no array growth).
   std::string rowValues_[MAX_STATUS_BAR_ITEMS];

@@ -491,23 +491,44 @@
     return changed;
   }
 
+  function setRowVisible(key, visible) {
+    const row = document.getElementById('row-setting-' + key);
+    if (row) {
+      row.style.display = visible ? '' : 'none';
+    }
+  }
+
   function updateSettingsVisibility() {
     const shortPwrBtnVal = getControlValue('shortPwrBtn');
-    const pwrBtnFootnoteBackRow = document.getElementById('row-setting-pwrBtnFootnoteBack');
-    if (pwrBtnFootnoteBackRow) {
-      if (shortPwrBtnVal === 4) {
-        pwrBtnFootnoteBackRow.style.display = '';
-      } else {
-        pwrBtnFootnoteBackRow.style.display = 'none';
-      }
-    }
+    setRowVisible('pwrBtnFootnoteBack', shortPwrBtnVal === 4);
+
+    const sleepScreenVal = getControlValue('sleepScreen');
+    const isHighlights = sleepScreenVal === 10;
+    setRowVisible('sleepHighlightMinutes', isHighlights);
+    setRowVisible('sleepHighlightFontFamily', isHighlights);
+    setRowVisible('sleepHighlightAlign', isHighlights);
+
+    const isCover = sleepScreenVal === 3 || sleepScreenVal === 4;
+    setRowVisible('sleepScreenCoverMode', isCover);
+    setRowVisible('sleepScreenCoverFilter', isCover);
+
+    const vibrationVal = getControlValue('vibration');
+    setRowVisible('hapticIntensity', vibrationVal !== undefined && vibrationVal !== 2);
+
+    const keySoundVal = getControlValue('keySound');
+    setRowVisible('buzzerVolume', !!keySoundVal);
+
+    const touchReaderVal = getControlValue('touchReaderControls');
+    setRowVisible('pageTurnGesture', !!touchReaderVal);
+    setRowVisible('previousPageGesture', !!touchReaderVal);
+
+    const progressBarVal = getControlValue('statusBarProgressBar');
+    setRowVisible('statusBarProgressBarThickness', progressBarVal !== undefined && progressBarVal !== 2);
   }
 
   function handleSettingChanged(key) {
     syncQuickResumeTimeoutForSleepScreen(key === 'sleepScreen', key === 'quickResumeSleepScreen');
-    if (key === 'shortPwrBtn') {
-      updateSettingsVisibility();
-    }
+    updateSettingsVisibility();
     markChanged();
   }
 

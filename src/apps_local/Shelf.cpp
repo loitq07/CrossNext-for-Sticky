@@ -365,6 +365,11 @@ const char* label(const char* stableTitle) {
   if (std::strcmp(stableTitle, "TO DO LIST") == 0) return tr(STR_UI_TO_DO_LIST_D61BE9);
   if (std::strcmp(stableTitle, "NOTES") == 0) return tr(STR_UI_NOTES_E69FC1);
   if (std::strcmp(stableTitle, "HABITS") == 0) return tr(STR_UI_HABITS_630758);
+  if (std::strcmp(stableTitle, "Voice Notes") == 0 || std::strcmp(stableTitle, "VOICE NOTES") == 0) {
+    if (I18N.getLanguage() == Language::VI) return "Ghi chú thoại";
+    if (I18N.getLanguage() == Language::ES) return "Notas de voz";
+    return "Voice Notes";
+  }
   if (std::strcmp(stableTitle, "Games") == 0) return tr(STR_SHORT_GAMES);
   if (std::strcmp(stableTitle, "Apps") == 0) return tr(STR_SHORT_APPS);
   return stableTitle;

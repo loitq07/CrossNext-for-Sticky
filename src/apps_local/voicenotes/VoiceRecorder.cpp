@@ -55,6 +55,7 @@ bool VoiceRecorder::startRecording() {
   samplesCount_ = 0;
   currentLevel_ = 0;
   elapsedMs_ = 0;
+  maxRecordedPeak_ = 0;
 
   if (!mic_.begin(kSampleRate)) {
     LOG_ERR("VOICE", "Microphone begin failed");
@@ -94,6 +95,9 @@ void VoiceRecorder::update() {
       int32_t sample = std::abs(static_cast<int32_t>(temp[i]));
       if (sample > peak) peak = sample;
     }
+    if (peak > maxRecordedPeak_) {
+      maxRecordedPeak_ = peak;
+    }
 
     // Map 0..32767 to 0..100 with gentle decay
     int level = std::min(100, static_cast<int>((peak * 100) / 16000));
@@ -107,8 +111,25 @@ void VoiceRecorder::stopRecording() {
   elapsedMs_ = millis() - startMs_;
   mic_.end();
   currentLevel_ = 0;
-  LOG_INF("VOICE", "Recording stopped: %u samples (%u ms)", static_cast<unsigned>(samplesCount_),
-          static_cast<unsigned>(durationMs()));
+  LOG_INF("VOICE", "Recording stopped: %u samples (%u ms), maxPeak: %ld", static_cast<unsigned>(samplesCount_),
+          static_cast<unsigned>(durationMs()), static_cast<long>(maxRecordedPeak_));
+
+  // Software AGC / normalization:
+  // If recording has valid speech (peak >= 30) but is quiet (peak < 16000),
+  // boost it so Whisper gets loud and clear audio!
+  if (maxRecordedPeak_ >= 30 && maxRecordedPeak_ < 16000 && pcmBuffer_ && samplesCount_ > 0) {
+    const float targetPeak = 20000.0f;
+    float gain = targetPeak / static_cast<float>(maxRecordedPeak_);
+    if (gain > 12.0f) gain = 12.0f;
+    LOG_INF("VOICE", "Normalizing audio: peak %ld -> target 20000 (gain x%.2f)", static_cast<long>(maxRecordedPeak_), gain);
+    for (size_t i = 0; i < samplesCount_; ++i) {
+      int32_t val = static_cast<int32_t>(pcmBuffer_[i] * gain);
+      if (val > 32767) val = 32767;
+      else if (val < -32767) val = -32767;
+      pcmBuffer_[i] = static_cast<int16_t>(val);
+    }
+    maxRecordedPeak_ = 20000;
+  }
 }
 
 uint32_t VoiceRecorder::durationMs() const {

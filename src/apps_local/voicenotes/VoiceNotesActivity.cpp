@@ -8,64 +8,32 @@
 #include <ctime>
 
 #include "../../CrossPointSettings.h"
+#include "../../HapticFeedback.h"
 #include "../../WifiCredentialStore.h"
-#include "../../fontIds.h"
+#include "../Shelf.h"
+#include "../ui/Dashboard.h"
 #include "../ui/ExtraIcons.h"
+#include "../ui/PixelMenu.h"
+#include "../ui/PixelMenuTheme.h"
 #include "../ui/ToyboxFonts.h"
+#include "../ui/ToyboxScreen.h"
 #include "../ui/ToyboxTheme.h"
 
 namespace voicenotes {
 
 namespace {
 
-// Break text into lines fitting within maxWidth pixels
-std::vector<std::string> wrapText(const GfxRenderer& renderer, int fontId, const std::string& text, int maxWidth) {
-  std::vector<std::string> lines;
-  if (text.empty()) return lines;
+namespace fui = freeink::ui;
 
-  std::string currentLine;
-  size_t start = 0;
-
-  while (start < text.length()) {
-    size_t nextSpace = text.find_first_of(" \n\r", start);
-    std::string word;
-    char delimiter = 0;
-
-    if (nextSpace == std::string::npos) {
-      word = text.substr(start);
-      start = text.length();
-    } else {
-      word = text.substr(start, nextSpace - start);
-      delimiter = text[nextSpace];
-      start = nextSpace + 1;
-    }
-
-    if (!word.empty()) {
-      std::string testLine = currentLine.empty() ? word : (currentLine + " " + word);
-      int w = renderer.getTextWidth(fontId, testLine.c_str());
-
-      if (w <= maxWidth) {
-        currentLine = testLine;
-      } else {
-        if (!currentLine.empty()) {
-          lines.push_back(currentLine);
-        }
-        currentLine = word;
-      }
-    }
-
-    if (delimiter == '\n') {
-      lines.push_back(currentLine);
-      currentLine.clear();
-    }
-  }
-
-  if (!currentLine.empty()) {
-    lines.push_back(currentLine);
-  }
-
-  return lines;
-}
+enum Actions : fui::ActionId {
+  ActionNone = 0,
+  ActionBack = 1,
+  ActionRecord = 2,
+  ActionStop = 3,
+  ActionCancel = 4,
+  ActionReload = 5,
+  ActionReset = 6
+};
 
 }  // namespace
 
@@ -82,13 +50,13 @@ std::unique_ptr<Activity> VoiceNotesActivity::create(GfxRenderer& renderer, Mapp
 
 void VoiceNotesActivity::onEnter() {
   Activity::onEnter();
+  mappedInput.setEdgeBackEnabled(true);
   toybox::ensureFonts(renderer);
 
   loadConfig(config_);
-  recorder_.begin();
 
   state_ = State::READY;
-  statusMessage_ = "Press OK / Tap to Record";
+  statusMessage_ = "Sẵn sàng ghi âm";
   requestUpdate();
 }
 
@@ -97,28 +65,71 @@ void VoiceNotesActivity::onExit() {
   Activity::onExit();
 }
 
+void VoiceNotesActivity::handleReloadConfig() {
+  HalBuzzer::click(SETTINGS.buzzerVolume);
+  loadConfig(config_);
+  if (config_.apiKey.empty()) {
+    errorMessage_ = "Chưa tìm thấy API Key! Vui lòng kiểm tra file /settings/voice_ai.json trên thẻ nhớ.";
+    state_ = State::ERROR_STATE;
+  } else {
+    state_ = State::READY;
+  }
+  requestUpdate();
+}
+
 void VoiceNotesActivity::startRecording() {
   if (state_ == State::RECORDING) return;
 
+  if (config_.apiKey.empty()) {
+    loadConfig(config_);
+    if (config_.apiKey.empty()) {
+      state_ = State::READY;
+      requestUpdate();
+      return;
+    }
+  }
+
   if (!recorder_.startRecording()) {
     state_ = State::ERROR_STATE;
-    errorMessage_ = "Cannot start microphone";
+    errorMessage_ = "Không thể khởi động microphone (lỗi phần cứng I2S).";
     requestUpdate();
     return;
   }
 
+  recordingStartMs_ = millis();
   state_ = State::RECORDING;
   lastRenderedSec_ = -1;
+  lastRenderedLevel_ = -1;
+  lastRenderMs_ = millis();
   requestUpdate();
 }
 
 void VoiceNotesActivity::finishRecordingAndTranscribe() {
   recorder_.stopRecording();
+  recorder_.saveWav("/notes/last_recording.wav");
+
+  const uint32_t dur = recorder_.durationMs();
+  if (dur < 1200) {
+    LOG_ERR("VOICE", "Recording too short: %u ms", static_cast<unsigned>(dur));
+    state_ = State::ERROR_STATE;
+    errorMessage_ = "Thời gian ghi âm quá ngắn (< 1.2s)! Vui lòng nói trọn vẹn câu rồi mới bấm dừng.";
+    requestUpdate();
+    return;
+  }
+
+  if (recorder_.recordedSamples() == 0 || recorder_.maxPeak() < 30) {
+    LOG_ERR("VOICE", "Audio silence detected (maxPeak=%ld, samples=%u)",
+            static_cast<long>(recorder_.maxPeak()), static_cast<unsigned>(recorder_.recordedSamples()));
+    state_ = State::ERROR_STATE;
+    errorMessage_ = "Không thu được âm thanh từ micro (quá im lặng). Vui lòng thử nói to hơn hoặc đưa máy lại gần!";
+    requestUpdate();
+    return;
+  }
+
   state_ = State::TRANSCRIBING;
-  statusMessage_ = "Transcribing with Groq Whisper...";
+  statusMessage_ = "Đang gửi dữ liệu tới Groq Whisper AI...";
   requestUpdateAndWait();
 
-  // If Wi-Fi is disconnected, attempt quick reconnect with saved credentials
   if (WiFi.status() != WL_CONNECTED) {
     const std::string lastSsid = WIFI_STORE.getLastConnectedSsid();
     if (!lastSsid.empty()) {
@@ -134,12 +145,44 @@ void VoiceNotesActivity::finishRecordingAndTranscribe() {
     }
   }
 
+  if (WiFi.status() != WL_CONNECTED) {
+    state_ = State::ERROR_STATE;
+    errorMessage_ = "Chưa kết nối Wi-Fi! Vui lòng kết nối Wi-Fi trong Cài đặt trước khi ghi âm.";
+    requestUpdate();
+    return;
+  }
+
   const TranscribeResult res = transcribeAudio(config_, recorder_.pcmData(), recorder_.recordedBytes());
 
   if (res.status == TranscribeStatus::SUCCESS) {
-    transcribedText_ = res.text;
-    state_ = State::RESULT;
-    saveTranscribedNote();
+    // Filter out known Whisper YouTube outro hallucinations unconditionally
+    std::string lower = res.text;
+    for (char& c : lower) c = static_cast<char>(tolower(static_cast<unsigned char>(c)));
+
+    bool isHallucination = false;
+    if (lower.find("subscribe") != std::string::npos ||
+        lower.find("ghiền mì gõ") != std::string::npos ||
+        lower.find("ghien mi go") != std::string::npos ||
+        lower.find("nghiền mì gõ") != std::string::npos ||
+        lower.find("la la school") != std::string::npos ||
+        lower.find("đăng ký kênh") != std::string::npos ||
+        lower.find("dang ky kenh") != std::string::npos ||
+        lower.find("kênh youtube") != std::string::npos ||
+        lower.find("video hấp dẫn") != std::string::npos ||
+        lower.find("cảm ơn các bạn đã theo dõi") != std::string::npos ||
+        lower.find("like và chia sẻ") != std::string::npos) {
+      isHallucination = true;
+    }
+
+    if (isHallucination) {
+      LOG_ERR("VOICE", "Filtered Whisper hallucination: %s", res.text.c_str());
+      state_ = State::ERROR_STATE;
+      errorMessage_ = "Không phát hiện được giọng nói rõ ràng. Vui lòng thử nói to hơn gần micro!";
+    } else {
+      transcribedText_ = res.text;
+      state_ = State::RESULT;
+      saveTranscribedNote();
+    }
   } else {
     state_ = State::ERROR_STATE;
     errorMessage_ = res.errorMessage;
@@ -151,7 +194,7 @@ void VoiceNotesActivity::finishRecordingAndTranscribe() {
 void VoiceNotesActivity::cancelRecording() {
   recorder_.stopRecording();
   state_ = State::READY;
-  statusMessage_ = "Recording cancelled";
+  statusMessage_ = "Đã hủy ghi âm";
   requestUpdate();
 }
 
@@ -160,7 +203,6 @@ void VoiceNotesActivity::saveTranscribedNote() {
 
   Storage.ensureDirectoryExists("/notes");
 
-  // Format filename with timestamp or counter
   char filename[64];
   const time_t now = time(nullptr);
   struct tm t;
@@ -171,9 +213,9 @@ void VoiceNotesActivity::saveTranscribedNote() {
     std::snprintf(filename, sizeof(filename), "/notes/Voice_Note_%lu.md", static_cast<unsigned long>(millis() / 1000));
   }
 
-  std::string content = "# Voice Note\n\n";
+  std::string content = "# Ghi chú thoại (Voice Note)\n\n";
   content += transcribedText_;
-  content += "\n\n---\n*Transcribed by Groq Whisper on reTerminal Sticky*\n";
+  content += "\n\n---\n*Chuyển ngữ bởi Groq Whisper trên reTerminal Sticky*\n";
 
   if (Storage.writeFile(filename, String(content.c_str()))) {
     lastSavedPath_ = filename;
@@ -183,12 +225,51 @@ void VoiceNotesActivity::saveTranscribedNote() {
   }
 }
 
-void VoiceNotesActivity::handleInput() {
-  int tapX = 0, tapY = 0;
-  const bool tapped = mappedInput.wasScreenTapped(tapX, tapY);
-  const bool confirmPressed = mappedInput.wasPressed(MappedInputManager::Button::Confirm);
-  const bool backPressed = mappedInput.wasPressed(MappedInputManager::Button::Back);
+void VoiceNotesActivity::handleAction(fui::ActionId action) {
+  switch (action) {
+    case ActionBack:
+      if (state_ == State::READY) {
+        shelf::leave(renderer, mappedInput);
+      } else {
+        state_ = State::READY;
+        requestUpdate();
+      }
+      break;
 
+    case ActionRecord:
+      startRecording();
+      break;
+
+    case ActionStop:
+      if (millis() - recordingStartMs_ < 1200) {
+        LOG_INF("VOICE", "Premature stop click ignored (debounce)");
+        return;
+      }
+      finishRecordingAndTranscribe();
+      break;
+
+    case ActionCancel:
+      cancelRecording();
+      break;
+
+    case ActionReload:
+      handleReloadConfig();
+      break;
+
+    case ActionReset:
+      state_ = State::READY;
+      requestUpdate();
+      break;
+
+    default:
+      break;
+  }
+}
+
+void VoiceNotesActivity::handleInput() {
+  const bool backPressed = mappedInput.wasPressed(MappedInputManager::Button::Back) ||
+                           mappedInput.wasReleased(MappedInputManager::Button::Back);
+  const bool confirmPressed = mappedInput.wasPressed(MappedInputManager::Button::Confirm);
   if (backPressed) {
     if (state_ == State::RECORDING) {
       cancelRecording();
@@ -196,41 +277,46 @@ void VoiceNotesActivity::handleInput() {
       state_ = State::READY;
       requestUpdate();
     } else {
-      finish();
+      shelf::leave(renderer, mappedInput);
     }
     return;
   }
 
-  switch (state_) {
-    case State::READY:
-      if (confirmPressed || tapped) {
+  if (confirmPressed) {
+    haptic_feedback::touchAction();
+    if (state_ == State::READY) {
+      if (config_.apiKey.empty()) {
+        handleReloadConfig();
+      } else {
         startRecording();
       }
-      break;
-
-    case State::RECORDING:
-      if (confirmPressed || tapped) {
+    } else if (state_ == State::RECORDING) {
+      if (millis() - recordingStartMs_ >= 1200) {
         finishRecordingAndTranscribe();
       }
-      break;
+    } else if (state_ == State::RESULT || state_ == State::ERROR_STATE) {
+      state_ = State::READY;
+      requestUpdate();
+    }
+    return;
+  }
 
-    case State::RESULT:
-      if (confirmPressed || tapped) {
-        // Start another recording
-        startRecording();
+  int tapX = 0, tapY = 0;
+  if (mappedInput.wasScreenTapped(tapX, tapY)) {
+    fui::InputSnapshot tap;
+    tap.touchReleased = true;
+    tap.touchX = tapX;
+    tap.touchY = tapY;
+    const auto event = interactions_.route(tap);
+    if (event.action) {
+      if (event.action == ActionStop && millis() - recordingStartMs_ < 1200) {
+        LOG_INF("VOICE", "Tap Stop ignored: premature debounce");
+        return;
       }
-      break;
-
-    case State::ERROR_STATE:
-      if (confirmPressed || tapped) {
-        state_ = State::READY;
-        requestUpdate();
-      }
-      break;
-
-    case State::TRANSCRIBING:
-      // Busy transcribing, ignore inputs
-      break;
+      haptic_feedback::touchAction();
+      handleAction(event.action);
+      return;
+    }
   }
 }
 
@@ -241,158 +327,264 @@ void VoiceNotesActivity::loop() {
     recorder_.update();
 
     if (!recorder_.isRecording()) {
-      // Auto-stopped due to buffer full or max duration
       finishRecordingAndTranscribe();
       return;
     }
 
-    // Refresh UI roughly once per second or when level changes
+    // Only refresh display ONCE PER SECOND to avoid blocking touch input with E-Ink refreshes
     const int sec = static_cast<int>(recorder_.durationMs() / 1000);
-    const int lvl = recorder_.audioLevel() / 10;
-    if (sec != lastRenderedSec_ || lvl != lastRenderedLevel_ || (millis() - lastRenderMs_ > 300)) {
+    if (sec != lastRenderedSec_) {
       lastRenderedSec_ = sec;
-      lastRenderedLevel_ = lvl;
-      lastRenderMs_ = millis();
       requestUpdate(true);
     }
   }
 }
 
 void VoiceNotesActivity::render(RenderLock&&) {
-  const int width = renderer.getScreenWidth();
-  const int height = renderer.getScreenHeight();
+  interactions_.clear();
+  renderer.clearScreen();
 
-  // White background
-  renderer.fillRect(0, 0, width, height, false);
+  auto target = toybox::makeTarget(renderer);
+  pixelui::bindFonts(target, renderer, I18N.getLanguage() != Language::EN);
 
-  // Top header bar
-  renderer.fillRect(0, 0, width, 56, true);
-  renderer.drawText(toybox::kUiFontId, 20, 36, "VOICE NOTES", false);
+  const fui::InputSnapshot noInput{};
+  toybox::Frame frame(target, target.deviceContext(), noInput, interactions_);
+  toybox::Screen screen(frame);
 
-  // Wi-Fi status indicator in header
-  const bool wifiOk = (WiFi.status() == WL_CONNECTED);
-  const char* wifiStr = wifiOk ? "Wi-Fi: OK" : "Wi-Fi: --";
-  const int bw = renderer.getTextWidth(toybox::kReadingFontId, wifiStr);
-  renderer.drawText(toybox::kReadingFontId, width - bw - 20, 36, wifiStr, false);
+  const bool isVi = (I18N.getLanguage() == Language::VI);
 
-  // Content area
-  const int contentTop = 80;
+  // Chrome Header
+  pixelui::Header header;
+  header.title = isVi ? "GHI CHÚ THOẠI" : "VOICE NOTES";
+  header.back = screen.device().hasTouch;
+  header.wifi = (WiFi.status() == WL_CONNECTED);
+  if (state_ == State::RECORDING) {
+    header.rightLabel = "REC";
+  }
+  pixelui::header(screen, header);
+
+  const auto body = pixelui::geometry(screen.device()).body;
+  constexpr int kPad = 6;
+  const int contentW = body.width - 2 * kPad;
+  const int startX = body.x + kPad;
 
   switch (state_) {
     case State::READY: {
-      // Big Mic Icon in center
-      const int iconX = (width - 32) / 2;
-      renderer.drawIcon(extra_mic_32_bits, iconX, contentTop + 40, 32);
-
-      // Prompt Box
-      const int boxY = contentTop + 110;
-      renderer.drawRect(30, boxY, width - 60, 90, 2, true);
-      renderer.drawText(toybox::kUiFontId, 50, boxY + 40, "Press OK to Record", true);
-      renderer.drawText(toybox::kReadingFontId, 50, boxY + 70, "Bấm hoặc chạm để bắt đầu ghi âm", true);
-
-      // Instructions / Configuration status
-      const int hintY = boxY + 130;
       if (config_.apiKey.empty()) {
-        renderer.drawText(toybox::kReadingFontId, 30, hintY, "! Missing Groq API Key", true);
-        renderer.drawText(toybox::kReadingFontId, 30, hintY + 28, "Please set key in /settings/voice_ai.json", true);
-        renderer.drawText(toybox::kReadingFontId, 30, hintY + 56, "(Free key at https://console.groq.com)", true);
-      } else {
-        renderer.drawText(toybox::kReadingFontId, 30, hintY, "Model: whisper-large-v3-turbo (Groq)", true);
-        renderer.drawText(toybox::kReadingFontId, 30, hintY + 28, "Language: vi (Tiếng Việt) / Auto", true);
-        renderer.drawText(toybox::kReadingFontId, 30, hintY + 56, "Saved directly to /notes/", true);
-      }
+        // --- SETUP GUIDE SCREEN ---
+        const auto noticeRect = fui::makeRect(startX, body.y + 4, contentW, 44);
+        dashboard::button(screen, noticeRect, isVi ? "CHƯA CÀI ĐẶT GROQ API KEY" : "GROQ API KEY REQUIRED",
+                          ActionReload, 0, true);
 
-      if (!lastSavedPath_.empty()) {
-        renderer.drawRect(30, height - 90, width - 60, 60, 1, true);
-        renderer.drawText(toybox::kReadingFontId, 45, height - 52, "Last note saved to:", true);
-        renderer.drawText(toybox::kReadingFontId, 45, height - 30, lastSavedPath_.c_str(), true);
+        const int guideH = std::min(400, static_cast<int>(body.height) - 180);
+        const auto guideBox = fui::makeRect(startX, noticeRect.bottom() + 12, contentW, guideH);
+        dashboard::frame(screen, guideBox, 2);
+
+        int textY = guideBox.y + 14;
+        const int innerW = guideBox.width - 24;
+        const int innerX = guideBox.x + 12;
+
+        // Step 1
+        dashboard::text(screen, fui::makeRect(innerX, textY, innerW, 24),
+                        isVi ? "1. Lấy Groq API Key miễn phí (30s):" : "1. Get free Groq API Key (30s):",
+                        pixelui::kSmall, fui::TextAlign::Left);
+        textY += 26;
+        dashboard::prose(screen, fui::makeRect(innerX, textY, innerW, 54),
+                         isVi ? "Vào console.groq.com/keys trên máy tính/điện thoại để tạo API key miễn phí (dạng gsk_...)."
+                              : "Visit console.groq.com/keys in browser to create a free API key (gsk_...).",
+                         fui::TextAlign::Left, 3);
+        textY += 62;
+
+        // Step 2
+        dashboard::text(screen, fui::makeRect(innerX, textY, innerW, 24),
+                        isVi ? "2. Mở thẻ nhớ microSD trên máy tính:" : "2. Open microSD card on PC:",
+                        pixelui::kSmall, fui::TextAlign::Left);
+        textY += 26;
+        dashboard::prose(screen, fui::makeRect(innerX, textY, innerW, 54),
+                         isVi ? "Mở file /settings/voice_ai.json (hoặc /notes/voice_ai.json) trên thẻ nhớ microSD."
+                              : "Open /settings/voice_ai.json (or /notes/voice_ai.json) on the microSD card.",
+                         fui::TextAlign::Left, 3);
+        textY += 62;
+
+        // Step 3
+        dashboard::text(screen, fui::makeRect(innerX, textY, innerW, 24),
+                        isVi ? "3. Dán Key và lưu file:" : "3. Paste key and save file:",
+                        pixelui::kSmall, fui::TextAlign::Left);
+        textY += 26;
+        dashboard::prose(screen, fui::makeRect(innerX, textY, innerW, 54),
+                         isVi ? "Điền chuỗi key vào mục \"api_key\": \"gsk_...\" rồi cắm thẻ nhớ lại vào Sticky."
+                              : "Paste key string into \"api_key\": \"gsk_...\" and insert card into Sticky.",
+                         fui::TextAlign::Left, 3);
+
+        // Action Reload Button
+        const auto reloadRect = fui::makeRect(startX, guideBox.bottom() + 16, contentW, 58);
+        dashboard::action(screen, reloadRect, isVi ? "ĐÃ THÊM KEY -> TẢI LẠI" : "KEY ADDED -> RELOAD",
+                          ActionReload, nullptr, true);
+
+        // Back to Menu Button
+        const auto backRect = fui::makeRect(startX, reloadRect.bottom() + 12, contentW, 46);
+        dashboard::button(screen, backRect, isVi ? "QUAY LẠI MENU" : "BACK TO MENU", ActionBack, 0, false);
+      } else {
+        // --- READY SCREEN ---
+        const auto infoBox = fui::makeRect(startX, body.y + 8, contentW, 200);
+        dashboard::frame(screen, infoBox, 2);
+
+        dashboard::text(screen, fui::makeRect(infoBox.x + 12, infoBox.y + 14, infoBox.width - 24, 28),
+                        isVi ? "CHUYỂN ĐỔI GIỌNG NÓI (GROQ AI)" : "VOICE TRANSCRIBING",
+                        pixelui::kBody, fui::TextAlign::Left);
+        screen.target().line({int16_t(infoBox.x + 12), int16_t(infoBox.y + 46)},
+                             {int16_t(infoBox.right() - 12), int16_t(infoBox.y + 46)}, 1,
+                             fui::Paint::solid(fui::Color::Black));
+
+        dashboard::text(screen, fui::makeRect(infoBox.x + 14, infoBox.y + 56, infoBox.width - 28, 22),
+                        isVi ? "• Mô hình: Whisper Large v3 Turbo (Cloud AI)" : "• Model: Whisper Large v3 Turbo",
+                        pixelui::kSmall, fui::TextAlign::Left);
+        dashboard::text(screen, fui::makeRect(infoBox.x + 14, infoBox.y + 84, infoBox.width - 28, 22),
+                        isVi ? "• Ngôn ngữ: Tiếng Việt (vi) / Tự động" : "• Language: Vietnamese (vi) / Auto",
+                        pixelui::kSmall, fui::TextAlign::Left);
+        dashboard::text(screen, fui::makeRect(infoBox.x + 14, infoBox.y + 112, infoBox.width - 28, 22),
+                        isVi ? "• Lưu file: Tự động ghi vào /notes/*.md" : "• Storage: Auto-saved to /notes/*.md",
+                        pixelui::kSmall, fui::TextAlign::Left);
+
+        if (!lastSavedPath_.empty()) {
+          dashboard::text(screen, fui::makeRect(infoBox.x + 14, infoBox.y + 148, infoBox.width - 28, 20),
+                          isVi ? "Ghi chú vừa tạo:" : "Last saved note:", pixelui::kSmall, fui::TextAlign::Left);
+          dashboard::text(screen, fui::makeRect(infoBox.x + 14, infoBox.y + 170, infoBox.width - 28, 20),
+                          lastSavedPath_.c_str(), pixelui::kSmall, fui::TextAlign::Left);
+        }
+
+        // Prominent Record Action Button
+        const auto recBox = fui::makeRect(startX, infoBox.bottom() + 28, contentW, 80);
+        dashboard::action(screen, recBox, isVi ? "BẮT ĐẦU GHI ÂM" : "START RECORDING",
+                          ActionRecord, &extra_mic_32, true);
+
+        // Subtext hint
+        dashboard::text(screen, fui::makeRect(startX, recBox.bottom() + 10, contentW, 26),
+                        isVi ? "Chạm nút trên hoặc bấm nút Nguồn để thu âm" : "Tap above or press Power to record",
+                        pixelui::kSmall, fui::TextAlign::Center);
+
+        // Back button at bottom
+        const auto backRect = fui::makeRect(startX, body.bottom() - 56, contentW, 48);
+        dashboard::button(screen, backRect, isVi ? "QUAY LẠI MENU" : "BACK TO MENU", ActionBack, 0, false);
       }
       break;
     }
 
     case State::RECORDING: {
-      // Flashing / Solid Recording header
-      renderer.fillRect(40, contentTop + 10, width - 80, 50, true);
-      renderer.drawText(toybox::kUiFontId, 60, contentTop + 44, "● RECORDING...", false);
+      // --- RECORDING SCREEN ---
+      const auto cardBox = fui::makeRect(startX, body.y + 16, contentW, 260);
+      dashboard::frame(screen, cardBox, 2);
 
-      // Timer (e.g. "00:07 / 01:00")
-      const uint32_t totalSec = recorder_.durationMs() / 1000;
+      // Title
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 18, cardBox.width - 24, 28),
+                      isVi ? "ĐANG GHI ÂM..." : "RECORDING...", pixelui::kBody, fui::TextAlign::Center);
+
+      // Big Timer
+      const int sec = static_cast<int>(recorder_.durationMs() / 1000);
       char timeBuf[32];
-      std::snprintf(timeBuf, sizeof(timeBuf), "%02lu:%02lu / 01:00", static_cast<unsigned long>(totalSec / 60),
-                    static_cast<unsigned long>(totalSec % 60));
+      std::snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d / 00:30", sec / 60, sec % 60);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 60, cardBox.width - 24, 48),
+                      timeBuf, pixelui::kTitle, fui::TextAlign::Center);
 
-      const int tw = renderer.getTextWidth(toybox::kDisplayFontId, timeBuf);
-      renderer.drawText(toybox::kDisplayFontId, (width - tw) / 2, contentTop + 130, timeBuf, true);
-
-      // VU Meter / Audio level bar
-      const int meterX = 50;
-      const int meterY = contentTop + 160;
-      const int meterW = width - 100;
-      const int meterH = 24;
-      renderer.drawRect(meterX, meterY, meterW, meterH, 2, true);
-
-      const int level = recorder_.audioLevel();
-      const int fillW = (meterW - 4) * level / 100;
+      // Audio Level Bar
+      const auto meterFrame = fui::makeRect(cardBox.x + 28, cardBox.y + 130, cardBox.width - 56, 18);
+      screen.target().stroke(meterFrame, fui::Paint::solid(fui::Color::Black), 2);
+      const int curLvl = std::min(100, std::max(0, recorder_.audioLevel()));
+      const int fillW = (meterFrame.width - 4) * curLvl / 100;
       if (fillW > 0) {
-        renderer.fillRect(meterX + 2, meterY + 2, fillW, meterH - 4, true);
+        screen.target().fill(fui::makeRect(meterFrame.x + 2, meterFrame.y + 2, fillW, meterFrame.height - 4),
+                             fui::Paint::solid(fui::Color::Black));
       }
 
-      // Stop hint
-      renderer.drawRect(40, contentTop + 220, width - 80, 60, 1, true);
-      renderer.drawText(toybox::kUiFontId, 60, contentTop + 258, "Press OK to Finish", true);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 165, cardBox.width - 24, 22),
+                      isVi ? "Nói rõ vào micro ở cạnh máy..." : "Speak into the microphone...",
+                      pixelui::kSmall, fui::TextAlign::Center);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 195, cardBox.width - 24, 22),
+                      isVi ? "Bấm Nguồn hoặc chạm Hoàn tất để kết thúc" : "Press Power or Stop to finish",
+                      pixelui::kSmall, fui::TextAlign::Center);
+
+      // Stop & Transcribe Button
+      const auto stopBox = fui::makeRect(startX, cardBox.bottom() + 24, contentW, 68);
+      dashboard::button(screen, stopBox, isVi ? "HOÀN TẤT & CHUYỂN VĂN BẢN" : "FINISH & TRANSCRIBE",
+                        ActionStop, 0, true);
+
+      // Cancel Button
+      const auto cancelBox = fui::makeRect(startX, stopBox.bottom() + 14, contentW, 50);
+      dashboard::button(screen, cancelBox, isVi ? "HỦY GHI ÂM" : "CANCEL", ActionCancel, 0, false);
       break;
     }
 
     case State::TRANSCRIBING: {
-      const int boxY = contentTop + 80;
-      renderer.drawRect(30, boxY, width - 60, 120, 2, true);
-      renderer.drawText(toybox::kUiFontId, 50, boxY + 45, "Transcribing...", true);
-      renderer.drawText(toybox::kReadingFontId, 50, boxY + 75, "Đang kết nối Groq Whisper...", true);
-      renderer.drawText(toybox::kReadingFontId, 50, boxY + 100, "Vui lòng đợi trong giây lát...", true);
+      // --- TRANSCRIBING SCREEN ---
+      const auto cardBox = fui::makeRect(startX, body.y + 80, contentW, 200);
+      dashboard::frame(screen, cardBox, 2);
+
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 30, cardBox.width - 24, 32),
+                      isVi ? "ĐANG XỬ LÝ..." : "TRANSCRIBING...", pixelui::kTitle, fui::TextAlign::Center);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 80, cardBox.width - 24, 26),
+                      isVi ? "Đang gửi âm thanh tới Groq Whisper AI..." : "Sending audio to Groq Whisper AI...",
+                      pixelui::kBody, fui::TextAlign::Center);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 120, cardBox.width - 24, 22),
+                      isVi ? "Vui lòng đợi trong giây lát" : "Please wait a moment",
+                      pixelui::kSmall, fui::TextAlign::Center);
       break;
     }
 
     case State::RESULT: {
-      renderer.drawText(toybox::kUiFontId, 30, contentTop + 25, "Transcribed Text (Kết quả):", true);
+      // --- RESULT SCREEN ---
+      const auto cardBox = fui::makeRect(startX, body.y + 8, contentW, std::min(400, static_cast<int>(body.height) - 150));
+      dashboard::frame(screen, cardBox, 2);
 
-      // Box containing transcribed text
-      const int boxY = contentTop + 40;
-      const int boxH = height - boxY - 100;
-      renderer.drawRect(20, boxY, width - 40, boxH, 2, true);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 12, cardBox.width - 24, 26),
+                      isVi ? "KẾT QUẢ CHUYỂN VĂN BẢN" : "TRANSCRIBED RESULT",
+                      pixelui::kBody, fui::TextAlign::Left);
+      screen.target().line({int16_t(cardBox.x + 12), int16_t(cardBox.y + 42)},
+                           {int16_t(cardBox.right() - 12), int16_t(cardBox.y + 42)}, 1,
+                           fui::Paint::solid(fui::Color::Black));
 
-      const auto wrapped = wrapText(renderer, toybox::kReadingFontId, transcribedText_, width - 80);
-      int lineY = boxY + 30;
-      for (const auto& line : wrapped) {
-        if (lineY + 22 > boxY + boxH) break;
-        renderer.drawText(toybox::kReadingFontId, 35, lineY, line.c_str(), true);
-        lineY += 26;
+      // Transcribed text prose
+      const auto textBox = fui::makeRect(cardBox.x + 12, cardBox.y + 52, cardBox.width - 24, cardBox.height - 100);
+      dashboard::prose(screen, textBox, transcribedText_.c_str(), fui::TextAlign::Left, 8);
+
+      // Note path at bottom of card
+      if (!lastSavedPath_.empty()) {
+        std::string savedLabel = (isVi ? "Đã lưu vào: " : "Saved to: ") + lastSavedPath_;
+        dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.bottom() - 32, cardBox.width - 24, 22),
+                        savedLabel.c_str(), pixelui::kSmall, fui::TextAlign::Left);
       }
 
-      // Bottom action bar
-      renderer.fillRect(20, height - 70, width - 40, 50, true);
-      renderer.drawText(toybox::kUiFontId, 40, height - 38, "Saved to /notes/ [OK: Record Again]", false);
+      // Next Action buttons
+      const auto newRecBox = fui::makeRect(startX, cardBox.bottom() + 18, contentW, 60);
+      dashboard::button(screen, newRecBox, isVi ? "GHI ÂM TIẾP" : "RECORD AGAIN",
+                        ActionRecord, 0, true, &extra_mic_32);
+
+      const auto doneBox = fui::makeRect(startX, newRecBox.bottom() + 12, contentW, 48);
+      dashboard::button(screen, doneBox, isVi ? "XONG - VỀ MENU" : "DONE - MENU",
+                        ActionBack, 0, false);
       break;
     }
 
     case State::ERROR_STATE: {
-      renderer.fillRect(30, contentTop + 20, width - 60, 50, true);
-      renderer.drawText(toybox::kUiFontId, 50, contentTop + 54, "ERROR / LỖI", false);
+      // --- ERROR SCREEN ---
+      const auto cardBox = fui::makeRect(startX, body.y + 40, contentW, 260);
+      dashboard::frame(screen, cardBox, 2);
 
-      const int boxY = contentTop + 90;
-      renderer.drawRect(30, boxY, width - 60, 140, 2, true);
+      dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 20, cardBox.width - 24, 30),
+                      isVi ? "CÓ LỖI XẢY RA" : "ERROR OCCURRED", pixelui::kBody, fui::TextAlign::Center);
+      screen.target().line({int16_t(cardBox.x + 20), int16_t(cardBox.y + 54)},
+                           {int16_t(cardBox.right() - 20), int16_t(cardBox.y + 54)}, 1,
+                           fui::Paint::solid(fui::Color::Black));
 
-      const auto wrappedErr = wrapText(renderer, toybox::kReadingFontId, errorMessage_, width - 100);
-      int ey = boxY + 35;
-      for (const auto& el : wrappedErr) {
-        renderer.drawText(toybox::kReadingFontId, 50, ey, el.c_str(), true);
-        ey += 26;
-      }
+      const auto errBox = fui::makeRect(cardBox.x + 16, cardBox.y + 70, cardBox.width - 32, 140);
+      dashboard::prose(screen, errBox, errorMessage_.c_str(), fui::TextAlign::Center, 5);
 
-      renderer.drawRect(40, height - 90, width - 80, 50, 1, true);
-      renderer.drawText(toybox::kUiFontId, 60, height - 58, "Press OK to Retry", true);
+      const auto okBox = fui::makeRect(startX, cardBox.bottom() + 24, contentW, 56);
+      dashboard::button(screen, okBox, isVi ? "QUAY LẠI" : "GO BACK", ActionReset, 0, true);
       break;
     }
   }
+
+  renderer.displayBuffer(HalDisplay::FAST_REFRESH);
 }
 
 }  // namespace voicenotes
