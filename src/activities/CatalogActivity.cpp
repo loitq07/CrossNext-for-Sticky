@@ -8,6 +8,7 @@
 #include <WiFi.h>
 
 #include "DevMode.h"
+#include "HapticFeedback.h"
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
 #include "activities/network/WifiSelectionActivity.h"
@@ -112,6 +113,7 @@ bool CatalogActivity::handleCustomInput() {
     if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
       onBackButton();
     } else if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) || mappedInput.wasScreenTapped(x, y)) {
+      haptic_feedback::touchAction();
       if (wifiConnected())
         retryBrowse();
       else

@@ -48,6 +48,7 @@ UiAppHost::TouchRoute UiAppHost::routeTouch(const MappedInputManager& input, con
 
 fui::ActionEvent UiAppHost::route(const fui::InputSnapshot& snap) {
   if (!uiReady || !revealed()) return {};
+  const unsigned long before = haptic_feedback::lastFeedbackMs();
   const auto event = app.route(snap);
   // Entering button mode can keep the same programmatically selected index.
   // The cursor's visibility still changed and needs a physical repaint.
@@ -55,7 +56,9 @@ fui::ActionEvent UiAppHost::route(const fui::InputSnapshot& snap) {
   // Releases activate controls; held/pressed frames only highlight or drag.
   // Empty/disabled hit regions produce no event and therefore no feedback.
   if (event && (snap.touchReleased || snap.swipeLeft || snap.swipeRight)) {
-    haptic_feedback::touchAction(event.longPress);
+    if (haptic_feedback::lastFeedbackMs() == before) {
+      haptic_feedback::touchAction(event.longPress);
+    }
   }
   return event;
 }

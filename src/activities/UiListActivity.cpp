@@ -6,6 +6,7 @@
 
 #include <algorithm>
 
+#include "HapticFeedback.h"
 #include "MappedInputManager.h"
 #include "apps_local/ui/PixelMenuTheme.h"
 #include "apps_local/ui/SettingsMenuStyle.h"
@@ -42,6 +43,7 @@ void UiListActivity::rowActionTrampoline(const fui::ActionEvent& event, void* us
 }
 
 void UiListActivity::onRowAction(const fui::ActionEvent& event) {
+  haptic_feedback::touchAction(event.longPress);
   activeNav().selected = event.value;
   if (event.longPress) {
     onRowLongPress(event.value);

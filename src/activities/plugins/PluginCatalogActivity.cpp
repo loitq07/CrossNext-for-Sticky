@@ -20,6 +20,7 @@
 #include <cstring>
 #include <new>
 
+#include "HapticFeedback.h"
 #include "MappedInputManager.h"
 #include "activities/reader/DictionaryDefinitionActivity.h"  // plain-text README viewer
 #include "apps_local/ui/PixelMenuTheme.h"
@@ -1353,6 +1354,7 @@ bool PluginCatalogActivity::handleCustomInput() {
     if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
       exitCatalog();
     } else if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) || mappedInput.wasScreenTapped(tx, ty)) {
+      haptic_feedback::touchAction();
       if (!wifiConnected())
         launchWifiSelection();
       else
@@ -1366,6 +1368,7 @@ bool PluginCatalogActivity::handleCustomInput() {
     int ty = 0;
     if (mappedInput.wasReleased(MappedInputManager::Button::Confirm) ||
         mappedInput.wasReleased(MappedInputManager::Button::Back) || mappedInput.wasScreenTapped(tx, ty)) {
+      haptic_feedback::touchAction();
       // The just-finished download may have installed/updated a plugin; refresh
       // the install badges so the row no longer reads "Update".
       computeInstallStatus();
