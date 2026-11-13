@@ -15,6 +15,7 @@
 #include "ShelfHidden.h"
 #include "ShelfState.h"
 #include "battleship/BattleshipActivity.h"
+#include "calculator/CalculatorActivity.h"
 #include "carnivoro/CarnivoroActivity.h"
 #include "carnivoro/CarnivoroIcon.h"
 #include "checkers/DraughtsActivity.h"
@@ -22,11 +23,9 @@
 #include "components/icons/listIcons.h"
 #include "connectfour/ConnectFourActivity.h"
 #include "flashcards/FlashcardsActivity.h"
-#include "forehead/ForeheadActivity.h"
 #include "game2048/Game2048Activity.h"
 #include "go/GoActivity.h"
 #include "habits/HabitsActivity.h"
-#include "hackernews/HackerNewsActivity.h"
 #include "hearts/HeartsActivity.h"
 #include "instapaper/InstapaperActivity.h"
 #include "intercept/InterceptActivity.h"
@@ -42,18 +41,14 @@
 #include "quest/ReadingQuestActivity.h"
 #include "quotes/QuotesActivity.h"
 #include "solitaire/SolitaireActivity.h"
-#include "study/StudyActivity.h"
 #include "sudoku/SudokuActivity.h"
 #include "tools/ToolsActivity.h"
-#include "toybattle/ToyBattleActivity.h"
 #include "ui/ExtraIcons.h"
 #include "ui/ToyboxIcons.h"
 #include "voicenotes/VoiceNotesActivity.h"
 #include "wallpapers/WallpapersActivity.h"
-#include "wikipedia/WikipediaActivity.h"
 #include "wordle/WordleActivity.h"
 #include "words/WordsActivity.h"
-#include "xkcd/XkcdActivity.h"
 
 namespace {
 
@@ -87,6 +82,8 @@ constexpr shelf::Item kApps[] = {
     {"VOICE NOTES", &extra_mic_32, &voicenotes::VoiceNotesActivity::create},
     {"POMODORO", &pomodoro::timerIcon, &PomodoroActivity::create},
     {"WALLPAPERS", &icon_wallpapers_32, &WallpapersActivity::create},
+    {"INSTAPAPER", &icon_instapaper_32, &InstapaperActivity::create},
+    {"CALCULATOR", &icon_calculator_32, &CalculatorActivity::create},
     {"QUOTES", &icon_library_32, &QuotesActivity::create},
     {"FLASHCARDS", &extra_cards_32, &FlashcardsActivity::create},
     {"WORDS", &icon_library_32, &WordsActivity::create},
@@ -357,6 +354,12 @@ const char* label(const char* stableTitle) {
   if (std::strcmp(stableTitle, "FLASHCARDS") == 0) return tr(STR_UI_FLASHCARDS_E0439E);
   if (std::strcmp(stableTitle, "CARNIVORO") == 0) return tr(STR_CAR_TITLE);
   if (std::strcmp(stableTitle, "WORDS") == 0) return tr(STR_WORDS_APP);
+  if (std::strcmp(stableTitle, "CALCULATOR") == 0) {
+    if (I18N.getLanguage() == Language::VI) return "Máy tính";
+    if (I18N.getLanguage() == Language::ES) return "Calculadora";
+    return "Calculator";
+  }
+  if (std::strcmp(stableTitle, "INSTAPAPER") == 0) return "Instapaper";
   if (std::strcmp(stableTitle, "QUOTES") == 0) return tr(STR_UI_QUOTES_171E81);
   if (std::strcmp(stableTitle, "WALLPAPERS") == 0) return tr(STR_UI_WALLPAPERS_2AA278);
   if (std::strcmp(stableTitle, "CALENDAR") == 0) return tr(STR_UI_CALENDAR_09D04E);

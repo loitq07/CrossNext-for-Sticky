@@ -2,32 +2,19 @@
 
 #include "../ui/ToyboxFonts.h"
 #include "fonts/calc_sans_20.h"
-#include "fonts/calc_sans_26.h"
 #include "fonts/calc_sans_28.h"
-#include "fonts/calc_sans_34.h"
-#include "fonts/calc_sans_44.h"
 #include "fonts/calc_sans_56.h"
 
 namespace calc {
 namespace {
 
-// All five converted at 1 BIT, like the Toybox cuts and for the same reason:
-// GfxRenderer's BW path paints a pixel for ANY coverage above zero, so an
-// antialiased cut floods -- stems fatten, counters close, and the type turns to
-// mush. A pixel-shaped face converted at one bit has no coverage to flood.
 EpdFont label28(&calc_sans_28);
 EpdFont small20(&calc_sans_20);
 EpdFont number56(&calc_sans_56);
-EpdFont mid44(&calc_sans_44);
-EpdFont tiny34(&calc_sans_34);
-EpdFont finest26(&calc_sans_26);
 
 EpdFontFamily labelFamily(&label28);
 EpdFontFamily smallFamily(&small20);
 EpdFontFamily numberFamily(&number56);
-EpdFontFamily midFamily(&mid44);
-EpdFontFamily tinyFamily(&tiny34);
-EpdFontFamily finestFamily(&finest26);
 
 bool registered = false;
 
@@ -38,13 +25,12 @@ const EpdFontFamily* familyFor(const int fontId) {
     case kSmallFontId:
       return &smallFamily;
     case kNumberFontId:
-      return &numberFamily;
     case kMidFontId:
-      return &midFamily;
+      return &numberFamily;
     case kTinyFontId:
-      return &tinyFamily;
+      return &labelFamily;
     case kFinestFontId:
-      return &finestFamily;
+      return &smallFamily;
     default:
       return nullptr;
   }
@@ -57,13 +43,12 @@ const EpdFontData* dataFor(const int fontId) {
     case kSmallFontId:
       return &calc_sans_20;
     case kNumberFontId:
-      return &calc_sans_56;
     case kMidFontId:
-      return &calc_sans_44;
+      return &calc_sans_56;
     case kTinyFontId:
-      return &calc_sans_34;
+      return &calc_sans_28;
     case kFinestFontId:
-      return &calc_sans_26;
+      return &calc_sans_20;
     default:
       return nullptr;
   }
@@ -76,9 +61,9 @@ void ensureCalcFonts(GfxRenderer& renderer) {
   renderer.insertFont(kLabelFontId, labelFamily);
   renderer.insertFont(kSmallFontId, smallFamily);
   renderer.insertFont(kNumberFontId, numberFamily);
-  renderer.insertFont(kMidFontId, midFamily);
-  renderer.insertFont(kTinyFontId, tinyFamily);
-  renderer.insertFont(kFinestFontId, finestFamily);
+  renderer.insertFont(kMidFontId, numberFamily);
+  renderer.insertFont(kTinyFontId, labelFamily);
+  renderer.insertFont(kFinestFontId, smallFamily);
   registered = true;
 }
 

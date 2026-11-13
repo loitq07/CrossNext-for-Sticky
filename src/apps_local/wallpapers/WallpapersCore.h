@@ -56,14 +56,17 @@ inline constexpr char kActiveMarker[] = "/wallpapers/.active";
 //   * .png is accepted there in overlay mode and never here;
 //   * names of 128..255 bytes are listed there and dropped here (this app's
 //     buffer is 128, and SdFat returns "" rather than truncating);
-//   * the 257th file in a folder is counted there and hidden here (kMaxLibrary).
+//   * the 257th file in a folder is counted there and hidden here (kMaxLibrary);
+//   * a valid BMP whose size is not kWallpaperFileBytes is listed here and
+//     cannot be set at all -- setWallpaper refuses and the caller shows nothing.
 //
 // The two also never read the same directory: this filter walks /wallpapers,
 // and findNextValidSleepImage only ever walks /.sleep, /sleep and the two
 // overlay folders. The bridges between them are the byte copies this app makes
-// -- to /sleep.bmp for one chosen wallpaper, into /.sleep for a set. Preparation
-// requires a complete bitmap decode; copying verifies the source byte count.
-// A file somebody dropped in /.sleep by hand bypasses the picker validation.
+// -- to /sleep.bmp for one chosen wallpaper, into /.sleep for a set -- and both
+// are size-checked at kWallpaperFileBytes on the way, so a file this app puts
+// where the sleep screen looks is one the sleep screen accepts. A file somebody
+// dropped in /.sleep by hand is the gap.
 // host-tests/wallpapers asserts the name half, which is why the drift was
 // untested rather than caught.
 bool isSupportedWallpaper(std::string_view name);
@@ -109,11 +112,51 @@ bool isBuiltInFile(std::string_view fileName);
 // twenty-one defaults.
 bool sortsBefore(std::string_view a, std::string_view b);
 
-// Ordinary taps preview the full image. Only the explicit sleep-image picker
-// changes the selection; a hold opens the existing image action sheet.
-// This decision is shared by the controller and host-tested routing matrix.
-enum class CellAction : uint8_t { None, Preview, Sheet };
-CellAction cellAction(bool heldLong, int index);
+// What a tap that landed on a wallpaper cell MEANS. Freestanding because it is
+// the one decision on this screen that a wrong answer makes destructive, and a
+// decision left inside loop() cannot be asserted anywhere -- the simulator never
+// compiles lib/hal and never runs InputManager, so the host suite is the only
+// place this can be proved at all.
+//
+// `heldLong` is MappedInputManager::tapWasHeldLong(): the SDK's wasTouchTap has
+// no duration gate, so a hold arrives here as an ordinary tap and only that
+// call tells the two apart. It wins over every other branch, INCLUDING the
+// already-set one: holding the wallpaper you are already using is how you reach
+// its preview and its delete, and returning None there would make the sheet
+// unreachable for exactly one wallpaper -- the one most likely to be held.
+//
+// `sleepBlocked` is card #354's rule, folded in here rather than left as an
+// early return beside this call, because the two would otherwise compete for
+// the same tap. "Already the sleep screen" is a reason to do NOTHING only when
+// it can actually BE the sleep screen; when the settings block it, tapping the
+// marked wallpaper again is what a person does after nothing happened, and it
+// must re-pin and repair the settings. Holding it still opens the sheet, which
+// is the ordering the two cards together require.
+//
+// `choosing`, `chosenCount` and `shadowedSet` are card #305's half, folded in
+// here for the same reason #354's was: three cards now want this one tap, and
+// three early returns beside each other is how one of them silently wins.
+//
+//   * choosing: a tile tap adds or removes that wallpaper. A hold still opens
+//     the sheet -- the delete behind it needs a second deliberate tap on a
+//     screen that names the file, and previewing a picture while picking
+//     pictures is the obvious thing to want.
+//   * a live set (two or more chosen) and NOT choosing: the tap opens the set
+//     for editing with that tile toggled. It must never collapse the set to one
+//     wallpaper: that is several taps of work undone by one, silently, under
+//     the pixel that meant "add to the set" one chip-press earlier.
+//   * shadowedSet: a stray /sleep.bmp (BmpViewerActivity, the File Transfer
+//     page, a power cut mid-commit) is hiding a set. Tapping the marked
+//     wallpaper is the user asking again, exactly as under sleepBlocked, and
+//     re-committing is what clears the shadow.
+enum class CellAction : uint8_t {
+  None,    // nothing to do (a plain tap on the wallpaper already in use)
+  Set,     // pin it as the sleep screen, alone
+  Sheet,   // open the hold sheet for it
+  Toggle,  // add it to the chosen set, or take it out
+};
+CellAction cellAction(bool heldLong, bool choosing, int index, int activeIndex, int chosenCount, bool sleepBlocked,
+                      bool shadowedSet);
 
 // What the delete confirm has to say, before it is asked. Two clauses, each
 // conditional, and a caveat assembled per render is a caveat that can silently
@@ -152,7 +195,7 @@ std::string deleteConsequence(bool builtIn, bool isActive);
 //      reader (inside a book the cover wins);
 //   5. DARK, LIGHT, COVER and BLANK never look at it.
 //
-// The modes, mirrored from CrossPointSettings::SLEEP_SCREEN_MODE. That
+// The nine modes, mirrored from CrossPointSettings::SLEEP_SCREEN_MODE. That
 // header pulls in ArduinoJson and the whole persistence layer, so it cannot be
 // included on a host; WallpapersActivity.cpp static_asserts every value below
 // against the real enum, which is what stops the two from drifting.
@@ -377,8 +420,10 @@ Room roomFor(bool queryOk, uint64_t freeBytes, uint64_t floorBytes);
 // derived-facts-written-as-literals memory for why a pinned byte count rots).
 inline constexpr uint64_t kCardFloorBytes = 12ull * 1024 * 1024;
 
-// Built-in pack images are 480x800, 1 bit, with a 62-byte header. User images
-// may have different dimensions; this constant budgets the built-in pack only.
+// Every device wallpaper is exactly this size: 480x800, 1 bit, uncompressed,
+// 62-byte header. The converter emits exactly this and the panel accepts
+// nothing else, so the download's size estimate is DERIVED rather than typed
+// into a sentence that would go stale the day a wallpaper is added.
 inline constexpr uint64_t kWallpaperFileBytes = 48062;
 inline constexpr uint64_t builtInPackBytes() { return kWallpaperFileBytes * kBuiltInCount; }
 

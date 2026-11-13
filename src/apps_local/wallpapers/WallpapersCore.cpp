@@ -1,7 +1,5 @@
 #include "WallpapersCore.h"
 
-#include <I18n.h>
-
 #include <cctype>
 #include <cstdio>
 #include <cstring>
@@ -106,21 +104,36 @@ DisplayName displayName(std::string_view fileName) {
   return DisplayName{own, own};
 }
 
-CellAction cellAction(bool heldLong, int index) {
+CellAction cellAction(const bool heldLong, const bool choosing, const int index, const int activeIndex,
+                      const int chosenCount, const bool sleepBlocked, const bool shadowedSet) {
   if (index < 0) return CellAction::None;
+  // FIRST, above every other branch. A hold that the SDK classified as a tap is
+  // still a hold, and the thing the user was reaching past is setWallpaper --
+  // which has no confirmation and no undo.
   if (heldLong) return CellAction::Sheet;
-  return CellAction::Preview;
+  // #305: while choosing, a tap is membership -- on a marked one too, because
+  // tapping again is how you take it out.
+  if (choosing) return CellAction::Toggle;
+  // #305: a live set is never collapsed by one stray tap. The tap opens it for
+  // editing instead, with this wallpaper toggled.
+  if (chosenCount >= 2) return CellAction::Toggle;
+  // #354: doing nothing on the marked wallpaper is right only while that mark
+  // is TRUE. When the settings block it from ever reaching the glass -- or a
+  // stray pin is hiding a set behind it -- a second tap is the user asking
+  // again, and swallowing it is the bug that card fixed.
+  if (index == activeIndex && !sleepBlocked && !shadowedSet) return CellAction::None;
+  return CellAction::Set;
 }
 
 std::string deleteConsequence(const bool builtIn, const bool isActive) {
   std::string out;
   if (builtIn) {
-    out += tr(STR_WALLPAPER_NOTE_217ABF35);
+    out += "A built-in wallpaper. Getting it back means downloading the whole set again, not just this one.";
   } else {
-    out += tr(STR_WALLPAPER_NOTE_17CD6FE0);
+    out += "Your own wallpaper. The card holds the only copy, so this cannot be undone.";
   }
   if (isActive) {
-    out += tr(STR_WALLPAPER_NOTE_B10AA7D0);
+    out += " It stays on your sleep screen until you pick another.";
   }
   return out;
 }
@@ -163,11 +176,11 @@ const char* reachHint(const Reach reach) {
     case Reach::Always:
       return nullptr;
     case Reach::OutsideReaderOnly:
-      return tr(STR_WALLPAPER_NOTE_3217057E);
+      return "Book covers win inside a book.";
     case Reach::BlockedByQuickResume:
-      return tr(STR_WALLPAPER_NOTE_884F69C1);
+      return "Quick Resume on Timeout hides this.";
     case Reach::BlockedByMode:
-      return tr(STR_WALLPAPER_NOTE_7118A0B7);
+      return "Sleep Screen is not set to Custom.";
   }
   return nullptr;
 }
@@ -175,32 +188,32 @@ const char* reachHint(const Reach reach) {
 const char* sleepScreenModeName(const uint8_t sleepScreenMode) {
   switch (sleepScreenMode) {
     case kSleepDark:
-      return tr(STR_WALLPAPER_NOTE_AE1EF014);
+      return "Dark";
     case kSleepLight:
-      return tr(STR_WALLPAPER_NOTE_A36EF8AB);
+      return "Light";
     case kSleepCustom:
-      return tr(STR_WALLPAPER_NOTE_081AE3FD);
+      return "Custom";
     case kSleepCover:
-      return tr(STR_WALLPAPER_NOTE_8B656A5D);
+      return "Cover";
     case kSleepCoverCustom:
-      return tr(STR_WALLPAPER_NOTE_D6D54C7C);
+      return "Cover + Custom";
     case kSleepBlank:
       // What Settings calls it: SettingsList.h maps BLANK to STR_NONE_OPT.
       // Naming it "Blank" would send the user hunting for a value the menu
       // does not have.
-      return tr(STR_WALLPAPER_NOTE_6EEF6648);
+      return "None";
     case kSleepQuickResume:
-      return tr(STR_WALLPAPER_NOTE_4EEE1CAB);
+      return "Quick Resume";
     case kSleepTransparentCustom:
-      return tr(STR_WALLPAPER_NOTE_0491F7BD);
+      return "Transparent";
     case kSleepNote:
-      return tr(STR_WALLPAPER_NOTE_2C924E30);
-    case kSleepHighlights:
-      return tr(STR_SLEEP_HIGHLIGHTS);
+      return "Note";
     case kSleepReadingGoal:
-      return tr(STR_GOAL_WALLPAPER);
+      return "Reading Goal";
+    case kSleepHighlights:
+      return "Highlights";
     default:
-      return tr(STR_WALLPAPER_NOTE_BC7819B3);
+      return "Unknown";
   }
 }
 
@@ -240,25 +253,23 @@ namespace {
 const char* modeTakeoverNote(const uint8_t previousMode) {
   switch (previousMode) {
     case kSleepDark:
-      return tr(STR_WALLPAPER_NOTE_27737EDE);
+      return "Was Dark, now Custom.";
     case kSleepLight:
-      return tr(STR_WALLPAPER_NOTE_7E85E726);
+      return "Was Light, now Custom.";
     case kSleepCover:
-      return tr(STR_WALLPAPER_NOTE_A2BDEF33);
+      return "Was Cover, now Custom.";
     case kSleepBlank:
-      return tr(STR_WALLPAPER_NOTE_BDA00557);
+      return "Was None, now Custom.";
     case kSleepQuickResume:
-      return tr(STR_WALLPAPER_NOTE_EBA2427E);
+      return "Was Quick Resume, now Custom.";
     case kSleepTransparentCustom:
-      return tr(STR_WALLPAPER_NOTE_375ED76A);
+      return "Was Transparent, now Custom.";
     case kSleepNote:
-      return tr(STR_WALLPAPER_NOTE_9802A6AC);
+      return "Was Note, now Custom.";
+    case kSleepReadingGoal:
+      return "Was Reading Goal, now Custom.";
     case kSleepHighlights:
-    case kSleepReadingGoal: {
-      static char label[160];
-      std::snprintf(label, sizeof(label), "%s → %s", sleepScreenModeName(previousMode), tr(STR_CUSTOM));
-      return label;
-    }
+      return "Was Highlights, now Custom.";
     default:
       return nullptr;
   }
@@ -279,7 +290,7 @@ StripLine stripLineAfterSelection(const SleepChoice& choice, const Reach reach) 
   // host-tests/wallpapers is what establishes that rather than this comment.
   if (choice.tookOverMode) {
     if (choice.clearedQuickResume) {
-      line.text = tr(STR_WALLPAPER_NOTE_20F76567);
+      line.text = "Now Custom, Quick Resume off.";
       line.saysModeChanged = true;
       line.saysQuickResumeCleared = true;
       return line;
@@ -295,12 +306,12 @@ StripLine stripLineAfterSelection(const SleepChoice& choice, const Reach reach) 
       // draws the wallpaper (COVER_CUSTOM), the quick-resume flag came off, and
       // the caveat that a book cover still wins inside a book STILL APPLIES.
       // Both go in the line.
-      line.text = tr(STR_WALLPAPER_NOTE_C29BD05F);
+      line.text = "Quick Resume off. Book covers win.";
       line.saysQuickResumeCleared = true;
       line.saysCaveat = true;
       return line;
     }
-    line.text = tr(STR_WALLPAPER_NOTE_1241E633);
+    line.text = "Quick Resume on Timeout turned off.";
     line.saysQuickResumeCleared = true;
     return line;
   }
@@ -348,7 +359,7 @@ ShuffleLine shuffleStripLine(const bool choosing, const int chosenCount, const b
   // Then the card's own contradiction. Said before any count, because the count
   // would be a lie while it holds: the files are there and none of them shows.
   if (shadowedSet) {
-    line.text = tr(STR_WALLPAPER_NOTE_A4BF9886);
+    line.text = "One wallpaper is hiding a set.";
     line.saysShadow = true;
     return line;
   }
@@ -358,7 +369,7 @@ ShuffleLine shuffleStripLine(const bool choosing, const int chosenCount, const b
     // the header carries: a mode whose taps toggle is a mode whose taps must be
     // seen to un-toggle, or the first mistap reads as a set you cannot escape.
     if (chosenCount <= 0) {
-      line.text = tr(STR_WALLPAPER_NOTE_511C658A);
+      line.text = "Tap wallpapers to build a set.";
       return line;
     }
     // The count is HERE rather than in the band, and the render is why: the
@@ -367,11 +378,11 @@ ShuffleLine shuffleStripLine(const bool choosing, const int chosenCount, const b
     // room and the count has to be somewhere -- four tiles fit a page and the
     // library is six pages, so the marks alone cannot say how many are chosen.
     if (chosenCount == 1) {
-      line.text = tr(STR_WALLPAPER_NOTE_AD932619);
+      line.text = "chosen. Pick another.";
       line.wantsCount = true;
       return line;
     }
-    line.text = tr(STR_WALLPAPER_NOTE_3157035A);
+    line.text = "chosen. Tap again to remove.";
     line.wantsCount = true;
     return line;
   }
@@ -386,7 +397,7 @@ ShuffleLine shuffleStripLine(const bool choosing, const int chosenCount, const b
   // alternates. Calling that shuffling would be a promise the platform does not
   // keep.
   if (chosenCount >= 2) {
-    line.text = tr(STR_WALLPAPER_NOTE_CBA12088);
+    line.text = "take turns. Tap to change.";
     line.wantsCount = true;
     return line;
   }

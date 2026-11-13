@@ -25,9 +25,9 @@ struct CutMetrics {
 
 constexpr CutMetrics kSmallCut{34, 18};
 constexpr CutMetrics kLabelCut{45, 24};
-constexpr CutMetrics kFinestCut{51, 27};
-constexpr CutMetrics kTinyCut{74, 41};
-constexpr CutMetrics kMidCut{96, 53};
+constexpr CutMetrics kFinestCut{34, 18};
+constexpr CutMetrics kTinyCut{45, 24};
+constexpr CutMetrics kMidCut{119, 65};
 constexpr CutMetrics kNumberCut{119, 65};
 
 constexpr CutMetrics cutFor(const int fontId) {
