@@ -1490,9 +1490,7 @@ constexpr BoardProfile STICKY = {
     800,
     480,
     {13, 14, 15, 16, 17, 18, 47},  // SCK13 MOSI(SDI)14 CS15 DC16 RST17 BUSY18, EP_PWR_EN47
-    0,  // displaySpiHz: 0 -> SSD1677 driver default (40 MHz), as on X4/de-link (same controller). The
-        // vendor peripheral demo clocks it at a conservative 10 MHz; if the SD-shared bus proves flaky on
-        // hardware, pin this to 10000000.
+    10000000,  // displaySpiHz: 10 MHz (vendor demo default for SD-shared bus)
     // SD over SPI, sharing the display's SPI bus: SCLK13 / MOSI14 / MISO12 (the
     // vendor demo's pin_config.h confirms these as the EPD bus pins), SD_CS8,
     // SD_PWR_EN10. SD bus-sharing is inferred (the demo doesn't exercise SD) —

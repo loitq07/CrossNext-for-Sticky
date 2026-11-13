@@ -777,7 +777,8 @@ void setup() {
       LOG_DBG("MAIN", "Dev bridge build: skipping power button verification");
       break;
 #else
-      if (!powermenu::acceptsWake(static_cast<powermenu::WakeMode>(SETTINGS.powerWakeMode), wakeHoldVerified)) {
+      if (!BoardConfig::isSticky() &&
+          !powermenu::acceptsWake(static_cast<powermenu::WakeMode>(SETTINGS.powerWakeMode), wakeHoldVerified)) {
         LOG_DBG("MAIN", "Power-button wake not held through verification, sleeping");
         powerprobe::beforeSleep();
         Storage.prepareForDeepSleep();
@@ -802,7 +803,7 @@ void setup() {
       // Most devices return to sleep after a USB-powered cold boot.
       LOG_DBG("MAIN", "Wakeup reason: After USB Power");
 #if FREEINK_DEVICE_X4PRO || FREEINK_DEVICE_X4CLASSIC || FREEINK_DEVICE_PAPERMONO || FREEINK_DEVICE_EEGO_A4 || \
-    FREEINK_DEVICE_METALIO_EINK4
+    FREEINK_DEVICE_METALIO_EINK4 || FREEINK_DEVICE_STICKY
       // X4 Pro must stay awake so USB Serial/JTAG remains available after leaving
       // USB Drive and reconnecting the cable. Paper Mono has no armable GPIO wake
       // (its button is behind the PMIC). Metalio also needs native USB available
@@ -812,6 +813,9 @@ void setup() {
       // the device in a USB-replug boot loop (or sleep right after a flash).
       break;
 #else
+      if (BoardConfig::isSticky()) {
+        break;
+      }
       powerprobe::beforeSleep();
       Storage.prepareForDeepSleep();
       startDeepSleepArmed(resleepTimerMicros());

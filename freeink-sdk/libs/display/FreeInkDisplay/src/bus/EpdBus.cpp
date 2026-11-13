@@ -102,7 +102,9 @@ void EpdBus::begin(const EpdPins& pins, uint32_t spiHz, BusyPolarity busy, int8_
     delay(100);
   }
 
-  SPI.begin(pins.sclk, spiMiso, pins.mosi, pins.cs);
+  SPI.end();
+  const int8_t misoToAttach = (spiMiso >= 0) ? spiMiso : BoardConfig::ACTIVE.sd.miso;
+  SPI.begin(pins.sclk, misoToAttach, pins.mosi, -1);
 
   pinMode(pins.cs, OUTPUT);
   pinMode(pins.dc, OUTPUT);

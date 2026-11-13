@@ -1133,6 +1133,7 @@ void PluginCatalogActivity::pollAuth() {
 }
 
 void PluginCatalogActivity::downloadItem(const int itemIndex) {
+  session.reset();  // Free browse TLS before UI update so contiguous DRAM is available
   // Own only the selected item's metadata while TLS needs the catalog's heap.
   Item item;
   {
