@@ -5,9 +5,9 @@ import json
 import urllib.request
 import urllib.parse
 
-IP = "192.168.1.12"
-PAIR_CODE = "273407"
-FW_PATH = r"D:\Projects\Sticky\CrossNext-build\.pio\build\gh_release_sticky\firmware.bin"
+IP = sys.argv[1] if len(sys.argv) > 1 else "192.168.0.174"
+PAIR_CODE = sys.argv[2] if len(sys.argv) > 2 else "966886"
+FW_PATH = sys.argv[3] if len(sys.argv) > 3 else r"D:\Projects\Sticky\output\firmware-sticky-web-mobile.bin"
 
 # 1. Status
 print(f"Connecting to http://{IP}/api/status ...", flush=True)

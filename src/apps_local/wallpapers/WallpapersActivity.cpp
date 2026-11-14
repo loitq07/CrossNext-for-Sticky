@@ -22,6 +22,7 @@
 #include "../Shelf.h"
 #include "../live/LiveBridge.h"
 #include "../live/LiveEngine.h"
+#include "../ui/PageIndicator.h"
 #include "../ui/Toybox.h"
 #include "../ui/ToyboxFonts.h"
 #include "../ui/ToyboxText.h"
@@ -987,21 +988,6 @@ void WallpapersActivity::drawGrid(const wallpapersui::GridGeom& geom) {
     }
   }
 
-  // Page dots, when the library spans more than one page.
-  const int pages = pageCount();
-  if (pages > 1) {
-    const int16_t totalW = static_cast<int16_t>(pages * kDotSize + (pages - 1) * kDotGap);
-    const fui::Rect panel = toybox::makeTarget(renderer).deviceContext().screen();
-    int16_t x = static_cast<int16_t>((panel.width - totalW) / 2);
-    for (int p = 0; p < pages; ++p) {
-      if (p == page_) {
-        renderer.fillRect(x, geom.pageDotsY, kDotSize, kDotSize, true);
-      } else {
-        renderer.drawRect(x, geom.pageDotsY, kDotSize, kDotSize, 1, true);
-      }
-      x = static_cast<int16_t>(x + kDotSize + kDotGap);
-    }
-  }
 }
 
 // How many chrome tiles sit in front of the wallpapers. The Live tile always,
@@ -2710,6 +2696,15 @@ void WallpapersActivity::loop() {
         pickView();
         requestUpdate();
         return;
+      case wallpapersui::ActionApply:
+        haptic_feedback::touchAction();
+        if (sheetIndex_ >= 0) {
+          setWallpaper(sheetIndex_);
+          pickView();
+          interactionsReady_ = false;
+          requestUpdate();
+        }
+        return;
       case wallpapersui::ActionPreview:
         view_ = View::Preview;
         interactionsReady_ = false;
@@ -2777,17 +2772,16 @@ void WallpapersActivity::loop() {
   int tapY = 0;
   if (!mappedInput.wasScreenTapped(tapX, tapY) || !interactionsReady_) return;
 
-  // The header chip is the only hit region the grid registers; everything below
-  // it is geometry. Routed FIRST so a tap on the band cannot fall through to a
-  // cell, and gated on the surface like every cell is: the chip is the one
-  // control on this screen whose label changes, so a tap that left the finger
-  // against the previous frame must not act on the new one.
+  // The header chip and pager controls are hit regions registered in interactions_;
+  // everything below it is geometry. Routed FIRST so a tap on the band or pager cannot fall through to a
+  // cell.
   {
-    fui::InputSnapshot chipInput{};
-    chipInput.touchReleased = true;
-    chipInput.touchX = static_cast<int16_t>(tapX);
-    chipInput.touchY = static_cast<int16_t>(tapY);
-    if (interactions_.route(chipInput).action == wallpapersui::ActionChoose) {
+    fui::InputSnapshot gridInput{};
+    gridInput.touchReleased = true;
+    gridInput.touchX = static_cast<int16_t>(tapX);
+    gridInput.touchY = static_cast<int16_t>(tapY);
+    const auto routed = interactions_.route(gridInput);
+    if (routed.action == wallpapersui::ActionChoose) {
       if (!surfaceRevealed()) {
         LOG_INF("WALL", "chip tap refused: surface not yet seen");
         return;
@@ -2799,29 +2793,25 @@ void WallpapersActivity::loop() {
       requestUpdate();
       return;
     }
+    if (routed.action == wallpapersui::ActionPagePrev) {
+      if (page_ > 0) {
+        haptic_feedback::touchAction();
+        --page_;
+        requestUpdate();
+      }
+      return;
+    }
+    if (routed.action == wallpapersui::ActionPageNext) {
+      if (page_ + 1 < pages) {
+        haptic_feedback::touchAction();
+        ++page_;
+        requestUpdate();
+      }
+      return;
+    }
   }
 
   const wallpapersui::GridGeom geom = wallpapersui::gridGeom(toybox::makeTarget(renderer).deviceContext());
-
-  // A page dot?
-  if (pages > 1) {
-    const int16_t totalW = static_cast<int16_t>(pages * kDotSize + (pages - 1) * kDotGap);
-    const fui::Rect panel = toybox::makeTarget(renderer).deviceContext().screen();
-    int16_t x = static_cast<int16_t>((panel.width - totalW) / 2);
-    for (int p = 0; p < pages; ++p) {
-      // A generous vertical band so the small dots are easy to hit.
-      if (tapX >= x - kDotGap / 2 && tapX < x + kDotSize + kDotGap / 2 && tapY >= geom.pageDotsY - 16 &&
-          tapY < geom.pageDotsY + kDotSize + 16) {
-        if (p != page_) {
-          haptic_feedback::touchAction();
-          page_ = p;
-          requestUpdate();
-        }
-        return;
-      }
-      x = static_cast<int16_t>(x + kDotSize + kDotGap);
-    }
-  }
 
   // A grid cell? The first cell of page 0 is the + Add a wallpaper tile.
   const int slot = wallpapersui::cellAt(geom, tapX, tapY);
@@ -3179,6 +3169,10 @@ void WallpapersActivity::render(RenderLock&&) {
     // member, so it outlives the paint.
     model.note = currentSleepNote();
     wallpapersui::buildGridChrome(surface, model);
+    if (pages > 1) {
+      pageui::build(surface, geom.pagerRect, page_ + 1, pages, wallpapersui::ActionPagePrev, 0,
+                    wallpapersui::ActionPageNext, 0);
+    }
 
     // The chrome is a screen tree; the grid is the app's own surface, drawn
     // after it into the body the same way chess draws its board.

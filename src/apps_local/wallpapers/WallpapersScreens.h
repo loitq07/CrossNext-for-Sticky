@@ -38,6 +38,7 @@ struct GridGeom {
   int16_t originY = 0;
   int16_t gapX = 0;
   int16_t gapY = 0;
+  fui::Rect pagerRect{};  // standard pager bar rect
   int16_t pageDotsY = 0;  // where the page-dot strip sits (when more than one page)
 };
 
@@ -111,6 +112,10 @@ enum : fui::ActionId {
   // WiFi notice, and the server is already running by the time this control
   // exists. One id per destination, and these are two.
   ActionAddAnother = 17,
+  ActionApply = 18,
+  ActionPagePrev = 19,
+  ActionPageNext = 20,
+  ActionSet = ActionApply,
 };
 
 // ---------------------------------------------------------------------------
@@ -150,6 +155,7 @@ constexpr int16_t kSheetButtonH = 64;
 fui::Rect sheetHeadRect(const fui::DeviceContext& device);
 fui::Rect sheetProseRect(const fui::DeviceContext& device);
 fui::Rect confirmProseRect(const fui::DeviceContext& device);
+fui::Rect sheetApplyRect(const fui::DeviceContext& device);
 fui::Rect sheetPreviewRect(const fui::DeviceContext& device);
 fui::Rect sheetDeleteRect(const fui::DeviceContext& device);
 fui::Rect confirmKeepRect(const fui::DeviceContext& device);

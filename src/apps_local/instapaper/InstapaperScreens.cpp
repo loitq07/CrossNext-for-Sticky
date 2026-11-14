@@ -46,19 +46,14 @@ fui::TextStyle plain(const fui::FontId font, const fui::TextAlign align = fui::T
 
 fui::TextStyle rowSubtitleStyle(const fui::ThemeTokens& tokens) {
   fui::TextStyle subtitle = tokens.smallText;
-  subtitle.font = toybox::kTileFont;
-  // FONT_SLOT_SMALL is 0, and textStyleUnset() reads a style whose font is 0
-  // and whose every other field is default as "the caller did not set this",
-  // so Screen::list() would put the theme's value back and the row would draw
-  // at full size. Naming the alignment the component applies anyway is what
-  // marks this style as owned.
+  subtitle.font = 3;
   subtitle.align = fui::TextAlign::Left;
   return subtitle;
 }
 
 fui::TextStyle rowValueStyle(const fui::ThemeTokens& tokens) {
   fui::TextStyle value = tokens.smallText;
-  value.font = toybox::kTileFont;
+  value.font = 3;
   value.align = fui::TextAlign::Right;
   return value;
 }
@@ -79,7 +74,7 @@ int16_t queueRowHeight(const fui::DrawTarget& target, const fui::ThemeTokens& to
   // tall whenever a subtitle is set, so a wrapping label draws straight
   // through the subtitle beneath it. The Activity fits the title to one line
   // for the same reason.
-  return static_cast<int16_t>(target.lineHeight(tokens.bodyText.font) + target.lineHeight(toybox::kTileFont) +
+  return static_cast<int16_t>(target.lineHeight(tokens.bodyText.font) + target.lineHeight(3) +
                               toybox::kGutter);
 }
 

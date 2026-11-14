@@ -107,22 +107,12 @@ DisplayName displayName(std::string_view fileName) {
 CellAction cellAction(const bool heldLong, const bool choosing, const int index, const int activeIndex,
                       const int chosenCount, const bool sleepBlocked, const bool shadowedSet) {
   if (index < 0) return CellAction::None;
-  // FIRST, above every other branch. A hold that the SDK classified as a tap is
-  // still a hold, and the thing the user was reaching past is setWallpaper --
-  // which has no confirmation and no undo.
+  // A hold or tap on a wallpaper opens its Sheet with Apply, Preview, and Delete.
   if (heldLong) return CellAction::Sheet;
-  // #305: while choosing, a tap is membership -- on a marked one too, because
-  // tapping again is how you take it out.
+  // While choosing, a tap toggles membership for the rotation set.
   if (choosing) return CellAction::Toggle;
-  // #305: a live set is never collapsed by one stray tap. The tap opens it for
-  // editing instead, with this wallpaper toggled.
   if (chosenCount >= 2) return CellAction::Toggle;
-  // #354: doing nothing on the marked wallpaper is right only while that mark
-  // is TRUE. When the settings block it from ever reaching the glass -- or a
-  // stray pin is hiding a set behind it -- a second tap is the user asking
-  // again, and swallowing it is the bug that card fixed.
-  if (index == activeIndex && !sleepBlocked && !shadowedSet) return CellAction::None;
-  return CellAction::Set;
+  return CellAction::Sheet;
 }
 
 std::string deleteConsequence(const bool builtIn, const bool isActive) {

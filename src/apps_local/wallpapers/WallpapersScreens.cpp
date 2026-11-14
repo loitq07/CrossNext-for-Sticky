@@ -60,10 +60,10 @@ constexpr int16_t kHintGap = 16;
 constexpr int16_t kGridTop = static_cast<int16_t>(kBodyTop + kHintH + kHintGap);
 constexpr int16_t kHintTop =
     static_cast<int16_t>(toybox::kChromeHeight + (kGridTop - toybox::kChromeHeight - kHintH) / 2);
-// The page-dot strip at the very bottom, reserved whether or not it is used, so
+// The pager strip at the very bottom, reserved whether or not it is used, so
 // the grid height is the same on a one-page library as on a ten-page one.
-constexpr int16_t kPageStripH = 28;
-constexpr int16_t kBottomMargin = 12;
+constexpr int16_t kPageStripH = 44;
+constexpr int16_t kBottomMargin = 8;
 // Wide enough to hold the selection marker in the padding with white space
 // on both sides of it, which is what keeps the marker off the artwork.
 constexpr int16_t kGap = 24;
@@ -298,7 +298,8 @@ GridGeom gridGeom(const fui::DeviceContext& device) {
   const int16_t usedW = static_cast<int16_t>(g.cols * cellW + (g.cols - 1) * g.gapX);
   g.originX = static_cast<int16_t>(gridLeft + (gridW - usedW) / 2);
   g.originY = gridTop;
-  g.pageDotsY = static_cast<int16_t>(safe.bottom() - kPageStripH + 6);
+  g.pagerRect = fui::makeRect(gridLeft, static_cast<int16_t>(safe.bottom() - kPageStripH - 4), gridW, kPageStripH);
+  g.pageDotsY = g.pagerRect.y;
   return g;
 }
 
@@ -1809,16 +1810,17 @@ fui::Rect proseTo(const fui::DeviceContext& device, const fui::Rect& firstContro
 }
 }  // namespace
 
-fui::Rect sheetPreviewRect(const fui::DeviceContext& device) { return stackRect(device, 0); }
-fui::Rect sheetDeleteRect(const fui::DeviceContext& device) { return stackRect(device, 1); }
+fui::Rect sheetApplyRect(const fui::DeviceContext& device) { return stackRect(device, 0); }
+fui::Rect sheetPreviewRect(const fui::DeviceContext& device) { return stackRect(device, 1); }
+fui::Rect sheetDeleteRect(const fui::DeviceContext& device) { return stackRect(device, 2); }
 // Deliberately the SAME rect as the sheet's DELETE. Not a coincidence to be
 // tidied away: it is the whole defence, and host-tests/wallcaption asserts the
 // two are identical rather than merely close.
 fui::Rect confirmKeepRect(const fui::DeviceContext& device) { return sheetDeleteRect(device); }
-fui::Rect confirmDeleteRect(const fui::DeviceContext& device) { return stackRect(device, 2); }
+fui::Rect confirmDeleteRect(const fui::DeviceContext& device) { return stackRect(device, 1); }
 
-fui::Rect sheetProseRect(const fui::DeviceContext& device) { return proseTo(device, sheetPreviewRect(device)); }
-fui::Rect confirmProseRect(const fui::DeviceContext& device) { return proseTo(device, confirmKeepRect(device)); }
+fui::Rect sheetProseRect(const fui::DeviceContext& device) { return proseTo(device, sheetApplyRect(device)); }
+fui::Rect confirmProseRect(const fui::DeviceContext& device) { return proseTo(device, confirmDeleteRect(device)); }
 
 namespace {
 // The name, at the largest cut that holds it on two lines.
@@ -1841,8 +1843,8 @@ std::string drawSheetName(toybox::Screen& screen, const fui::Rect& box, const ch
 }  // namespace
 
 const char* sheetInstruction(const bool isActive) {
-  return isActive ? "This one is on your sleep screen now. Preview fills the panel; tap it to come back."
-                  : "Preview fills the panel exactly as the sleep screen draws it; tap it to come back.";
+  return isActive ? "This wallpaper is currently applied to your sleep screen. Preview fills the panel; tap it to come back."
+                  : "Tap APPLY to set this wallpaper on your sleep screen, or PREVIEW to see it full screen.";
 }
 
 void buildSheet(toybox::Screen& screen, const SheetModel& model) {
@@ -1861,6 +1863,7 @@ void buildSheet(toybox::Screen& screen, const SheetModel& model) {
   // way back out has to be said here instead, where there is room for it.
   drawProse(screen, sheetProseRect(device), sheetInstruction(model.isActive), fui::TextAlign::Left);
 
+  drawButton(screen, sheetApplyRect(device), model.isActive ? "APPLIED" : "APPLY", ActionApply);
   drawButton(screen, sheetPreviewRect(device), "PREVIEW", ActionPreview);
   drawButton(screen, sheetDeleteRect(device), "DELETE", ActionDelete);
   drawFoot(screen, screen.body(), "BACK RETURNS");
