@@ -8,9 +8,14 @@
 </p>
 
 <p align="center">
+  <a href="https://discord.gg/kChkaFdEyB"><img src="https://img.shields.io/badge/Discord-Join%20Community-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
+</p>
+
+<p align="center">
   <a href="#-credits--acknowledgements">Credits</a> •
   <a href="#-key-features--hardware-adaptations">Features</a> •
   <a href="#-flashing--installation">Installation</a> •
+  <a href="#-community--support">Community</a> •
   <a href="#-building-from-source">Build from Source</a> •
   <a href="#-license--attribution">License</a>
 </p>
@@ -80,6 +85,17 @@ You can use [ESP Web Tools (esptool-js)](https://espressif.github.io/esptool-js/
 1. Connect the reTerminal Sticky via USB.
 2. Select your serial port and choose `CrossNext-Sticky-v1.4.0-factory.bin` at offset `0x0`.
 3. Click **Program**.
+
+---
+
+## 💬 Community & Support
+
+Join our Discord server to connect with other users, ask questions, propose features, and report bugs:
+
+- **Discord Server:** [https://discord.gg/kChkaFdEyB](https://discord.gg/kChkaFdEyB)
+  - `#💡-feature-requests`: Suggest and upvote new feature ideas.
+  - `#🐛-bug-reports`: Report bugs, display issues, or crashes with screenshots.
+  - `#🔌-plugins-showcase`: Share and discover custom plugins for Plugin Hub.
 
 ---
 
