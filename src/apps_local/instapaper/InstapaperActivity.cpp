@@ -11,6 +11,7 @@
 #include <ctime>
 
 #include "../../SilentRestart.h"
+#include "../../HapticFeedback.h"
 #include "../../activities/network/WifiSelectionActivity.h"
 #include "../../components/UITheme.h"
 #include "../../util/QrUtils.h"
@@ -260,6 +261,7 @@ void InstapaperActivity::loop() {
   // it afterwards would make walking away from the QR take up to a poll
   // interval to answer, which on a screen people stare at reads as a hang.
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    haptic_feedback::touchAction();
     switch (phase_) {
       case Phase::Reading:
         closeArticle();
@@ -313,25 +315,29 @@ void InstapaperActivity::loop() {
     return;
   }
 
+  const MappedInputManager::SwipeDir swipe = mappedInput.wasSwipe();
+  const bool swipeNext = (swipe == MappedInputManager::SwipeDir::Left || swipe == MappedInputManager::SwipeDir::Up);
+  const bool swipePrev = (swipe == MappedInputManager::SwipeDir::Right || swipe == MappedInputManager::SwipeDir::Down);
+
   // Physical page keys do the same thing the footer arrows do, through the
   // same function. Two paths would drift, and the drift is invisible until
   // somebody uses the input nobody tested.
   if (phase_ == Phase::Reading) {
-    if (mappedInput.wasReleased(MappedInputManager::Button::PageForward)) {
+    if (mappedInput.wasReleased(MappedInputManager::Button::PageForward) || swipeNext) {
+      haptic_feedback::touchAction();
       turnPage(1);
       return;
     }
-    if (mappedInput.wasReleased(MappedInputManager::Button::PageBack)) {
+    if (mappedInput.wasReleased(MappedInputManager::Button::PageBack) || swipePrev) {
+      haptic_feedback::touchAction();
       turnPage(-1);
       return;
     }
   }
 
-  // The two side keys PAGE the queue. They are the device's only physical
-  // buttons; a row cursor would need Confirm, which is an unassigned pin on
-  // the X4 Pro and never fires. See docs/buttons.md.
-  const bool next = mappedInput.wasReleased(MappedInputManager::Button::Down);
-  const bool prev = mappedInput.wasReleased(MappedInputManager::Button::Up);
+  // The two side keys or vertical swipe PAGE the queue.
+  const bool next = mappedInput.wasReleased(MappedInputManager::Button::Down) || swipeNext;
+  const bool prev = mappedInput.wasReleased(MappedInputManager::Button::Up) || swipePrev;
   if (phase_ == Phase::Queue && !rows_.empty() && (next || prev)) {
     const int count = static_cast<int>(rows_.size());
     const int perPage = visibleRows_;
@@ -339,6 +345,7 @@ void InstapaperActivity::loop() {
       const int pages = (count + perPage - 1) / perPage;
       const int page = topIndex_ / perPage;
       // Wraps: a page key that stops working at the last page reads as broken.
+      haptic_feedback::touchAction();
       topIndex_ = ((page + (next ? 1 : pages - 1)) % pages) * perPage;
       requestUpdate();
     }
@@ -360,6 +367,9 @@ void InstapaperActivity::loop() {
   input.touchX = static_cast<int16_t>(tapX);
   input.touchY = static_cast<int16_t>(tapY);
   const fui::ActionEvent event = sidebuttons::route(interactions_, input, mappedInput, *this);
+  if (event.action != fui::NO_ACTION) {
+    haptic_feedback::touchAction();
+  }
 
   switch (event.action) {
     case instapaperui::ActionOpenArticle:
@@ -777,8 +787,8 @@ void InstapaperActivity::turnPage(const int delta) {
 void InstapaperActivity::render(RenderLock&&) {
   renderer.clearScreen();
   // The reading cut in the body slot. This app is a page of text, not a board,
-  // and at the 20px UI cut a 480px panel holds about 28 characters a line.
-  fui::GfxRendererTarget target = toybox::makeTarget(renderer, toybox::readingFaces());
+  const toybox::Faces faces = (phase_ == Phase::Reading) ? toybox::readingFaces() : toybox::toyboxFaces();
+  fui::GfxRendererTarget target = toybox::makeTarget(renderer, faces);
   const fui::DeviceContext device = target.deviceContext();
   const fui::ThemeTokens& tokens = toybox::themeTokens();
   const fui::InputSnapshot noInput{};

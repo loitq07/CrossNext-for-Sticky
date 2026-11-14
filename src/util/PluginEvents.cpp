@@ -328,6 +328,10 @@ bool deliverLine(const DrainManifest& mf, const std::string& lineText, std::stri
         LOG_ERR("PEVT", "unsafe download dest rejected: %s", dest.c_str());
         return 200;  // treat as delivered: retrying can never fix the manifest
       }
+      if (dest == "/sleep.bmp" && Storage.exists("/wallpapers/.active")) {
+        LOG_INF("PEVT", "skipping /sleep.bmp download because active wallpaper is set");
+        return 200;
+      }
       // Generous for images (a 4-bit 800x480 BMP is ~192KB), still bounded.
       constexpr size_t MAX_EVENT_DOWNLOAD = 1024 * 1024;
       // Stream to a sibling temp and swap it in only on a clean 2xx, so a

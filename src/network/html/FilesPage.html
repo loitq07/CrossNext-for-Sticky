@@ -1,1897 +1,1217 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Files - CrossNext</title>
+  <title>Truyền tập tin - CrossNext</title>
   <script src="/js/jszip.min.js"></script>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
+
     :root {
-      --font-color: #333;
-      --bg: #f5f5f5;
-      --title-color: #2c3e50;
-      --card-bg: #FFF;
-      --label-color: #7f8c8d;
-      --border-color: #eee;
-      --accent-color: rgb(110, 154, 130);
-      --accent-color-10: rgba(110, 154, 130, 0.1);
-      --accent-hover-color: #5a8c73;
-      --plugin-control-bg: #fbfcfb;
-      --plugin-control-border: #aebbb5;
+      --background: 0 0% 100%;
+      --foreground: 240 10% 3.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 240 10% 3.9%;
+      --popover: 0 0% 100%;
+      --popover-foreground: 240 10% 3.9%;
+      --primary: 240 5.9% 10%;
+      --primary-foreground: 0 0% 98%;
+      --secondary: 240 4.8% 95.9%;
+      --secondary-foreground: 240 5.9% 10%;
+      --muted: 240 4.8% 95.9%;
+      --muted-foreground: 240 3.8% 46.1%;
+      --accent: 240 4.8% 95.9%;
+      --accent-foreground: 240 5.9% 10%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 5.9% 90%;
+      --input: 240 5.9% 90%;
+      --ring: 240 5.9% 10%;
+      --radius: 0.625rem;
+      --sidebar-width: 250px;
+      --storage-width: 290px;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --font-color: #f5f5f5;
-        --bg: #333;
-        --title-color: #ecf0f1;
-        --card-bg: #444;
-        --label-color: #bdc3c7;
-        --border-color: #555;
-        --plugin-control-bg: #393f3c;
-        --plugin-control-border: #7b8781;
-        color-scheme: dark;
-      }
+
+    .dark {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 240 10% 5.5%;
+      --card-foreground: 0 0% 98%;
+      --popover: 240 10% 5.5%;
+      --popover-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 240 5.9% 10%;
+      --secondary: 240 3.7% 15.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 240 3.7% 14%;
+      --muted-foreground: 240 5% 64.9%;
+      --accent: 240 3.7% 15.9%;
+      --accent-foreground: 0 0% 98%;
+      --destructive: 0 62.8% 50.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 3.7% 17%;
+      --input: 240 3.7% 17%;
+      --ring: 240 4.9% 83.9%;
     }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-      Oxygen, Ubuntu, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: var(--bg);
-      color: var(--font-color);
-    }
-    h1 {
-      color: var(--title-color);
-      border-bottom: 2px solid var(--accent-color);
-      padding-bottom: 10px;
-    }
-    h2 {
-      color: var(--title-color);
-      margin: 0;
-    }
-    .card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 20px;
-      margin: 15px 0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    /* Shared presentation for SD-card plugins mounted in the File Manager.
-       Plugin markup stays portable; the host page owns its visual treatment. */
-    #plugin-container {
-      display: grid;
-      gap: 15px;
-      margin: 15px 0;
-    }
-    #plugin-container .card {
-      margin: 0;
-      border: 1px solid var(--border-color);
-    }
-    #plugin-container h2 {
-      margin-bottom: 8px;
-    }
-    #plugin-container p {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
     }
-    #plugin-container .setting-row {
-      display: grid;
-      grid-template-columns: minmax(0, 1fr) minmax(180px, 280px);
+
+    /* Layout */
+    .app-shell { display: flex; width: 100%; }
+
+    /* Sidebar */
+    .sidebar {
+      width: var(--sidebar-width);
+      background: hsl(var(--card));
+      border-right: 1px solid hsl(var(--border));
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+      padding: 1.25rem 1rem;
+      gap: 1.5rem;
+    }
+
+    .brand-box {
+      display: flex;
       align-items: center;
-      gap: 16px;
-      padding: 12px 0;
-      border-bottom: 1px solid var(--border-color);
+      gap: 0.75rem;
+      padding: 0.25rem 0.5rem;
     }
-    #plugin-container .setting-name {
-      color: var(--label-color);
+
+    .brand-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: calc(var(--radius) - 2px);
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.25rem;
+    }
+
+    .brand-title {
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-sub {
+      font-size: 0.75rem;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #10b981;
+      display: inline-block;
+    }
+
+    .nav-section { display: flex; flex-direction: column; gap: 0.25rem; }
+
+    .nav-label {
+      font-size: 0.7rem;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground));
+      padding: 0.5rem 0.75rem 0.25rem;
     }
-    #plugin-container .setting-control {
-      min-width: 0;
-    }
-    #plugin-container input[type="text"],
-    #plugin-container input[type="password"],
-    #plugin-container input[type="number"],
-    #plugin-container select,
-    #plugin-container textarea {
-      width: 100%;
-      min-height: 38px;
-      box-sizing: border-box;
-      padding: 8px 10px;
-      border: 1px solid var(--plugin-control-border);
-      border-radius: 6px;
-      background: var(--plugin-control-bg);
-      color: var(--font-color);
-      font: inherit;
-      box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04);
-    }
-    #plugin-container textarea {
-      min-height: 96px;
-      resize: vertical;
-    }
-    #plugin-container input:focus-visible,
-    #plugin-container select:focus-visible,
-    #plugin-container textarea:focus-visible {
-      border-color: var(--accent-color);
-      outline: 2px solid var(--accent-color);
-      outline-offset: -1px;
-    }
-    #plugin-container .btn-small {
-      min-height: 36px;
-      padding: 8px 12px;
-      border: 1px solid var(--accent-color);
-      border-radius: 6px;
-      background: var(--accent-color-10);
-      color: var(--accent-color);
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius);
+      color: hsl(var(--muted-foreground));
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      transition: all 0.15s ease;
       cursor: pointer;
-      font: inherit;
-      font-size: 0.9em;
+    }
+
+    .nav-item:hover {
+      background: hsl(var(--accent));
+      color: hsl(var(--foreground));
+    }
+
+    .nav-item.active {
+      background: hsl(var(--accent));
+      color: hsl(var(--foreground));
       font-weight: 600;
     }
-    #plugin-container .btn-small:hover:not(:disabled) {
-      background: var(--border-color);
+
+    .nav-badge {
+      margin-left: auto;
+      font-size: 0.75rem;
+      background: hsl(var(--secondary));
+      padding: 0.1rem 0.45rem;
+      border-radius: 9999px;
+      color: hsl(var(--muted-foreground));
     }
-    #plugin-container .btn-add {
-      background: var(--accent-color);
-      color: white;
+
+    .sidebar-footer {
+      margin-top: auto;
+      background: hsl(var(--secondary));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 0.85rem;
+      font-size: 0.8rem;
     }
-    #plugin-container .btn-add:hover:not(:disabled) {
-      background: var(--accent-hover-color);
-    }
-    #plugin-container button:focus-visible {
-      outline: 2px solid var(--accent-color);
-      outline-offset: 2px;
-    }
-    #plugin-container button:disabled,
-    #plugin-container input:disabled,
-    #plugin-container select:disabled,
-    #plugin-container textarea:disabled {
-      cursor: not-allowed;
-      opacity: 0.55;
-    }
-    #plugin-container hr {
-      margin: 18px 0;
-      border: 0;
-      border-top: 1px solid var(--border-color);
-    }
-    @media (prefers-color-scheme: dark) {
-      #plugin-container .card {
-        box-shadow: none;
-      }
-    }
-    .page-header {
+
+    .device-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      flex-wrap: wrap;
-      gap: 15px;
-      margin-bottom: 20px;
+      margin-bottom: 0.3rem;
+      color: hsl(var(--muted-foreground));
     }
-    .page-header-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-    .breadcrumb-inline {
-      color: var(--label-color);
-      font-size: 1.1em;
-    }
-    .breadcrumb-inline a {
-      color: var(--accent-color);
-      text-decoration: none;
-    }
-    .breadcrumb-inline a:hover {
-      text-decoration: underline;
-    }
-    .breadcrumb-inline .sep {
-      margin: 0 6px;
-      color: var(--label-color);
-    }
-    .breadcrumb-inline .current {
-      color: var(--title-color);
+    .device-row:last-child { margin-bottom: 0; }
+    .device-val {
       font-weight: 600;
+      color: hsl(var(--foreground));
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
     }
-    .nav-links {
-      margin: 20px 0;
+
+    /* Main Area */
+    .main-wrapper {
+      flex: 1;
       display: flex;
-      gap: 10px;
+      flex-direction: column;
+      min-width: 0;
     }
-    .nav-links a {
-      padding: 10px 20px;
-      color: var(--font-color);
+
+    /* Topbar */
+    .topbar {
+      height: 60px;
+      border-bottom: 1px solid hsl(var(--border));
+      background: hsl(var(--card));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.5rem;
+      gap: 1rem;
+    }
+
+    .breadcrumbs {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      white-space: nowrap;
+      overflow-x: auto;
+    }
+
+    .breadcrumbs a {
+      color: hsl(var(--muted-foreground));
       text-decoration: none;
-      border-radius: 4px;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: color 0.15s;
     }
-    .nav-links a.active {
-      background-color: var(--accent-color);
-      color: white;
-    }
-    .nav-links a:not(.active):hover {
-      background-color: var(--accent-hover-color);
-      color: white;
-    }
-    /* Action buttons */
-    .action-buttons {
+
+    .breadcrumbs a:hover { color: hsl(var(--foreground)); }
+    .breadcrumbs .sep { color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
+    .breadcrumbs .current { font-weight: 600; color: hsl(var(--foreground)); }
+
+    .topbar-actions {
       display: flex;
-      gap: 10px;
+      align-items: center;
+      gap: 0.5rem;
     }
-    .action-btn {
-      color: white;
-      padding: 10px 16px;
-      border: none;
-      border-radius: 4px;
+
+    /* Search bar */
+    .search-box { position: relative; width: 220px; }
+    .search-box .search-icon {
+      position: absolute;
+      left: 0.75rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: hsl(var(--muted-foreground));
+      pointer-events: none;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-input {
+      width: 100%;
+      height: 36px;
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--input));
+      border-radius: var(--radius);
+      padding: 0 0.75rem 0 2.2rem;
+      font-size: 0.85rem;
+      color: hsl(var(--foreground));
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .search-input:focus { border-color: hsl(var(--ring)); }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      height: 36px;
+      padding: 0 0.85rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      border-radius: var(--radius);
       cursor: pointer;
-      font-size: 0.95em;
-      font-weight: 600;
+      border: 1px solid transparent;
+      transition: all 0.15s ease;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-outline {
+      background: hsl(var(--background));
+      border-color: hsl(var(--input));
+      color: hsl(var(--foreground));
+    }
+    .btn-outline:hover:not(:disabled) { background: hsl(var(--accent)); }
+
+    .btn-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+    .btn-destructive:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .btn-icon {
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border-radius: var(--radius);
+      background: transparent;
+      border: 1px solid hsl(var(--input));
+      color: hsl(var(--muted-foreground));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.05rem;
+      transition: all 0.15s ease;
+    }
+
+    .btn-icon:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+
+    .segmented-control {
+      display: flex;
+      background: hsl(var(--muted));
+      padding: 2px;
+      border-radius: var(--radius);
+    }
+
+    .segmented-btn {
+      border: none;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      padding: 5px 8px;
+      border-radius: calc(var(--radius) - 3px);
+      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 6px;
+      font-size: 0.95rem;
+      transition: all 0.15s ease;
     }
-    .upload-action-btn {
-      background-color: #27ae60;
+
+    .segmented-btn.active {
+      background: hsl(var(--card));
+      color: hsl(var(--foreground));
+      box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
-    .upload-action-btn:hover {
-      background-color: #219a52;
+
+    /* Content Area */
+    .content-container { display: flex; flex: 1; overflow: hidden; }
+    .content-main { flex: 1; padding: 1.5rem; overflow-y: auto; min-width: 0; }
+
+    /* Section Headers */
+    .section-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
     }
-    .folder-action-btn {
-      background-color: #f39c12;
+    .section-subtitle { font-size: 0.8rem; color: hsl(var(--muted-foreground)); font-weight: 400; }
+
+    /* Recently Modified Strip */
+    .recent-strip {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.75rem;
     }
-    .folder-action-btn:hover {
-      background-color: #d68910;
+
+    .recent-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      text-decoration: none;
+      color: inherit;
+      transition: all 0.15s ease;
+      cursor: pointer;
     }
-    .delete-action-btn {
-      background-color: #e74c3c;
+
+    .recent-card:hover {
+      border-color: hsl(var(--ring));
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
     }
-    .delete-action-btn:hover {
-      background-color: #c0392b;
+
+    .recent-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: var(--radius);
+      background: hsl(var(--muted));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      flex-shrink: 0;
     }
-    /* Upload modal */
+
+    .recent-icon.epub { color: #10b981; background: rgba(16, 185, 129, 0.12); }
+    .recent-icon.image { color: #3b82f6; background: rgba(59, 130, 246, 0.12); }
+    .recent-icon.folder { color: #f59e0b; background: rgba(245, 158, 11, 0.12); }
+    .recent-icon.doc { color: #8b5cf6; background: rgba(139, 92, 246, 0.12); }
+
+    .recent-meta { min-width: 0; flex: 1; }
+    .recent-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 0.2rem;
+    }
+    .recent-sub { font-size: 0.725rem; color: hsl(var(--muted-foreground)); }
+
+    /* All Files Table Card */
+    .files-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+
+    .files-header {
+      padding: 0.9rem 1.25rem;
+      border-bottom: 1px solid hsl(var(--border));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: hsl(var(--card));
+    }
+
+    .files-summary { font-size: 0.85rem; color: hsl(var(--muted-foreground)); }
+
+    /* Table */
+    .file-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      text-align: left;
+    }
+
+    .file-table th {
+      padding: 0.75rem 1rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: hsl(var(--muted-foreground));
+      background: hsl(var(--muted));
+      border-bottom: 1px solid hsl(var(--border));
+    }
+
+    .file-table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid hsl(var(--border));
+      vertical-align: middle;
+    }
+
+    .file-table tr:last-child td { border-bottom: none; }
+    .file-table tr:hover td { background: hsl(var(--accent)); }
+
+    .cell-name {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 500;
+    }
+
+    .cell-name a {
+      color: hsl(var(--foreground));
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .cell-name a:hover { text-decoration: underline; }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.5rem;
+      font-size: 0.7rem;
+      font-weight: 600;
+      border-radius: 9999px;
+      text-transform: uppercase;
+      letter-spacing: 0.02em;
+    }
+
+    .badge-folder { background: rgba(245, 158, 11, 0.15); color: #d97706; }
+    .badge-epub { background: rgba(16, 185, 129, 0.15); color: #059669; }
+    .badge-image { background: rgba(59, 130, 246, 0.15); color: #2563eb; }
+    .badge-doc { background: rgba(139, 92, 246, 0.15); color: #7c3aed; }
+    .badge-other { background: rgba(107, 114, 128, 0.15); color: #4b5563; }
+
+    /* Action Buttons in Rows */
+    .action-group {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      justify-content: flex-end;
+    }
+
+    .row-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: calc(var(--radius) - 3px);
+      border: 1px solid transparent;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.15s ease;
+    }
+
+    .row-btn:hover {
+      background: hsl(var(--secondary));
+      color: hsl(var(--foreground));
+      border-color: hsl(var(--border));
+    }
+
+    .row-btn.btn-del:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+
+    /* Grid View */
+    .file-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 1rem;
+      padding: 1.25rem;
+    }
+
+    .grid-card {
+      background: hsl(var(--card));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      transition: all 0.15s ease;
+    }
+
+    .grid-card:hover {
+      border-color: hsl(var(--ring));
+      box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+    }
+
+    .grid-checkbox { position: absolute; top: 0.75rem; left: 0.75rem; }
+    .grid-icon { font-size: 2.5rem; margin: 0.75rem 0; color: hsl(var(--foreground)); }
+    .grid-name {
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      margin-bottom: 0.25rem;
+    }
+    .grid-sub { font-size: 0.725rem; color: hsl(var(--muted-foreground)); margin-bottom: 0.75rem; }
+    .grid-actions {
+      display: flex;
+      gap: 0.35rem;
+      width: 100%;
+      justify-content: center;
+      border-top: 1px solid hsl(var(--border));
+      padding-top: 0.65rem;
+    }
+
+    /* Storage Panel */
+    .storage-panel {
+      width: var(--storage-width);
+      background: hsl(var(--card));
+      border-left: 1px solid hsl(var(--border));
+      padding: 1.5rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      flex-shrink: 0;
+    }
+
+    .storage-title { font-size: 0.95rem; font-weight: 600; }
+
+    .radial-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      padding: 1rem 0;
+    }
+
+    .radial-svg { width: 140px; height: 140px; transform: rotate(-90deg); }
+    .radial-bg { fill: none; stroke: hsl(var(--muted)); stroke-width: 12; }
+    .radial-fill {
+      fill: none;
+      stroke: #10b981;
+      stroke-width: 12;
+      stroke-linecap: round;
+      stroke-dasharray: 377;
+      stroke-dashoffset: 120;
+      transition: stroke-dashoffset 0.6s ease;
+    }
+
+    .radial-text {
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+    .radial-percent { font-size: 1.4rem; font-weight: 700; letter-spacing: -0.02em; }
+    .radial-caption { font-size: 0.7rem; color: hsl(var(--muted-foreground)); }
+
+    .storage-categories { display: flex; flex-direction: column; gap: 0.85rem; }
+    .cat-item { display: flex; flex-direction: column; gap: 0.35rem; }
+    .cat-top { display: flex; justify-content: space-between; font-size: 0.8rem; }
+    .cat-name { display: flex; align-items: center; gap: 0.45rem; font-weight: 500; }
+    .cat-size { color: hsl(var(--muted-foreground)); }
+    .cat-bar { height: 6px; background: hsl(var(--muted)); border-radius: 9999px; overflow: hidden; }
+    .cat-bar-fill { height: 100%; border-radius: 9999px; transition: width 0.4s ease; }
+    .cat-bar-epub { background: #10b981; }
+    .cat-bar-image { background: #3b82f6; }
+    .cat-bar-doc { background: #8b5cf6; }
+    .cat-bar-other { background: #64748b; }
+
+    .specs-card {
+      background: hsl(var(--secondary));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 1rem;
+      font-size: 0.8rem;
+    }
+    .specs-header { font-weight: 600; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.45rem; }
+
+    /* Modals (shadcn Dialog style) */
     .modal-overlay {
       display: none;
       position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
+      inset: 0;
+      background: rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(4px);
       z-index: 200;
-      justify-content: center;
       align-items: center;
+      justify-content: center;
+      padding: 1rem;
     }
-    .modal-overlay.open {
-      display: flex;
-    }
+
+    .modal-overlay.open { display: flex; }
+
     .modal {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 25px;
-      max-width: 450px;
-      width: 90%;
+      background: hsl(var(--card));
+      color: hsl(var(--card-foreground));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
+      max-width: 480px;
+      width: 100%;
       max-height: 90vh;
       overflow-y: auto;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      padding: 1.5rem;
+      position: relative;
     }
-    .modal.picker-mode {
-      max-width: 920px;
+
+    .modal.picker-mode { max-width: 920px; }
+    .modal.image-preview-mode { max-width: 640px; }
+
+    .modal-close {
+      position: absolute;
+      right: 1rem;
+      top: 1rem;
+      width: 32px;
+      height: 32px;
+      border-radius: calc(var(--radius) - 4px);
+      border: 1px solid transparent;
+      background: transparent;
+      color: hsl(var(--muted-foreground));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 1.15rem;
+      transition: all 0.15s ease;
     }
-    .modal.image-preview-mode {
-      max-width: 640px;
+    .modal-close:hover { background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
+
+    .modal h3 { font-size: 1.15rem; font-weight: 600; margin-bottom: 0.4rem; }
+    .file-info { font-size: 0.85rem; color: hsl(var(--muted-foreground)); margin-bottom: 1.25rem; }
+
+    .folder-input {
+      width: 100%;
+      height: 40px;
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--input));
+      border-radius: var(--radius);
+      padding: 0 0.85rem;
+      font-size: 0.875rem;
+      color: hsl(var(--foreground));
+      outline: none;
+      margin-bottom: 1.25rem;
+      transition: border-color 0.15s;
     }
+    .folder-input:focus { border-color: hsl(var(--ring)); }
+
+    .modal-actions { display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 1rem; }
+
+    /* Drop Zone */
+    .drop-zone {
+      border: 2px dashed hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 2.25rem 1rem;
+      text-align: center;
+      background: hsl(var(--secondary) / 0.4);
+      cursor: pointer;
+      position: relative;
+      margin-bottom: 1.25rem;
+      transition: all 0.15s;
+    }
+    .drop-zone:hover, .drop-zone.dragover { border-color: hsl(var(--ring)); background: hsl(var(--accent)); }
+    .drop-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+    .drop-zone-hint { font-size: 0.875rem; color: hsl(var(--muted-foreground)); pointer-events: none; }
+
+    /* Convert Options */
+    .convert-options {
+      background: hsl(var(--secondary) / 0.5);
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 1.25rem;
+    }
+    .convert-row { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; }
+    .convert-checkbox { display: flex; align-items: center; gap: 0.5rem; font-size: 0.875rem; font-weight: 500; cursor: pointer; }
+    .advanced-options-toggle { font-size: 0.8rem; color: hsl(var(--muted-foreground)); cursor: pointer; display: flex; align-items: center; gap: 0.25rem; }
+    .advanced-options-toggle:hover { color: hsl(var(--foreground)); }
+
+    .advanced-settings-content { display: none; margin-top: 1rem; border-top: 1px solid hsl(var(--border)); padding-top: 0.85rem; }
+    .advanced-settings-content.open { display: block; }
+    .advanced-setting-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; font-size: 0.825rem; }
+    .setting-title { font-weight: 500; }
+    .setting-desc { font-size: 0.725rem; color: hsl(var(--muted-foreground)); }
+
+    /* Quality presets */
+    .quality-presets, .rotation-buttons, .overlap-selector { display: flex; gap: 0.35rem; }
+    .quality-preset, .rotation-btn, .overlap-btn, .device-btn {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--input));
+      color: hsl(var(--foreground));
+      border-radius: calc(var(--radius) - 3px);
+      cursor: pointer;
+    }
+    .quality-preset.active, .rotation-btn.active, .overlap-btn.active, .device-btn.active {
+      background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground));
+      border-color: hsl(var(--primary));
+    }
+
+    /* Toggle switch */
+    .toggle-switch { position: relative; display: inline-block; width: 36px; height: 20px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .toggle-slider {
+      position: absolute; cursor: pointer; inset: 0;
+      background-color: hsl(var(--muted));
+      border-radius: 20px;
+      transition: .2s;
+    }
+    .toggle-slider:before {
+      position: absolute; content: ""; height: 14px; width: 14px; left: 3px; bottom: 3px;
+      background-color: white; border-radius: 50%; transition: .2s;
+    }
+    input:checked + .toggle-slider { background-color: #10b981; }
+    input:checked + .toggle-slider:before { transform: translateX(16px); }
+
+    /* Progress bar */
+    #progress-container { display: none; margin-top: 1rem; }
+    #progress-bar { height: 8px; background: hsl(var(--muted)); border-radius: 9999px; overflow: hidden; }
+    #progress-fill { height: 100%; width: 0%; background: #10b981; transition: width 0.2s ease; }
+    #progress-text { font-size: 0.8rem; color: hsl(var(--muted-foreground)); margin-top: 0.35rem; text-align: center; }
+
+    /* Log section */
+    .log-section { display: none; margin-top: 1rem; }
+    .log-container {
+      background: hsl(var(--background));
+      border: 1px solid hsl(var(--border));
+      border-radius: var(--radius);
+      padding: 0.75rem;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.75rem;
+      max-height: 180px;
+      overflow-y: auto;
+      line-height: 1.4;
+    }
+
+    /* Image Preview */
     .image-preview-stage {
       display: flex;
       justify-content: center;
       align-items: center;
-      overflow: auto;
-      margin-bottom: 15px;
-      border-radius: 6px;
-    }
-    .image-preview-stage img {
-      max-width: 100%;
-      max-height: 65vh;
-      object-fit: contain;
-    }
-    #imagePreviewDownload {
-      display: inline-block;
-      width: auto;
-      text-decoration: none;
-    }
-    .picker-columns.picker-active {
-      display: flex;
-      flex-direction: row;
-      gap: 16px;
-      align-items: flex-start;
-    }
-    .picker-columns.picker-active > .convert-options {
-      flex: 0 0 340px;
-      width: 340px;
-      margin-bottom: 0;
-    }
-    .picker-columns.picker-active > .image-picker-section {
-      flex: 1;
-      margin-top: 0;
-      max-height: 55vh;
-      overflow-y: auto;
-    }
-    @media (max-width: 850px) {
-      .modal.picker-mode { max-width: 95%; }
-      .picker-columns.picker-active {
-        flex-direction: column;
-      }
-      .picker-columns.picker-active > .convert-options {
-        flex: 0 0 auto;
-        width: 100%;
-      }
-      .picker-columns.picker-active > .image-picker-section {
-        max-height: 40vh;
-      }
-    }
-    .modal h3 {
-      margin: 0 0 15px 0;
-      color: var(--title-color);
-    }
-    .modal-close {
-      float: right;
-      background: none;
-      border: none;
-      font-size: 1.5em;
-      cursor: pointer;
-      color: var(--label-color);
-      line-height: 1;
-      transition: opacity 0.15s;
-    }
-    .modal-close:hover {
-      color: var(--title-color);
-    }
-    .modal-close.disabled {
-      opacity: 0.3;
-      cursor: not-allowed;
-    }
-    .modal-close.disabled:hover {
-      color: var(--label-color);
-    }
-    .file-table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-    .file-table th,
-    .file-table td {
-      padding: 12px;
-      text-align: left;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .file-table th {
-      font-weight: 600;
-      color: var(--label-color);
-    }
-    .file-table tr:hover {
-      background-color: var(--accent-color-10);
-    }
-    .epub-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      background-color: #27ae60;
-      color: white;
-      border-radius: 10px;
-      font-size: 0.75em;
-    }
-    .folder-badge {
-      display: inline-block;
-      padding: 2px 8px;
-      background-color: #f39c12;
-      color: white;
-      border-radius: 10px;
-      font-size: 0.75em;
-    }
-    .file-icon {
-      margin-right: 8px;
-    }
-    .folder-link,
-    .file-link {
-      word-break: break-word;
-      color: var(--accent-color);
-      text-decoration: none;
-      cursor: pointer;
-    }
-    .folder-link:hover,
-    .file-link:hover {
-      color: var(--accent-hover-color);
-      text-decoration: underline;
-    }
-    .upload-form {
-      margin-bottom: 10px;
-    }
-    .upload-form input[type="file"] {
-      margin: 10px 0;
-      width: 100%;
-    }
-    .upload-form input[type="file"]::file-selector-button {
-      background-color: #27ae60;
-      color: white;
-      border: none;
-      padding: 6px 14px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9em;
-      margin-right: 8px;
-    }
-    .upload-form input[type="file"].has-files::file-selector-button {
-      background-color: #95a5a6;
-    }
-    .drop-zone {
-      border: 2px dashed var(--border-color);
-      border-radius: 6px;
-      padding: 14px;
-      text-align: center;
-      cursor: pointer;
-      transition: border-color 0.15s, background-color 0.15s;
-    }
-    .drop-zone.dragover {
-      border-color: var(--accent-color);
-      background-color: var(--accent-color-10);
-    }
-    .drop-zone-hint {
-      margin: 8px 0 0;
-      font-size: 0.85em;
-      color: var(--label-color);
-      pointer-events: none;
-    }
-    .drop-zone.dragover .drop-zone-hint {
-      color: var(--accent-color);
-    }
-    .upload-btn {
-      background-color: #27ae60;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-      margin-top: 12px;
-    }
-    .upload-btn:hover {
-      background-color: #219a52;
-    }
-    .upload-btn.optimize {
-      background-color: #9b59b6;
-    }
-    .upload-btn.optimize:hover {
-      background-color: #8e44ad;
-    }
-    .upload-btn:disabled {
-      background-color: #95a5a6;
-      cursor: not-allowed;
-    }
-    /* Convert options */
-    .convert-options {
-      margin-bottom: 10px;
-      padding: 12px;
-      border-radius: 6px;
-      border: 1px solid var(--accent-color);
-    }
-    .convert-checkbox {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      cursor: pointer;
-      user-select: none;
-    }
-    .convert-checkbox input[type="checkbox"] {
-      width: 18px;
-      height: 18px;
-      cursor: pointer;
-      outline: none;
-    }
-    .convert-checkbox input[type="checkbox"]:focus {
-      outline: none;
-      box-shadow: none;
-    }
-    .convert-warning {
-      font-size: 0.85em;
-      color: #d68910;
-      background-color: rgba(214, 137, 16, 0.1);
-      border: 1px solid #d68910;
-      border-radius: 4px;
-      padding: 8px 12px;
-      margin-top: 8px;
-      margin-bottom: 12px;
-      line-height: 1.4;
-      text-align: center;
-    }
-    .convert-info {
-      font-size: 0.85em;
-      color: var(--label-color);
-      margin-top: 8px;
-      line-height: 1.4;
-    }
-    .convert-settings {
-      font-size: 0.8em;
-      color: var(--label-color);
-      margin-top: 6px;
-      padding-left: 26px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-    .convert-settings span {
-      display: inline-block;
-    }
-    /* Convert row - compact layout with checkbox and advanced options toggle */
-    .convert-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-    }
-    .convert-separator {
-      display: none; /* Hidden, using space-between instead */
-    }
-    .advanced-options-toggle {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 0.85em;
-      color: var(--label-color);
-      cursor: pointer;
-      user-select: none;
-      transition: color 0.2s;
-    }
-    .advanced-options-toggle:hover {
-      color: var(--accent-color);
-    }
-    /* Disable hover when disabled (opacity < 1) */
-    .advanced-options-toggle[style*="opacity: 0.3"]:hover,
-    .advanced-options-toggle[style*="opacity: 0.5"]:hover {
-      color: var(--label-color);
-    }
-    .advanced-options-text {
-      font-weight: 500;
-    }
-    /* Advanced Options */
-    .advanced-options-arrow {
-      font-size: 0.7em;
-      transition: transform 0.2s;
-    }
-    .advanced-options-arrow.expanded {
-      transform: rotate(90deg);
-    }
-    /* Settings content - hidden by default, shown when expanded */
-    .advanced-settings-content {
-      display: none;
-      margin-top: 12px;
-      padding-left: 4px;
-    }
-    .advanced-settings-content.visible {
-      display: block;
-    }
-    .advanced-setting-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      margin-top: 12px;
-    }
-    .advanced-setting-row:first-child {
-      margin-top: 10px;
-    }
-    .quality-row {
-      flex-wrap: wrap;
-    }
-    .quality-row .setting-title {
-      flex: 1;
-      min-width: 100px;
-    }
-    .setting-label {
-      flex-shrink: 0;
-    }
-    .setting-controls {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      gap: 8px;
-    }
-    .setting-row-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 8px;
-    }
-    .setting-title {
-      font-size: 0.85em;
-      color: var(--title-color);
-      font-weight: 500;
-    }
-    .setting-value {
-      font-size: 0.8em;
-      color: var(--accent-color);
-      font-weight: 600;
-    }
-    /* Quality Slider */
-    .quality-slider-container {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 8px;
-    }
-    .quality-slider {
-      flex: 1;
-      height: 6px;
-      border-radius: 3px;
-      background: var(--border-color);
-      -webkit-appearance: none;
-      appearance: none;
-      cursor: pointer;
-    }
-    .quality-slider::-webkit-slider-thumb {
-      -webkit-appearance: none;
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent-color);
-      cursor: pointer;
-    }
-    .quality-slider::-moz-range-thumb {
-      width: 16px;
-      height: 16px;
-      border-radius: 50%;
-      background: var(--accent-color);
-      border: none;
-      cursor: pointer;
-    }
-    .quality-input-wrapper {
-      display: flex;
-      align-items: center;
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 4px;
-      padding: 4px 8px;
-    }
-    .quality-input {
-      width: 40px;
-      border: none;
-      background: transparent;
-      text-align: center;
-      font-size: 0.85em;
-      color: var(--title-color);
-      font-weight: 600;
-    }
-    .quality-input:focus {
-      outline: none;
-    }
-    .quality-unit {
-      font-size: 0.75em;
-      color: var(--label-color);
-    }
-    .quality-slider-container-inline {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex: 1;
-      max-width: 180px;
-      min-width: 0;
-    }
-    .quality-slider-container-inline .quality-slider {
-      flex: 1;
-      min-width: 50px;
-    }
-    .quality-slider-container-inline .quality-input-wrapper {
-      padding: 2px 4px;
-      flex-shrink: 0;
-    }
-    .quality-slider-container-inline .quality-input {
-      width: 32px;
-      font-size: 0.8em;
-    }
-    /* Quality Presets - Compact Single Row */
-    .quality-presets {
-      display: flex;
-      gap: 0;
-      background: var(--border-color);
-      border-radius: 6px;
-      padding: 3px;
-      width: fit-content;
-    }
-    .quality-preset {
-      padding: 6px 14px;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.75em;
-      font-weight: 500;
-      color: var(--label-color);
-      text-align: center;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .quality-preset:hover {
-      background: var(--accent-color-10);
-      color: var(--accent-color);
-    }
-    .quality-preset.active {
-      background: var(--accent-color);
-      color: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    /* Toggle Switch */
-    .setting-toggle {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .toggle-switch {
-      position: relative;
-      width: 44px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      inset: 0;
-      background: var(--border-color);
-      border-radius: 24px;
-      transition: 0.2s;
-    }
-    .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background: white;
-      border-radius: 50%;
-      transition: 0.2s;
-    }
-    .toggle-switch input:checked + .toggle-slider {
-      background: var(--accent-color);
-    }
-    .toggle-switch input:checked + .toggle-slider:before {
-      transform: translateX(20px);
-    }
-    .setting-desc {
-      font-size: 0.75em;
-      color: var(--label-color);
-      margin-top: 4px;
-      line-height: 1.3;
-    }
-    /* Rotation Buttons */
-    .rotation-buttons {
-      display: flex;
-      gap: 0;
-      background: var(--border-color);
-      border-radius: 6px;
-      padding: 3px;
-    }
-    .rotation-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 14px;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.75em;
-      font-weight: 500;
-      color: var(--label-color);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .rotation-btn:hover {
-      background: var(--accent-color-10);
-      color: var(--accent-color);
-    }
-    .rotation-btn.active {
-      background: var(--accent-color);
-      color: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    .rotation-btn .rot-icon {
-      font-size: 1.1em;
-    }
-    /* Overlap Selector */
-    .overlap-selector {
-      display: flex;
-      gap: 0;
-      background: var(--border-color);
-      border-radius: 6px;
-      padding: 3px;
-    }
-    .overlap-btn {
-      padding: 6px 14px;
-      background: transparent;
-      border: none;
-      border-radius: 4px;
-      font-size: 0.75em;
-      font-weight: 500;
-      color: var(--label-color);
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-    .overlap-btn:hover {
-      background: var(--accent-color-10);
-      color: var(--accent-color);
-    }
-    .overlap-btn.active {
-      background: var(--accent-color);
-      color: white;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
-    /* Image Picker Grid Styles */
-    .image-picker-section {
-      margin-top: 15px;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      max-height: 350px;
-      overflow-y: auto;
-    }
-    .image-picker-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .image-picker-title {
-      font-size: 0.85em;
-      font-weight: 600;
-      color: var(--title-color);
-    }
-    .image-picker-count {
-      font-size: 0.75em;
-      color: var(--label-color);
-    }
-    .image-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-      gap: 8px;
-    }
-    .image-item {
-      position: relative;
-      border: 2px solid var(--border-color);
-      border-radius: 6px;
+      margin-bottom: 1rem;
+      border-radius: var(--radius);
       overflow: hidden;
-      cursor: pointer;
-      transition: all 0.2s;
-      background: var(--card-bg);
+      background: hsl(var(--secondary));
     }
-    .image-item:hover {
-      border-color: var(--accent-color);
-      transform: scale(1.02);
-    }
-    .image-item.state-0 {
-      border-color: var(--border-color);
-    }
-    .image-item.state-1 {
-      border-color: #3498db;
-      background: rgba(52, 152, 219, 0.1);
-    }
-    .image-item.state-2 {
-      border-color: #e74c3c;
-      background: rgba(231, 76, 60, 0.1);
-    }
-    .image-item.state-3 {
-      border-color: #9b59b6;
-      background: rgba(155, 89, 182, 0.1);
-    }
-    .image-item.crop-preview {
-      border-color: #16a085;
-      background: rgba(22, 160, 133, 0.1);
-    }
-    .image-item.cover-locked {
-      border-color: #e67e22;
-      background: rgba(230, 126, 34, 0.1);
-      cursor: default;
-      opacity: 0.85;
-    }
-    .image-item.cover-locked:hover {
-      transform: none;
-      border-color: #e67e22;
-    }
-    .image-item.cover-locked .image-state-badge {
-      background: #e67e22;
-    }
-    .image-item.separator-locked {
-      border-color: #1abc9c;
-      background: rgba(26, 188, 156, 0.1);
-      cursor: default;
-      opacity: 0.85;
-    }
-    .image-item.separator-locked:hover {
-      transform: none;
-      border-color: #1abc9c;
-    }
-    .image-item.separator-locked .image-state-badge {
-      background: #1abc9c;
-    }
-    .image-item img {
-      width: 100%;
-      height: 80px;
-      object-fit: contain;
-      display: block;
-      background: #fff;
-    }
-    .image-state-badge {
-      position: absolute;
-      top: 2px;
-      right: 2px;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-size: 0.65em;
-      font-weight: 600;
-      color: white;
-    }
-    .state-0 .image-state-badge {
-      background: var(--label-color);
-    }
-    .state-1 .image-state-badge {
-      background: #3498db;
-    }
-    .state-2 .image-state-badge {
-      background: #e74c3c;
-    }
-    .state-3 .image-state-badge {
-      background: #9b59b6;
-    }
-    .crop-preview .image-state-badge {
-      background: #16a085;
-    }
-    /* Preview Overlay (shown on hover) */
-    .image-preview-overlay {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 20px; /* Above the filename */
-      pointer-events: none;
-      opacity: 0;
-      transition: opacity 0.15s;
-      z-index: 5;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    .image-item:hover .image-preview-overlay {
-      opacity: 1;
-    }
-    /* Split lines - thick colored stripes */
-    .split-lines {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-    }
-    .split-line {
-      position: absolute;
-      top: 0;
-      bottom: 0;
-      width: 4px;
-      transform: translateX(-50%);
-      border-radius: 2px;
-    }
-    .split-line.split-h {
-      background: linear-gradient(180deg, #3498db 0%, #2980b9 100%);
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.5), 0 0 2px rgba(52, 152, 219, 0.8);
-    }
-    .split-line.split-v {
-      background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
-      box-shadow: 0 0 6px rgba(0, 0, 0, 0.5), 0 0 2px rgba(231, 76, 60, 0.8);
-    }
-    /* Rotate image on hover for rotation states */
-    .image-item.rotate-cw:hover img {
-      transform: rotate(90deg) scale(0.75);
-      transition: transform 0.2s ease;
-    }
-    .image-item.rotate-ccw:hover img {
-      transform: rotate(-90deg) scale(0.75);
-      transition: transform 0.2s ease;
-    }
-    .image-item img {
-      transition: transform 0.2s ease;
-    }
-    .image-name {
-      font-size: 0.65em;
-      color: var(--label-color);
-      padding: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      text-align: center;
-    }
-    .state-legend {
-      display: flex;
-      gap: 8px;
-      font-size: 0.7em;
-      margin: 10px 0;
-      flex-wrap: wrap;
-      padding: 8px 12px;
-      background: rgba(0,0,0,0.02);
-      border-radius: 6px;
-      align-items: center;
-    }
-    .legend-item {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-    .legend-item.locked {
-      opacity: 0.7;
-    }
-    .legend-btn {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-      padding: 4px 10px;
-      border: 1px solid var(--btn-color);
-      border-radius: 4px;
-      background: transparent;
-      color: var(--text-color);
-      cursor: pointer;
-      transition: all 0.15s;
-      font-size: inherit;
-      font-family: inherit;
-    }
-    .legend-btn:hover {
-      background: var(--btn-color);
-      color: white;
-    }
-    .legend-btn .legend-color {
-      background: var(--btn-color);
-    }
-    .legend-color {
-      width: 10px;
-      height: 10px;
-      border-radius: 3px;
-    }
-    .file-info {
-      color: var(--label-color);
-      font-size: 0.85em;
-      margin: 8px 0;
-    }
-    .no-files {
-      text-align: center;
-      color: #95a5a6;
-      padding: 40px;
-      font-style: italic;
-    }
-    .message {
-      padding: 15px;
-      border-radius: 4px;
-      margin: 15px 0;
-    }
-    .message.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-    .message.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .contents-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-    .summary-inline {
-      color: var(--label-color);
-      font-size: 0.9em;
-    }
-    #progress-container {
-      display: none;
-      margin-top: 10px;
-    }
-    #progress-bar {
-      width: 100%;
-      height: 20px;
-      background-color: #e0e0e0;
-      border-radius: 10px;
-      overflow: hidden;
-    }
-    #progress-fill {
-      height: 100%;
-      background-color: #27ae60;
-      width: 0%;
-      transition: width 0.3s;
-    }
-    #progress-fill.no-transition {
-      transition: none !important;
-    }
-    #progress-text {
-      text-align: center;
-      margin-top: 5px;
-      font-size: 0.9em;
-      color: var(--label-color);
-    }
-    .folder-form {
-      margin-top: 10px;
-    }
-    .folder-input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 1em;
-      margin-bottom: 10px;
-      box-sizing: border-box;
-    }
-    .folder-btn {
-      background-color: #f39c12;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-    }
-    .folder-btn:hover {
-      background-color: #d68910;
-    }
-    .folder-btn:disabled {
-      background-color: #bdc3c7;
-      cursor: not-allowed;
-    }
-    /* Action button styles */
-    .delete-btn,
-    .rename-btn,
-    .move-btn {
-      background: none;
-      border: none;
-      cursor: pointer;
-      font-size: 1.1em;
-      padding: 4px 8px;
-      border-radius: 4px;
-      transition: all 0.15s;
-    }
-    .delete-btn {
-      color: #95a5a6;
-    }
-    .delete-btn:hover {
-      background-color: #fee;
-      color: #e74c3c;
-    }
-    .rename-btn {
-      color: #2980b9;
-    }
-    .rename-btn:hover {
-      background-color: #e8f4fd;
-    }
-    .move-btn {
-      color: #16a085;
-    }
-    .move-btn:hover {
-      background-color: #e6f7f4;
-    }
-    .actions-col {
-      width: 140px;
-      text-align: center;
-    }
-    .action-icon-group {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
+    .image-preview-stage img { max-width: 100%; max-height: 60vh; object-fit: contain; }
+
     /* Failed uploads banner */
     .failed-uploads-banner {
-      background-color: #fff3cd;
-      border: 1px solid #ffc107;
-      border-radius: 4px;
-      padding: 15px;
-      margin-bottom: 15px;
       display: none;
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: hsl(var(--foreground));
+      border-radius: var(--radius);
+      padding: 1rem;
+      margin-bottom: 1.25rem;
     }
-    .failed-uploads-banner.show {
-      display: block;
-    }
-    .failed-uploads-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .failed-uploads-title {
-      font-weight: 600;
-      color: #856404;
-      margin: 0;
-    }
-    .dismiss-btn {
-      background: none;
-      border: none;
-      font-size: 1.2em;
-      cursor: pointer;
-      color: #856404;
-      padding: 0;
-      line-height: 1;
-    }
-    .dismiss-btn:hover {
-      color: #533f03;
-    }
-    .failed-file-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 0;
-      border-bottom: 1px solid #ffe69c;
-    }
-    .failed-file-item:last-child {
-      border-bottom: none;
-    }
-    .failed-file-info {
-      flex: 1;
-    }
-    .failed-file-name {
+    .failed-uploads-banner.show { display: block; }
+    .failed-uploads-header { display: flex; justify-content: space-between; align-items: center; }
+
+    /* Notifications toast */
+    #notification {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      padding: 12px 18px;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
       font-weight: 500;
-      color: #856404;
-    }
-    .failed-file-error {
-      font-size: 0.85em;
-      color: #856404;
-      opacity: 0.8;
-    }
-    .retry-btn {
-      background-color: #ffc107;
-      color: #533f03;
-      border: none;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9em;
-      font-weight: 600;
-    }
-    .retry-btn:hover {
-      background-color: #e0a800;
-    }
-    .retry-all-btn {
-      background-color: #ffc107;
-      color: #533f03;
-      border: none;
-      padding: 8px 16px;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.95em;
-      font-weight: 600;
-      margin-top: 10px;
-    }
-    .retry-all-btn:hover {
-      background-color: #e0a800;
-    }
-    /* Delete modal */
-    .delete-warning {
-      color: #e74c3c;
-      font-weight: 600;
-      margin: 10px 0;
-    }
-    .delete-item-name {
-      font-weight: 600;
-      color: var(--title-color);
-      word-break: break-all;
-    }
-    .delete-btn-confirm {
-      background-color: #e74c3c;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-    }
-    .delete-btn-confirm:hover {
-      background-color: #c0392b;
-    }
-    .delete-btn-cancel {
-      background-color: #95a5a6;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-      margin-top: 10px;
-    }
-    .delete-btn-cancel:hover {
-      background-color: var(--label-color);
-    }
-    .rename-btn-confirm {
-      background-color: #3498db;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-    }
-    .rename-btn-confirm:hover {
-      background-color: #2e86c1;
-    }
-    .move-btn-confirm {
-      background-color: #16a085;
-      color: white;
-      padding: 10px 20px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1em;
-      width: 100%;
-    }
-    .move-btn-confirm:hover {
-      background-color: #138d75;
-    }
-    .loader-container {
+      z-index: 10000;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.15);
+      transition: all 0.3s ease;
       display: flex;
-      justify-content: center;
       align-items: center;
-      margin: 20px 0;
+      gap: 0.5rem;
     }
-    .loader {
-      width: 48px;
-      height: 48px;
-      border: 5px solid #AAA;
-      border-bottom-color: transparent;
-      border-radius: 50%;
-      display: inline-block;
-      box-sizing: border-box;
-      animation: rotation 1s linear infinite;
+
+    /* Plugin container */
+    #plugin-container { margin: 1.5rem 0; display: flex; flex-direction: column; gap: 1rem; }
+
+    /* Responsive */
+    @media (max-width: 1100px) { .storage-panel { display: none; } }
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .search-box { width: 140px; }
+      .recent-strip { grid-template-columns: 1fr 1fr; }
     }
-    @keyframes rotation {
-      from {
-        transform: rotate(0deg);
-      }
-      to {
-        transform: rotate(360deg);
-      }
-    }
-    /* Mobile responsive styles */
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-        font-size: 14px;
-      }
-      .card {
-        line-break: anywhere;
-        padding: 12px;
-        margin: 10px 0;
-      }
-      #plugin-container {
-        gap: 10px;
-        margin: 10px 0;
-      }
-      #plugin-container .card {
-        margin: 0;
-      }
-      #plugin-container .setting-row {
-        grid-template-columns: 1fr;
-        gap: 7px;
-        padding: 12px 0;
-      }
-      #plugin-container input[type="text"],
-      #plugin-container input[type="password"],
-      #plugin-container input[type="number"],
-      #plugin-container select,
-      #plugin-container textarea {
-        min-height: 44px;
-        font-size: 16px;
-      }
-      #plugin-container .btn-small {
-        min-height: 48px;
-        padding: 10px 12px;
-        font-size: 1em;
-      }
-      .page-header {
-        gap: 10px;
-        margin-bottom: 12px;
-        padding-bottom: 10px;
-      }
-      .page-header-left {
-        gap: 8px;
-      }
-      h1 {
-        font-size: 1.3em;
-      }
-      .breadcrumb-inline {
-        font-size: 0.95em;
-      }
-      .nav-links a {
-        padding: 8px 12px;
-        margin-right: 6px;
-        font-size: 0.9em;
-      }
-      .action-buttons {
-        gap: 6px;
-      }
-      .action-btn {
-        padding: 8px 10px;
-        font-size: 0.85em;
-      }
-      .file-table th,
-      .file-table td {
-        padding: 8px 6px;
-        font-size: 0.9em;
-      }
-      .file-table th {
-        font-size: 0.85em;
-      }
-      .file-icon {
-        margin-right: 4px;
-      }
-      .epub-badge,
-      .folder-badge {
-        padding: 2px 5px;
-        font-size: 0.65em;
-      }
-      .contents-header {
-        margin-bottom: 8px;
-        flex-wrap: wrap;
-        gap: 4px;
-      }
-      .summary-inline {
-        font-size: 0.8em;
-      }
-      .modal {
-        padding: 15px;
-      }
-      .modal h3 {
-        font-size: 1.1em;
-      }
-      .actions-col {
-        width: 120px;
-      }
-      .delete-btn,
-      .rename-btn,
-      .move-btn {
-        font-size: 1em;
-        padding: 2px 4px;
-      }
-      .action-icon-group {
-        gap: 4px;
-      }
-      .no-files {
-        padding: 20px;
-        font-size: 0.9em;
-      }
-      .handedness-btn {
-        padding: 6px 10px;
-      }
-      .handedness-buttons {
-        width: 100%;
-        justify-content: center;
-      }
-      .quality-slider-container-inline {
-        max-width: 215px;
-        gap: 4px;
-      }
-      .quality-slider-container-inline .quality-slider {
-        min-width: 40px;
-      }
-      .quality-slider-container-inline .quality-input {
-        width: 28px;
-      }
-    }
-    /* Enhanced Logging System Styles */
-    .log-section {
-      margin-top: 15px;
-      display: none;
-    }
-    .log-section.visible {
-      display: block;
-    }
-    .log-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 10px;
-    }
-    .log-title {
-      font-weight: 600;
-      color: var(--title-color);
-      font-size: 0.95em;
-    }
-    .log-container {
-      background: var(--card-bg);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 12px;
-      max-height: 300px;
-      overflow-y: auto;
-      font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Mono', 'Droid Sans Mono', 'Source Code Pro', monospace;
-      font-size: 0.8em;
-    }
-    .log-entry {
-      color: var(--font-color);
-      display: flex;
-      gap: 8px;
-      align-items: flex-start;
-      margin-bottom: 4px;
-      line-height: 1.4;
-    }
-    .log-entry.success {
-      color: var(--accent-color);
-    }
-    .log-entry.error {
-      color: #e74c3c;
-    }
-    .log-entry.warning {
-      color: #f39c12;
-    }
-    .log-entry.info {
-      color: #3498db;
-    }
-    .log-timestamp {
-      color: var(--label-color);
-      font-size: 0.75em;
-      min-width: 52px;
-      opacity: 0.7;
-    }
-    .log-tag {
-      font-size: 0.7em;
-      font-weight: 600;
-      padding: 2px 6px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      min-width: 56px;
-      text-align: center;
-    }
-    .log-tag.convert {
-      background: rgba(110, 154, 130, 0.15);
-      color: var(--accent-color);
-    }
-    .log-tag.split {
-      background: rgba(243, 156, 18, 0.15);
-      color: #f39c12;
-    }
-    .log-tag.fix {
-      background: rgba(39, 174, 96, 0.15);
-      color: #27ae60;
-    }
-    .log-tag.skip {
-      background: rgba(127, 140, 141, 0.15);
-      color: #7f8c8d;
-    }
-    .log-tag.info {
-      background: rgba(52, 152, 219, 0.15);
-      color: #3498db;
-    }
-    .log-tag.error {
-      background: rgba(231, 76, 60, 0.15);
-      color: #e74c3c;
-    }
-    .log-tag.done {
-      background: rgba(39, 174, 96, 0.15);
-      color: #27ae60;
-    }
-    .log-message {
-      flex: 1;
-      word-break: break-word;
-    }
-    .log-detail {
-      color: var(--label-color);
-      font-size: 0.9em;
-    }
-    .log-summary {
-      background: rgba(110, 154, 130, 0.08);
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      margin-top: 12px;
-      overflow: hidden;
-    }
-    .log-summary-title {
-      background: rgba(110, 154, 130, 0.15);
-      padding: 8px 12px;
-      font-weight: 600;
-      font-size: 0.85em;
-      border-bottom: 1px solid var(--border-color);
-      color: var(--accent-color);
-    }
-    .log-summary-table {
-      width: 100%;
-      font-size: 0.8em;
-    }
-    .log-summary-table td {
-      padding: 6px 12px;
-      border-bottom: 1px solid var(--border-color);
-    }
-    .log-summary-table tr:last-child td {
-      border-bottom: none;
-    }
-    .log-summary-table td:first-child {
-      color: var(--label-color);
-      width: 45%;
-    }
-    .log-summary-table td:last-child {
-      color: var(--font-color);
-      font-weight: 500;
-      text-align: right;
-    }
-    .log-summary-table .highlight {
-      color: var(--accent-color);
-    }
-    .log-summary-table .saved {
-      color: #27ae60;
-    }
-    .log-summary-table .increased {
-      color: #f39c12;
-    }
+
   </style>
 </head>
 <body>
-<h1>CrossNext</h1>
 
-<div class="nav-links">
-  <a href="/">Home</a>
-  <a href="/files" class="active">File Manager</a>
-  <a href="/settings">Settings</a>
-  <a href="/fonts">Fonts</a>
-</div>
+<div class="app-shell">
+  <!-- Left Sidebar -->
+  <aside class="sidebar">
+    <div class="brand-box">
+      <div class="brand-icon">
+        <i class="ph ph-book-open"></i>
+      </div>
+      <div>
+        <div class="brand-title">CrossNext</div>
+        <div class="brand-sub">
+          <span class="status-dot"></span> Sticky e-Paper
+        </div>
+      </div>
+    </div>
 
-<div class="page-header">
-  <div class="page-header-left">
-    <h2>📁 File Manager</h2>
-  </div>
+    <nav class="nav-section">
+      <div class="nav-label">Menu</div>
+      <a class="nav-item active" href="/files">
+        <i class="ph ph-folder"></i>
+        <span>Truyền tập tin</span>
+        <span class="nav-badge" id="sidebarTotalFiles">0</span>
+      </a>
+      <a href="/settings" class="nav-item">
+        <i class="ph ph-gear-six"></i>
+        <span>Cài đặt</span>
+      </a>
+      <a href="/fonts" class="nav-item">
+        <i class="ph ph-text-t"></i>
+        <span>Phông chữ</span>
+      </a>
+    </nav>
 
-  <div class="action-buttons">
-    <button class="action-btn upload-action-btn" onclick="openUploadModal()">📤 Upload</button>
-    <button class="action-btn folder-action-btn" onclick="openFolderModal()">📁 New Folder</button>
-    <button class="action-btn delete-action-btn" onclick="openDeleteSelectedModal()">🗑️ Delete Selected</button>
-  </div>
-</div>
+    <nav class="nav-section">
+      <div class="nav-label">Phân loại</div>
+      <div class="nav-item active" id="filterCatAll" onclick="setCategoryFilter('all')">
+        <i class="ph ph-files"></i>
+        <span>Tất cả tập tin</span>
+        <span class="nav-badge" id="badgeCatAll">0</span>
+      </div>
+      <div class="nav-item" id="filterCatEpub" onclick="setCategoryFilter('epub')">
+        <i class="ph ph-book"></i>
+        <span>Sách & EPUB</span>
+        <span class="nav-badge" id="badgeCatEpub">0</span>
+      </div>
+      <div class="nav-item" id="filterCatImage" onclick="setCategoryFilter('image')">
+        <i class="ph ph-image"></i>
+        <span>Hình ảnh</span>
+        <span class="nav-badge" id="badgeCatImage">0</span>
+      </div>
+      <div class="nav-item" id="filterCatDoc" onclick="setCategoryFilter('doc')">
+        <i class="ph ph-file-text"></i>
+        <span>Tài liệu</span>
+        <span class="nav-badge" id="badgeCatDoc">0</span>
+      </div>
+    </nav>
 
-<!-- Failed Uploads Banner -->
-<div class="failed-uploads-banner" id="failedUploadsBanner">
-  <div class="failed-uploads-header">
-    <h3 class="failed-uploads-title">⚠️ Some files failed to upload</h3>
-    <button class="dismiss-btn" onclick="dismissFailedUploads()" title="Dismiss">&times;</button>
-  </div>
-  <div id="failedFilesList"></div>
-  <button class="retry-all-btn" onclick="retryAllFailedUploads()">Retry All Failed Uploads</button>
-</div>
+    <div class="sidebar-footer">
+      <div class="device-row">
+        <span>Thiết bị</span>
+        <span class="device-val" id="sbDevice">Sticky</span>
+      </div>
+      <div class="device-row">
+        <span>Phiên bản</span>
+        <span class="device-val" id="sbVersion">v1.4.11</span>
+      </div>
+      <div class="device-row">
+        <span>Địa chỉ IP</span>
+        <span class="device-val" id="sbIp">192.168.0.174</span>
+      </div>
+    </div>
+  </aside>
 
-<div class="card">
-  <div class="contents-header">
-    <div class="breadcrumb-inline" id="directory-breadcrumbs"></div>
-    <span class="summary-inline" id="folder-summary"></span>
-  </div>
+  <!-- Main Section -->
+  <div class="main-wrapper">
+    <!-- Topbar -->
+    <header class="topbar">
+      <div class="breadcrumbs" id="directory-breadcrumbs">
+        <a href="/files"><i class="ph ph-house"></i> Home</a>
+      </div>
 
-  <div id="file-table">
-    <div class="loader-container">
-      <span class="loader"></span>
+      <div class="topbar-actions">
+        <div class="search-box">
+          <span class="search-icon"><i class="ph ph-magnifying-glass"></i></span>
+          <input type="text" class="search-input" id="fileSearchInput" placeholder="Tìm kiếm tập tin..." oninput="onSearchInput(this.value)" />
+        </div>
+
+        <button class="btn btn-primary" onclick="openUploadModal()">
+          <i class="ph ph-upload-simple"></i>
+          <span>Tải lên</span>
+        </button>
+        <button class="btn btn-outline" onclick="openFolderModal()">
+          <i class="ph ph-folder-plus"></i>
+          <span>Thư mục mới</span>
+        </button>
+        <button class="btn btn-destructive" style="display:none;" id="btnDeleteSelected" onclick="openDeleteSelectedModal()">
+          <i class="ph ph-trash"></i>
+          <span id="btnDeleteSelectedText">Xóa đã chọn</span>
+        </button>
+
+        <div class="segmented-control">
+          <button class="segmented-btn active" id="btnViewTable" onclick="setViewMode('table')" title="Dạng bảng"><i class="ph ph-list"></i></button>
+          <button class="segmented-btn" id="btnViewGrid" onclick="setViewMode('grid')" title="Dạng lưới"><i class="ph ph-squares-four"></i></button>
+        </div>
+
+        <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">
+          <i class="ph ph-sun" id="themeIcon"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Content -->
+    <div class="content-container">
+      <main class="content-main">
+        <!-- Failed Uploads Banner -->
+        <div class="failed-uploads-banner" id="failedUploadsBanner">
+          <div class="failed-uploads-header">
+            <h4 style="font-size:0.95rem; font-weight:600; display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
+              <i class="ph ph-warning"></i> Một số tập tin tải lên thất bại
+            </h4>
+            <button class="modal-close" style="position:static;" onclick="dismissFailedUploads()">&times;</button>
+          </div>
+          <div id="failedFilesList" style="margin: 0.5rem 0; font-size: 0.85rem;"></div>
+          <button class="btn btn-outline btn-sm" onclick="retryAllFailedUploads()">Thử lại tất cả</button>
+        </div>
+
+        <!-- Recently Modified Strip -->
+        <div id="recentSection">
+          <div class="section-title">
+            <span>Truy cập gần đây</span>
+            <span class="section-subtitle" id="recentSubtitle"></span>
+          </div>
+          <div class="recent-strip" id="recentStrip"></div>
+        </div>
+
+        <!-- All Files Card -->
+        <div class="files-card">
+          <div class="files-header">
+            <div class="section-title" style="margin-bottom:0">
+              <span id="filesSectionTitle">Tất cả tập tin</span>
+            </div>
+            <span class="files-summary" id="folder-summary">Đang tải...</span>
+          </div>
+
+          <div id="file-table">
+            <div style="padding: 2rem; text-align: center; color: hsl(var(--muted-foreground));">
+              Đang tải danh sách tập tin...
+            </div>
+          </div>
+        </div>
+
+        <div id="plugin-container"></div>
+      </main>
+
+      <!-- Right Storage & Device Panel -->
+      <aside class="storage-panel">
+        <div>
+          <div class="storage-title">Dung lượng bộ nhớ</div>
+          <div class="radial-container">
+            <svg class="radial-svg" viewBox="0 0 140 140">
+              <circle class="radial-bg" cx="70" cy="70" r="54"></circle>
+              <circle class="radial-fill" id="radialProgressCircle" cx="70" cy="70" r="54"></circle>
+            </svg>
+            <div class="radial-text">
+              <span class="radial-percent" id="storagePercentText">0%</span>
+              <span class="radial-caption">Đã dùng</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="storage-categories">
+          <div class="cat-item">
+            <div class="cat-top">
+              <span class="cat-name"><i class="ph ph-book" style="color:#10b981"></i> Sách & EPUB</span>
+              <span class="cat-size" id="panelSizeEpub">0 B</span>
+            </div>
+            <div class="cat-bar"><div class="cat-bar-fill cat-bar-epub" id="panelBarEpub" style="width:0%"></div></div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-top">
+              <span class="cat-name"><i class="ph ph-image" style="color:#3b82f6"></i> Hình ảnh</span>
+              <span class="cat-size" id="panelSizeImage">0 B</span>
+            </div>
+            <div class="cat-bar"><div class="cat-bar-fill cat-bar-image" id="panelBarImage" style="width:0%"></div></div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-top">
+              <span class="cat-name"><i class="ph ph-file-text" style="color:#8b5cf6"></i> Tài liệu</span>
+              <span class="cat-size" id="panelSizeDoc">0 B</span>
+            </div>
+            <div class="cat-bar"><div class="cat-bar-fill cat-bar-doc" id="panelBarDoc" style="width:0%"></div></div>
+          </div>
+          <div class="cat-item">
+            <div class="cat-top">
+              <span class="cat-name"><i class="ph ph-files" style="color:#64748b"></i> Khác</span>
+              <span class="cat-size" id="panelSizeOther">0 B</span>
+            </div>
+            <div class="cat-bar"><div class="cat-bar-fill cat-bar-other" id="panelBarOther" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="specs-card">
+          <div class="specs-header">
+            <i class="ph ph-cpu"></i> Trạng thái thiết bị
+          </div>
+          <div class="device-row">
+            <span>RAM rảnh (Heap)</span>
+            <span class="device-val" id="specFreeHeap">-</span>
+          </div>
+          <div class="device-row">
+            <span>Tín hiệu Wi-Fi</span>
+            <span class="device-val" id="specRssi">-</span>
+          </div>
+          <div class="device-row">
+            <span>Thời gian chạy</span>
+            <span class="device-val" id="specUptime">-</span>
+          </div>
+        </div>
+      </aside>
     </div>
   </div>
-</div>
-
-<div id="plugin-container"></div>
-
-<div class="card">
-  <p style="text-align: center; color: #95a5a6; margin: 0;">
-    CrossNext • a fork of CrossPlay and CrossPoint • Open Source
-  </p>
 </div>
 
 <!-- Upload Modal -->
 <div class="modal-overlay" id="uploadModal">
   <div class="modal">
     <button class="modal-close" id="uploadModalClose" onclick="closeUploadModal()">&times;</button>
-    <h3>📤 Upload file</h3>
+    <h3><i class="ph ph-upload-simple"></i> Tải lên tập tin</h3>
     <div class="upload-form">
-      <p class="file-info">Select a file to upload to <strong id="uploadPathDisplay"></strong></p>
+      <p class="file-info">Tải lên thư mục: <strong id="uploadPathDisplay">/</strong></p>
       <div class="drop-zone" id="dropZone">
         <input type="file" id="fileInput" onchange="validateFile()" multiple>
-        <p class="drop-zone-hint">⬇ Drop files here — or click to browse</p>
+        <p class="drop-zone-hint">Kéo thả tập tin vào đây hoặc nhấp để chọn</p>
       </div>
+
       <div class="picker-columns" id="pickerColumns">
         <div class="convert-options" id="convertOptions" style="display:none;">
           <div class="convert-row">
             <label class="convert-checkbox">
               <input type="checkbox" id="convertBeforeUpload" onchange="toggleConvertOptions()">
-              <span>Optimize EPUB</span>
+              <span>Tối ưu hóa EPUB</span>
             </label>
-            <span class="convert-separator">—</span>
             <span class="advanced-options-toggle" id="advancedOptionsToggle" onclick="toggleAdvancedOptions()">
-              <span class="advanced-options-arrow" id="advancedOptionsArrow">▶</span>
-              <span class="advanced-options-text">Advanced Mode</span>
+              <span id="advancedOptionsArrow">▶</span>
+              <span id="advancedOptionsText">Nâng cao</span>
             </span>
           </div>
 
-          <div id="convertInfo" style="display:none; margin-bottom: 10px; font-size: 0.9em;">
-          </div>
+          <div id="convertInfo" style="display:none; margin: 10px 0; font-size: 0.825rem; color: hsl(var(--muted-foreground));"></div>
 
-          <div class="advanced-setting-row">
-            <div class="setting-label">
-              <div class="setting-title">Rename from Book Metadata</div>
-              <div class="setting-desc">Use Title - Author.epub when available</div>
-            </div>
-            <div class="setting-controls">
+          <div class="advanced-settings-content" id="advancedSettingsContent">
+            <div class="advanced-setting-row">
+              <div class="setting-title">Đổi tên theo Metadata</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="renameFromMetadataToggle" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
-          </div>
 
-          <div class="convert-settings" id="convertSettings" style="display:block;">
-            <span>⚫ True-Grayscale</span>
-          <span id="convertSizeSummary">📏 Max 480×800px</span>
-          <span>📦 85% JPEG</span>
-          <span>🔧 Fix SVG</span>
-        </div>
-        <!-- Advanced Settings Content -->
-        <div class="advanced-settings-content" id="advancedSettingsContent">
-          <!-- JPEG Quality -->
-          <div class="advanced-setting-row quality-row">
-            <div class="setting-title">📦 JPEG Quality</div>
-            <div class="quality-presets">
-              <button class="quality-preset" data-value="30" onclick="setQualityPreset(30)" title="Minimum quality">30%</button>
-              <button class="quality-preset" data-value="45" onclick="setQualityPreset(45)" title="Low quality">45%</button>
-              <button class="quality-preset" data-value="60" onclick="setQualityPreset(60)" title="Medium-low quality">60%</button>
-              <button class="quality-preset" data-value="75" onclick="setQualityPreset(75)" title="Medium quality">75%</button>
-              <button class="quality-preset active" data-value="85" onclick="setQualityPreset(85)" title="High quality">85%</button>
-              <button class="quality-preset" data-value="95" onclick="setQualityPreset(95)" title="Maximum quality">95%</button>
-            </div>
-            <!-- Hidden inputs to maintain compatibility -->
-            <input type="hidden" id="qualitySlider" value="85">
-            <input type="hidden" id="qualityInput" value="85">
-          </div>
-          <!-- Grayscale Toggle (commented for e-ink optimization, kept for compatibility with other devices/web apps)
-          <div class="advanced-setting-row" style="display:none;">
-            <div class="setting-toggle">
-              <div>
-                <div class="setting-title">⚫ True-Grayscale</div>
-                <div class="setting-desc">BT.601 luminance formula (recommended for e-ink)</div>
+            <div class="advanced-setting-row">
+              <div class="setting-title">Chất lượng ảnh JPEG</div>
+              <div class="quality-presets">
+                <button class="quality-preset" data-value="45" onclick="setQualityPreset(45)">45%</button>
+                <button class="quality-preset" data-value="60" onclick="setQualityPreset(60)">60%</button>
+                <button class="quality-preset active" data-value="85" onclick="setQualityPreset(85)">85%</button>
+                <button class="quality-preset" data-value="95" onclick="setQualityPreset(95)">95%</button>
               </div>
-              <label class="toggle-switch">
-                <input type="checkbox" id="grayscaleToggle" checked onchange="updateQualitySettings()">
-                <span class="toggle-slider"></span>
-              </label>
+              <input type="hidden" id="qualitySlider" value="85">
+              <input type="hidden" id="qualityInput" value="85">
             </div>
-          </div>
-          -->
-          <!-- Auto-crop Margins -->
-          <div class="advanced-setting-row">
-            <div class="setting-label">
-              <div class="setting-title">✂ Auto-crop Margins</div>
-              <div class="setting-desc">Trim uniform borders and scale image content to fit</div>
-            </div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row">
+              <div class="setting-title">Tự cắt lề (Auto-crop)</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="autoCropToggle" onchange="updateQualitySettings()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
-          </div>
-          <!-- Target Device -->
-          <div class="advanced-setting-row" id="deviceSettingRow">
-            <div class="setting-title">📱 Target Device</div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row" id="deviceSettingRow">
+              <div class="setting-title">Thiết bị đích</div>
               <div class="rotation-buttons">
-                <button class="rotation-btn device-btn active" data-value="auto" onclick="setDeviceTarget('auto')">
-                  <span id="deviceAutoLabel">Auto</span>
-                </button>
-                <button class="rotation-btn device-btn" data-value="X4" onclick="setDeviceTarget('X4')">X4</button>
-                <button class="rotation-btn device-btn" data-value="X3" onclick="setDeviceTarget('X3')">X3</button>
+                <button class="device-btn active" data-value="auto" onclick="setDeviceTarget('auto')"><span id="deviceAutoLabel">Auto</span></button>
+                <button class="device-btn" data-value="X4" onclick="setDeviceTarget('X4')">X4</button>
+                <button class="device-btn" data-value="X3" onclick="setDeviceTarget('X3')">X3</button>
               </div>
             </div>
-          </div>
-          <!-- Rotation Direction -->
-          <div class="advanced-setting-row" id="rotationSettingRow">
-            <div class="setting-title">↻ Rotation Direction</div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row" id="rotationSettingRow">
+              <div class="setting-title">Hướng xoay ảnh</div>
               <div class="rotation-buttons">
-                <button class="rotation-btn" id="rotationCCW" onclick="setHandedness('left')">
-                  <span class="rot-icon">↺</span> CCW
-                </button>
-                <button class="rotation-btn active" id="rotationCW" onclick="setHandedness('right')">
-                  <span class="rot-icon">↻</span> CW
-                </button>
+                <button class="rotation-btn" id="rotationCCW" onclick="setHandedness('left')">CCW ↺</button>
+                <button class="rotation-btn active" id="rotationCW" onclick="setHandedness('right')">CW ↻</button>
               </div>
             </div>
-          </div>
-          <!-- Overlap Settings -->
-          <div class="advanced-setting-row" id="overlapSettingRow">
-            <div class="setting-title">📐 Min Overlap</div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row" id="overlapSettingRow">
+              <div class="setting-title">Độ gối mép</div>
               <div class="overlap-selector">
                 <button class="overlap-btn active" data-value="5" onclick="setOverlap(5)">5%</button>
                 <button class="overlap-btn" data-value="10" onclick="setOverlap(10)">10%</button>
-                <button class="overlap-btn" data-value="15" onclick="setOverlap(15)">15%</button>
               </div>
             </div>
-          </div>
-          <!-- Conversion Log Export -->
-          <div class="advanced-setting-row">
-            <div class="setting-label">
-              <div class="setting-title">📥 Auto-download Log</div>
-              <div class="setting-desc">Export detailed log with statistics</div>
-            </div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row">
+              <div class="setting-title">Tải log xử lý</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="export-log-checkbox" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
-          </div>
-          <div class="advanced-setting-row">
-            <div class="setting-label">
-              <div class="setting-title">Remember Settings</div>
-              <div class="setting-desc">Store these upload options in this browser</div>
-            </div>
-            <div class="setting-controls">
+
+            <div class="advanced-setting-row">
+              <div class="setting-title">Ghi nhớ cài đặt</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="rememberUploadSettings" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
               </label>
             </div>
           </div>
-          </div><!-- advanced-settings-content -->
-      </div><!-- end convert-options -->
-      <!-- Image Picker Section - in picker-columns for two-column layout -->
-      <div class="image-picker-section" id="imagePickerSection" style="display:none;">
-        <div class="image-picker-header">
-          <span class="image-picker-title">🖼️ Image Processing Options</span>
-          <span class="image-picker-count" id="imagePickerCount">0 images</span>
-        </div>
-        <div class="state-legend">
-          <div class="legend-item locked">
-            <span>🔒</span>
-            <span>Cover</span>
+
+          <div id="convertSettings" style="display:none;">
+            <span id="convertSizeSummary"></span>
           </div>
-          <div class="legend-item locked">
-            <span style="color:#1abc9c">✦</span>
-            <span>Separator</span>
-          </div>
-          <button class="legend-btn" style="--btn-color:var(--label-color)" onclick="applyStateToAll(0)">
-            <div class="legend-color"></div>
-            <span>Normal</span>
-          </button>
-          <button class="legend-btn" style="--btn-color:#3498db" onclick="applyStateToAll(1)">
-            <div class="legend-color"></div>
-            <span>H-Split</span>
-          </button>
-          <button class="legend-btn" style="--btn-color:#e74c3c" onclick="applyStateToAll(2)">
-            <div class="legend-color"></div>
-            <span>V-Split</span>
-          </button>
-          <button class="legend-btn" style="--btn-color:#9b59b6" onclick="applyStateToAll(3)">
-            <div class="legend-color"></div>
-            <span>Rotate</span>
-          </button>
         </div>
-        <div class="image-grid" id="imageGrid"></div>
+
+        <div class="image-picker-section" id="imagePickerSection" style="display:none;">
+          <div style="font-weight:600; margin-bottom:0.5rem;">Tùy chọn tách / xoay ảnh (<span id="imagePickerCount">0</span>)</div>
+          <div class="image-grid" id="imageGrid"></div>
+        </div>
       </div>
-      </div><!-- end picker-columns -->
-      <!-- Sync compatibility warning - outside picker-columns -->
-      <div class="convert-warning" id="convertWarning" style="display:none;" role="alert" aria-live="polite">
-        ⚠️ Converting will modify files and can break hash‑based sync. ⚠️<br>
-        Please back up or disable sync before proceeding.
+
+      <div class="convert-warning" id="convertWarning" style="display:none; color:#f59e0b; font-size:0.8rem; margin:0.5rem 0;">
+        ⚠️ Tối ưu hóa sẽ thay đổi tập tin EPUB. Hãy sao lưu nếu cần.
       </div>
-      <!-- Optimize & Upload button - shown when picker is visible, replaces Upload -->
-      <button id="startConversionBtn" class="upload-btn optimize" style="display:none;" onclick="startConversionWithImageStates()">Optimize & Upload</button>
-      <button id="uploadBtn" class="upload-btn" onclick="uploadFile()" disabled>Upload</button>
-      <button class="delete-btn-cancel" onclick="handleCancelUploadModal()">Cancel</button>
+
+      <div class="modal-actions">
+        <button class="btn btn-outline" onclick="handleCancelUploadModal()">Hủy</button>
+        <button id="startConversionBtn" class="btn btn-primary" style="display:none;" onclick="startConversionWithImageStates()">Tối ưu & Tải lên</button>
+        <button id="uploadBtn" class="btn btn-primary" onclick="uploadFile()" disabled>Tải lên</button>
+      </div>
+
       <div id="progress-container">
         <div id="progress-bar"><div id="progress-fill"></div></div>
         <div id="progress-text"></div>
       </div>
+
       <div class="log-section" id="log-section">
-        <div class="log-header">
-          <div class="log-title">📋 Conversion Log</div>
-        </div>
         <div class="log-container" id="log-container"></div>
       </div>
     </div>
@@ -1902,12 +1222,12 @@
 <div class="modal-overlay" id="folderModal">
   <div class="modal">
     <button class="modal-close" onclick="closeFolderModal()">&times;</button>
-    <h3>📁 New Folder</h3>
-    <div class="folder-form">
-      <p class="file-info">Create a new folder in <strong id="folderPathDisplay"></strong></p>
-      <input type="text" id="folderName" class="folder-input" placeholder="Folder name..." oninput="document.getElementById('createFolderBtn').disabled = !this.value.trim();">
-      <button class="folder-btn" id="createFolderBtn" onclick="createFolder()" disabled>Create Folder</button>
-      <button class="delete-btn-cancel" onclick="closeFolderModal()">Cancel</button>
+    <h3><i class="ph ph-folder-plus"></i> Tạo thư mục mới</h3>
+    <p class="file-info">Tạo thư mục trong: <strong id="folderPathDisplay">/</strong></p>
+    <input type="text" id="folderName" class="folder-input" placeholder="Tên thư mục..." oninput="document.getElementById('createFolderBtn').disabled = !this.value.trim();">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeFolderModal()">Hủy</button>
+      <button class="btn btn-primary" id="createFolderBtn" onclick="createFolder()" disabled>Tạo thư mục</button>
     </div>
   </div>
 </div>
@@ -1916,13 +1236,12 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-    <h3>🗑️ Delete Item(s)</h3>
-    <div class="folder-form">
-      <p class="delete-warning">⚠️ This action cannot be undone!</p>
-      <p class="file-info">Are you sure you want to delete the following item(s)?</p>
-      <div id="deleteItemList" style="max-height:240px; overflow:auto; margin-bottom:10px;"></div>
-      <button class="delete-btn-confirm" onclick="confirmDelete()">Delete</button>
-      <button class="delete-btn-cancel" onclick="closeDeleteModal()">Cancel</button>
+    <h3 style="color:#ef4444;"><i class="ph ph-trash"></i> Xác nhận xóa</h3>
+    <p class="file-info">Bạn có chắc chắn muốn xóa các mục sau? Hành động này không thể hoàn tác!</p>
+    <div id="deleteItemList" style="max-height:180px; overflow-y:auto; margin-bottom:1rem; font-size:0.85rem; border:1px solid hsl(var(--border)); border-radius:var(--radius); padding:0.75rem;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDeleteModal()">Hủy</button>
+      <button class="btn btn-destructive" onclick="confirmDelete()">Xác nhận xóa</button>
     </div>
   </div>
 </div>
@@ -1931,13 +1250,13 @@
 <div class="modal-overlay" id="renameModal">
   <div class="modal">
     <button class="modal-close" onclick="closeRenameModal()">&times;</button>
-    <h3>✏️ Rename File</h3>
-    <div class="folder-form">
-      <p class="file-info">Renaming <strong id="renameItemName"></strong></p>
-      <input type="text" id="renameNewName" class="folder-input" placeholder="New file name...">
-      <input type="hidden" id="renameItemPath">
-      <button class="rename-btn-confirm" onclick="confirmRename()">Rename</button>
-      <button class="delete-btn-cancel" onclick="closeRenameModal()">Cancel</button>
+    <h3><i class="ph ph-pencil-simple"></i> Đổi tên tập tin</h3>
+    <p class="file-info">Đổi tên: <strong id="renameItemName"></strong></p>
+    <input type="text" id="renameNewName" class="folder-input" placeholder="Tên mới...">
+    <input type="hidden" id="renameItemPath">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeRenameModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="confirmRename()">Lưu thay đổi</button>
     </div>
   </div>
 </div>
@@ -1946,14 +1265,14 @@
 <div class="modal-overlay" id="moveModal">
   <div class="modal">
     <button class="modal-close" onclick="closeMoveModal()">&times;</button>
-    <h3>📂 Move File</h3>
-    <div class="folder-form">
-      <p class="file-info">Moving <strong id="moveItemName"></strong></p>
-      <input type="text" id="moveDestPath" class="folder-input" list="moveFolderOptions" placeholder="/Destination/Folder">
-      <datalist id="moveFolderOptions"></datalist>
-      <input type="hidden" id="moveItemPath">
-      <button class="move-btn-confirm" onclick="confirmMove()">Move</button>
-      <button class="delete-btn-cancel" onclick="closeMoveModal()">Cancel</button>
+    <h3><i class="ph ph-folder-simple-arrow-right"></i> Di chuyển tập tin</h3>
+    <p class="file-info">Di chuyển: <strong id="moveItemName"></strong></p>
+    <input type="text" id="moveDestPath" class="folder-input" list="moveFolderOptions" placeholder="/Thư_mục_đích">
+    <datalist id="moveFolderOptions"></datalist>
+    <input type="hidden" id="moveItemPath">
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeMoveModal()">Hủy</button>
+      <button class="btn btn-primary" onclick="confirmMove()">Di chuyển</button>
     </div>
   </div>
 </div>
@@ -1962,19 +1281,24 @@
 <div class="modal-overlay" id="imagePreviewModal">
   <div class="modal image-preview-mode">
     <button class="modal-close" onclick="closeImagePreview()">&times;</button>
-    <h3>🖼️ Preview</h3>
-    <div class="folder-form">
-      <p class="file-info"><strong id="imagePreviewName"></strong></p>
-      <div class="image-preview-stage">
-        <img id="imagePreviewImg" alt="">
-      </div>
-      <a id="imagePreviewDownload" class="move-btn-confirm" rel="noopener noreferrer" target="_blank" href="#">Download</a>
+    <h3><i class="ph ph-image"></i> Xem trước hình ảnh</h3>
+    <p class="file-info"><strong id="imagePreviewName"></strong></p>
+    <div class="image-preview-stage">
+      <img id="imagePreviewImg" alt="Xem trước">
+    </div>
+    <div class="modal-actions">
+      <a id="imagePreviewDownload" class="btn btn-primary" rel="noopener noreferrer" target="_blank" href="#">
+        <i class="ph ph-download-simple"></i> Tải về
+      </a>
+      <button class="btn btn-outline" onclick="closeImagePreview()">Đóng</button>
     </div>
   </div>
 </div>
 
+
 <script>
-  // get current path from query parameter
+
+  // Path state
   const currentPath = decodeURIComponent(new URLSearchParams(window.location.search).get('path') || '/');
 
   if (currentPath !== '/') {
@@ -1982,27 +1306,57 @@
     if (leaf) document.title = leaf + ' - Files - CrossNext';
   }
 
-  // Network status monitoring
-  let isNetworkOnline = navigator.onLine;
+  // App state
+  let allFilesData = [];
+  let currentFilterCategory = 'all';
+  let currentSearchQuery = '';
+  let currentViewMode = localStorage.getItem('cp_view_mode') || 'table';
+  let currentTheme = localStorage.getItem('cp_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 
-  // Add network status listeners
-  window.addEventListener('online', () => {
-    console.log('[Network] Online event fired');
-    isNetworkOnline = true;
-    showNotification('Network connection restored', 'success');
-  });
+  // Apply theme immediately
+  function applyTheme(theme) {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = 'ph ph-sun';
+    } else {
+      document.documentElement.classList.remove('dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = 'ph ph-moon';
+    }
+  }
+  applyTheme(currentTheme);
 
-  window.addEventListener('offline', () => {
-    console.log('[Network] Offline event fired');
-    isNetworkOnline = false;
-    showNotification('Network connection lost', 'warning');
-  });
+  function toggleTheme() {
+    currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('cp_theme', currentTheme);
+    applyTheme(currentTheme);
+  }
 
-  // Initialize network status
-  console.log('[Network] Initial status:', isNetworkOnline ? 'online' : 'offline');
+  function setViewMode(mode) {
+    currentViewMode = mode;
+    localStorage.setItem('cp_view_mode', mode);
+    document.getElementById('btnViewTable').classList.toggle('active', mode === 'table');
+    document.getElementById('btnViewGrid').classList.toggle('active', mode === 'grid');
+    renderFiles();
+  }
+
+  function setCategoryFilter(cat) {
+    currentFilterCategory = cat;
+    ['All', 'Epub', 'Image', 'Doc'].forEach(k => {
+      const el = document.getElementById('filterCat' + k);
+      if (el) el.classList.toggle('active', k.toLowerCase() === cat);
+    });
+    renderFiles();
+  }
+
+  function onSearchInput(val) {
+    currentSearchQuery = (val || '').trim().toLowerCase();
+    renderFiles();
+  }
 
   function escapeHtml(unsafe) {
-    return unsafe
+    return (unsafe || '')
       .replaceAll("&", "&amp;")
       .replaceAll("<", "&lt;")
       .replaceAll(">", "&gt;")
@@ -2010,74 +1364,362 @@
       .replaceAll("'", "&#039;");
   }
 
+  function formatFileSize(bytes) {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  }
+
   function showNotification(message, type = 'info') {
-    // Create notification element if it doesn't exist
     let notification = document.getElementById('notification');
     if (!notification) {
       notification = document.createElement('div');
       notification.id = 'notification';
-      notification.style.cssText = `
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        padding: 12px 20px;
-        border-radius: 4px;
-        color: white;
-        font-weight: 500;
-        z-index: 10000;
-        max-width: 300px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-        transition: all 0.3s ease;
-      `;
       document.body.appendChild(notification);
     }
-
-    // Set styles based on type
-    const styles = {
-      'success': 'background-color: #27ae60;',
-      'error': 'background-color: #e74c3c;',
-      'warning': 'background-color: #f39c12;',
-      'info': 'background-color: #3498db;'
+    const colors = {
+      success: 'background: #10b981; color: white;',
+      error: 'background: #ef4444; color: white;',
+      warning: 'background: #f59e0b; color: white;',
+      info: 'background: hsl(var(--primary)); color: hsl(var(--primary-foreground));'
     };
-    notification.style.cssText += styles[type] || styles['info'];
+    notification.style.cssText = colors[type] || colors.info;
     notification.textContent = message;
-
-    // Show notification
     notification.style.opacity = '1';
-    notification.style.transform = 'translateX(0)';
-
-    // Auto-hide after 5 seconds
     setTimeout(() => {
       notification.style.opacity = '0';
-      notification.style.transform = 'translateX(100%)';
-      setTimeout(() => {
-        if (notification.parentNode) {
-          notification.parentNode.removeChild(notification);
-        }
-      }, 300);
-    }, 5000);
+    }, 4000);
   }
 
-  function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)).toLocaleString() + ' ' + sizes[i];
+  function updateFolderSummary(folderCount, fileCount, totalSize) {
+    const summaryEl = document.getElementById('folder-summary');
+    if (summaryEl) {
+      summaryEl.textContent = `${folderCount} thư mục, ${fileCount} tập tin • ${formatFileSize(totalSize)}`;
+    }
+  }
+
+  function updateStoragePanel(files) {
+    let epubBytes = 0, epubCount = 0;
+    let imgBytes = 0, imgCount = 0;
+    let docBytes = 0, docCount = 0;
+    let otherBytes = 0, otherCount = 0;
+
+    files.forEach(f => {
+      if (f.isDirectory) return;
+      const lower = f.name.toLowerCase();
+      if (f.isEpub || lower.endsWith('.epub')) {
+        epubBytes += f.size; epubCount++;
+      } else if (/\.(png|jpe?g|bmp|gif|webp)$/i.test(lower)) {
+        imgBytes += f.size; imgCount++;
+      } else if (/\.(txt|md|pdf|json|log|doc|docx)$/i.test(lower)) {
+        docBytes += f.size; docCount++;
+      } else {
+        otherBytes += f.size; otherCount++;
+      }
+    });
+
+    const totalBytes = epubBytes + imgBytes + docBytes + otherBytes || 1;
+    const pEpub = Math.round((epubBytes / totalBytes) * 100);
+    const pImg = Math.round((imgBytes / totalBytes) * 100);
+    const pDoc = Math.round((docBytes / totalBytes) * 100);
+    const pOther = Math.max(0, 100 - (pEpub + pImg + pDoc));
+
+    document.getElementById('panelSizeEpub').textContent = formatFileSize(epubBytes);
+    document.getElementById('panelBarEpub').style.width = pEpub + '%';
+
+    document.getElementById('panelSizeImage').textContent = formatFileSize(imgBytes);
+    document.getElementById('panelBarImage').style.width = pImg + '%';
+
+    document.getElementById('panelSizeDoc').textContent = formatFileSize(docBytes);
+    document.getElementById('panelBarDoc').style.width = pDoc + '%';
+
+    document.getElementById('panelSizeOther').textContent = formatFileSize(otherBytes);
+    document.getElementById('panelBarOther').style.width = pOther + '%';
+
+    // Update categories badges in sidebar
+    document.getElementById('sidebarTotalFiles').textContent = files.length;
+    document.getElementById('badgeCatAll').textContent = files.length;
+    document.getElementById('badgeCatEpub').textContent = epubCount;
+    document.getElementById('badgeCatImage').textContent = imgCount;
+    document.getElementById('badgeCatDoc').textContent = docCount;
+
+    // Update circular radial chart
+    const circle = document.getElementById('radialProgressCircle');
+    const percentText = document.getElementById('storagePercentText');
+    if (circle && percentText) {
+      // 377 is approx 2 * pi * 60
+      const circumference = 339; // 2 * pi * 54
+      const usedPct = Math.min(100, Math.max(5, Math.round((files.length / 50) * 100)));
+      const offset = circumference - (usedPct / 100) * circumference;
+      circle.style.strokeDasharray = circumference;
+      circle.style.strokeDashoffset = offset;
+      percentText.textContent = usedPct + '%';
+    }
+  }
+
+  function updateRecentStrip(files) {
+    const strip = document.getElementById('recentStrip');
+    const subtitle = document.getElementById('recentSubtitle');
+    if (!strip) return;
+
+    // Pick top 4 files (prefer books, then images, then others)
+    const candidates = files.filter(f => !f.isDirectory).slice(0, 4);
+    if (candidates.length === 0) {
+      document.getElementById('recentSection').style.display = 'none';
+      return;
+    }
+    document.getElementById('recentSection').style.display = 'block';
+    subtitle.textContent = candidates.length + ' mục';
+
+    strip.innerHTML = candidates.map(file => {
+      let iconClass = 'ph ph-file-text';
+      let iconType = 'doc';
+      let typeLabel = 'Tài liệu';
+
+      const lower = file.name.toLowerCase();
+      if (file.isEpub || lower.endsWith('.epub')) {
+        iconClass = 'ph ph-book-open';
+        iconType = 'epub';
+        typeLabel = 'EPUB';
+      } else if (/\.(png|jpe?g|bmp|gif|webp)$/i.test(lower)) {
+        iconClass = 'ph ph-image';
+        iconType = 'image';
+        typeLabel = 'Hình ảnh';
+      }
+
+      let filePath = currentPath;
+      if (!filePath.endsWith('/')) filePath += '/';
+      filePath += file.name;
+      const downloadPath = downloadUrl(filePath);
+
+      return `
+        <a class="recent-card" href="${downloadPath}" target="_blank" rel="noopener noreferrer">
+          <div class="recent-icon ${iconType}">
+            <i class="${iconClass}"></i>
+          </div>
+          <div class="recent-meta">
+            <div class="recent-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+            <div class="recent-sub">${formatFileSize(file.size)} • ${typeLabel}</div>
+          </div>
+        </a>
+      `;
+    }).join('');
+  }
+
+  function renderFiles() {
+    const container = document.getElementById('file-table');
+    if (!container) return;
+
+    // Filter files
+    let filtered = allFilesData.filter(file => {
+      // Category filter
+      if (currentFilterCategory === 'epub' && !(file.isEpub || file.name.toLowerCase().endsWith('.epub'))) return false;
+      if (currentFilterCategory === 'image' && !isImageFile(file.name)) return false;
+      if (currentFilterCategory === 'doc' && !/\.(txt|md|pdf|json|log|doc|docx)$/i.test(file.name)) return false;
+
+      // Search filter
+      if (currentSearchQuery && !file.name.toLowerCase().includes(currentSearchQuery)) return false;
+
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      container.innerHTML = `
+        <div style="padding: 3rem 1rem; text-align: center; color: hsl(var(--muted-foreground));">
+          <i class="ph ph-folder-open" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
+          <p style="font-size: 0.95rem; font-weight: 500;">Không có tập tin nào phù hợp</p>
+          <p style="font-size: 0.8rem; margin-top: 0.25rem;">Thư mục trống hoặc từ khóa tìm kiếm không khớp</p>
+        </div>
+      `;
+      return;
+    }
+
+    // Sort files: directories first, then epubs, then alphabetical
+    filtered.sort((a, b) => {
+      if (a.isDirectory && !b.isDirectory) return -1;
+      if (!a.isDirectory && b.isDirectory) return 1;
+      if (a.isEpub && !b.isEpub) return -1;
+      if (!a.isEpub && b.isEpub) return 1;
+      return a.name.localeCompare(b.name);
+    });
+
+    if (currentViewMode === 'table') {
+      let html = `
+        <table class="file-table">
+          <thead>
+            <tr>
+              <th style="width: 40px"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
+              <th>Tên tập tin</th>
+              <th>Định dạng</th>
+              <th>Kích thước</th>
+              <th style="text-align: right">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      filtered.forEach(file => {
+        if (file.isDirectory) {
+          let folderPath = currentPath;
+          if (!folderPath.endsWith("/")) folderPath += "/";
+          folderPath += file.name;
+
+          html += `
+            <tr class="folder-row">
+              <td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(folderPath)}" data-name="${escapeHtml(file.name)}" data-type="folder" onchange="onRowCheckboxChange()"></td>
+              <td>
+                <div class="cell-name">
+                  <i class="ph ph-folder" style="color: #f59e0b; font-size: 1.25rem;"></i>
+                  <a href="/files?path=${encodeURIComponent(folderPath)}" class="folder-link">${escapeHtml(file.name)}</a>
+                </div>
+              </td>
+              <td><span class="badge badge-folder">FOLDER</span></td>
+              <td>—</td>
+              <td>
+                <div class="action-group">
+                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Xóa thư mục">
+                    <i class="ph ph-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          `;
+        } else {
+          let filePath = currentPath;
+          if (!filePath.endsWith("/")) filePath += "/";
+          filePath += file.name;
+
+          const fileIsImage = isImageFile(file.name);
+          const ext = file.name.split('.').pop().toUpperCase();
+          let iconClass = 'ph ph-file-text';
+          let badgeClass = 'badge-other';
+
+          if (file.isEpub) {
+            iconClass = 'ph ph-book-open';
+            badgeClass = 'badge-epub';
+          } else if (fileIsImage) {
+            iconClass = 'ph ph-image';
+            badgeClass = 'badge-image';
+          } else if (/^(TXT|MD|PDF|DOC|DOCX)$/i.test(ext)) {
+            badgeClass = 'badge-doc';
+          }
+
+          html += `
+            <tr class="${file.isEpub ? 'epub-file' : ''}">
+              <td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file" onchange="onRowCheckboxChange()"></td>
+              <td>
+                <div class="cell-name">
+                  <i class="${iconClass}" style="font-size: 1.25rem;"></i>
+                  ${fileIsImage 
+                    ? `<a href="${downloadUrl(filePath)}" class="file-link image-preview-link">${escapeHtml(file.name)}</a>`
+                    : `<a rel="noopener noreferrer" target="_blank" href="${downloadUrl(filePath)}" class="file-link">${escapeHtml(file.name)}</a>`
+                  }
+                </div>
+              </td>
+              <td><span class="badge ${badgeClass}">${file.isEpub ? 'EPUB' : escapeHtml(ext)}</span></td>
+              <td>${formatFileSize(file.size)}</td>
+              <td>
+                <div class="action-group">
+                  ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
+                  <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
+                  <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-folder-simple-arrow-right"></i></button>
+                  <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
+                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+      });
+
+      html += `</tbody></table>`;
+      container.innerHTML = html;
+    } else {
+      // Grid View
+      let html = `<div class="file-grid">`;
+      filtered.forEach(file => {
+        if (file.isDirectory) {
+          let folderPath = currentPath;
+          if (!folderPath.endsWith("/")) folderPath += "/";
+          folderPath += file.name;
+
+          html += `
+            <div class="grid-card">
+              <input type="checkbox" class="grid-checkbox select-item" data-path="${encodeURIComponent(folderPath)}" data-name="${escapeHtml(file.name)}" data-type="folder" onchange="onRowCheckboxChange()">
+              <i class="ph ph-folder grid-icon" style="color: #f59e0b;"></i>
+              <a href="/files?path=${encodeURIComponent(folderPath)}" class="grid-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
+              <div class="grid-sub"><span class="badge badge-folder">FOLDER</span></div>
+              <div class="grid-actions">
+                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Xóa thư mục">
+                  <i class="ph ph-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+        } else {
+          let filePath = currentPath;
+          if (!filePath.endsWith("/")) filePath += "/";
+          filePath += file.name;
+
+          const fileIsImage = isImageFile(file.name);
+          const ext = file.name.split('.').pop().toUpperCase();
+          let iconClass = 'ph ph-file-text';
+          let iconColor = 'hsl(var(--foreground))';
+
+          if (file.isEpub) {
+            iconClass = 'ph ph-book-open';
+            iconColor = '#10b981';
+          } else if (fileIsImage) {
+            iconClass = 'ph ph-image';
+            iconColor = '#3b82f6';
+          }
+
+          html += `
+            <div class="grid-card">
+              <input type="checkbox" class="grid-checkbox select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file" onchange="onRowCheckboxChange()">
+              <i class="${iconClass} grid-icon" style="color: ${iconColor};"></i>
+              <div class="grid-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
+              <div class="grid-sub">${formatFileSize(file.size)} • ${escapeHtml(ext)}</div>
+              <div class="grid-actions">
+                ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
+                <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
+                <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-folder-simple-arrow-right"></i></button>
+                <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
+                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
+              </div>
+            </div>
+          `;
+        }
+      });
+      html += `</div>`;
+      container.innerHTML = html;
+    }
+  }
+
+  function onRowCheckboxChange() {
+    const selected = document.querySelectorAll('.select-item:checked');
+    const btn = document.getElementById('btnDeleteSelected');
+    const btnText = document.getElementById('btnDeleteSelectedText');
+    if (btn) {
+      if (selected.length > 0) {
+        btn.style.display = 'inline-flex';
+        btnText.textContent = `Xóa (${selected.length}) mục`;
+      } else {
+        btn.style.display = 'none';
+      }
+    }
   }
 
   async function hydrate() {
-    // Fetch CrossPoint version
     fetchVersion();
-
-    // Load any SD-hosted plugins that mount on the File Manager page.
     loadPlugins('files');
 
-    // Close modals when clicking overlay - call proper cleanup functions
+    // Close modals when clicking overlay
     document.querySelectorAll('.modal-overlay').forEach(function(overlay) {
       overlay.addEventListener('click', function(e) {
         if (e.target === overlay) {
-          // Call the appropriate close function for each modal to ensure cleanup
           if (overlay.id === 'uploadModal') return closeUploadModal();
           if (overlay.id === 'folderModal') return closeFolderModal();
           if (overlay.id === 'deleteModal') return closeDeleteModal();
@@ -2089,139 +1731,63 @@
       });
     });
 
+    // Render breadcrumbs
     const breadcrumbs = document.getElementById('directory-breadcrumbs');
-    const fileTable = document.getElementById('file-table');
-
     const segments = currentPath.split('/').filter(Boolean);
     breadcrumbs.replaceChildren();
 
-    const appendSep = function() {
+    const homeLink = document.createElement('a');
+    homeLink.href = '/files';
+    homeLink.innerHTML = '<i class="ph ph-house"></i> Home';
+    breadcrumbs.appendChild(homeLink);
+
+    let accum = '';
+    segments.forEach((seg, idx) => {
+      accum += '/' + seg;
       const sep = document.createElement('span');
       sep.className = 'sep';
-      sep.textContent = '›';
+      sep.innerHTML = '<i class="ph ph-caret-right"></i>';
       breadcrumbs.appendChild(sep);
-    };
 
-    const appendLink = function(label, href) {
-      const link = document.createElement('a');
-      link.href = href;
-      link.textContent = label;
-      breadcrumbs.appendChild(link);
-    };
+      if (idx === segments.length - 1) {
+        const cur = document.createElement('span');
+        cur.className = 'current';
+        cur.textContent = seg;
+        breadcrumbs.appendChild(cur);
+      } else {
+        const a = document.createElement('a');
+        a.href = '/files?path=' + encodeURIComponent(accum);
+        a.textContent = seg;
+        breadcrumbs.appendChild(a);
+      }
+    });
 
-    const appendCurrent = function(label) {
-      const current = document.createElement('span');
-      current.className = 'current';
-      current.textContent = label;
-      breadcrumbs.appendChild(current);
-    };
-
-    if (segments.length === 0) {
-      appendCurrent('🏠 Home');
-    } else {
-      appendLink('🏠 Home', '/files');
-      segments.forEach(function(segment, index) {
-        appendSep();
-        if (index === segments.length - 1) {
-          appendCurrent(segment);
-        } else {
-          const path = '/' + segments.slice(0, index + 1).join('/');
-          appendLink(segment, '/files?path=' + encodeURIComponent(path));
-        }
-      });
-    }
-
-    let files = [];
+    // Fetch files
     try {
       const response = await fetch('/api/files?path=' + encodeURIComponent(currentPath) + '&_=' + Date.now());
-      if (!response.ok) {
-        throw new Error('Failed to load files: ' + response.status + ' ' + response.statusText);
-      }
-      files = await response.json();
+      if (!response.ok) throw new Error('HTTP ' + response.status);
+      allFilesData = await response.json();
     } catch (e) {
       console.error(e);
-      fileTable.innerHTML = '<div class="no-files">An error occurred while loading the files</div>';
+      document.getElementById('file-table').innerHTML = '<div style="padding:2rem; text-align:center; color:#ef4444;">Không thể tải danh sách tập tin</div>';
       return;
     }
 
     let folderCount = 0;
     let totalSize = 0;
-    files.forEach(file => {
-      if (file.isDirectory) folderCount++;
-      totalSize += file.size;
+    allFilesData.forEach(f => {
+      if (f.isDirectory) folderCount++;
+      else totalSize += f.size;
     });
 
-    const fileCount = files.length - folderCount;
-    const folderLabel = folderCount === 1 ? 'folder' : 'folders';
-    const fileLabel = fileCount === 1 ? 'file' : 'files';
-    document.getElementById('folder-summary').innerHTML = `${folderCount} ${folderLabel}, ${fileCount} ${fileLabel}, ${formatFileSize(totalSize)}`;
-
-    if (files.length === 0) {
-      fileTable.innerHTML = '<div class="no-files">This folder is empty</div>';
-    } else {
-      let fileTableContent = '<table class="file-table">';
-
-				// Add select-all checkbox column
-      fileTableContent += '<tr><th style="width:40px"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th><th>Name</th><th>Type</th><th>Size</th><th class="actions-col">Actions</th></tr>';
-
-
-      const sortedFiles = files.sort((a, b) => {
-        // Directories first, then epub files, then other files, alphabetically within each group
-        if (a.isDirectory && !b.isDirectory) return -1;
-        if (!a.isDirectory && b.isDirectory) return 1;
-        if (a.isEpub && !b.isEpub) return -1;
-        if (!a.isEpub && b.isEpub) return 1;
-        return a.name.localeCompare(b.name);
-      });
-
-      sortedFiles.forEach(file => {
-        if (file.isDirectory) {
-          let folderPath = currentPath;
-          if (!folderPath.endsWith("/")) folderPath += "/";
-          folderPath += file.name;
-
-         // Checkbox cell + folder row
-          fileTableContent += `<tr class="folder-row">`;
-          fileTableContent += `<td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(folderPath)}" data-name="${escapeHtml(file.name)}" data-type="folder"></td>`;
-          fileTableContent += `<td><span class="file-icon">📁</span><a href="/files?path=${encodeURIComponent(folderPath)}" class="folder-link">${escapeHtml(file.name)}</a></td>`;
-          fileTableContent += '<td><span class="folder-badge">FOLDER</span></td>';
-          fileTableContent += '<td>-</td>';
-          fileTableContent += `<td class="actions-col"><div class="action-icon-group"><button class="delete-btn" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Delete folder">🗑️</button></div></td>`;
-          fileTableContent += '</tr>';
-        } else {
-          let filePath = currentPath;
-          if (!filePath.endsWith("/")) filePath += "/";
-          filePath += file.name;
-
-          // Checkbox cell + file row
-          fileTableContent += `<tr class="${file.isEpub ? 'epub-file' : ''}">`;
-          fileTableContent += `<td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file"></td>`;
-          const fileIsImage = isImageFile(file.name);
-          fileTableContent += `<td><span class="file-icon">${file.isEpub ? '📗' : (fileIsImage ? '🖼️' : '📄')}</span>`;
-          if (fileIsImage) {
-            fileTableContent += `<a href="${downloadUrl(filePath)}" class="file-link image-preview-link">${escapeHtml(file.name)}</a>`;
-          } else {
-            fileTableContent += `<a rel="noopener noreferrer" target="_blank" href="${downloadUrl(filePath)}" class="file-link">${escapeHtml(file.name)}</a>`;
-          }
-          fileTableContent += '</td>';
-          fileTableContent += file.isEpub ? '<td><span class="epub-badge">EPUB</span></td>' : `<td>${escapeHtml(file.name.split('.').pop().toUpperCase())}</td>`;
-          fileTableContent += `<td>${formatFileSize(file.size)}</td>`;
-          fileTableContent += `<td class="actions-col"><div class="action-icon-group">`;
-          fileTableContent += `<button class="move-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Move file">📂</button>`;
-          fileTableContent += `<button class="rename-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Rename file">✏️</button>`;
-          fileTableContent += `<button class="delete-btn" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Delete file">🗑️</button>`;
-          fileTableContent += `</div></td>`;
-          fileTableContent += '</tr>';
-        }
-      });
-
-      fileTableContent += '</table>';
-      fileTable.innerHTML = fileTableContent;
-    }
+    updateFolderSummary(folderCount, allFilesData.length - folderCount, totalSize);
+    updateStoragePanel(allFilesData);
+    updateRecentStrip(allFilesData);
+    renderFiles();
   }
 
-  // Image preview
-  function isImageFile(name) {
+
+function isImageFile(name) {
     return /\.(png|jpe?g|bmp|gif|webp)$/i.test(name);
   }
 
@@ -6325,6 +5891,4 @@ function retryAllFailedUploads() {
   }
 <!--#include file="shared/PluginHost.js.inc" -->
   hydrate();
-</script>
-</body>
-</html>
+

@@ -13,6 +13,7 @@
 
 #include "../../../lib/GfxRenderer/FontCacheManager.h"
 #include "../../CrossPointSettings.h"
+#include "../../HapticFeedback.h"
 #include "../../DevMode.h"
 #include "../../activities/network/WifiSelectionActivity.h"
 #include "../../network/HttpDownloader.h"
@@ -1415,7 +1416,7 @@ void WallpapersActivity::renderPreview() {
   // cannot still be routable while a full-screen picture covers it. It also
   // gives the one failure path here somewhere to put words: a blank panel reads
   // as a crash, twice confirmed by cold testers in this fork.
-  fui::GfxRendererTarget target = toybox::makeTarget(renderer, toybox::readingChromeFaces());
+  fui::GfxRendererTarget target = toybox::makeTarget(renderer, toybox::toyboxFaces());
   const fui::DeviceContext device = target.deviceContext();
   const fui::InputSnapshot noInput{};
   toybox::Frame frame(target, device, noInput, interactions_, nullptr, toybox::headerStatus(renderer));
@@ -2525,6 +2526,7 @@ void WallpapersActivity::loop() {
   }
 
   if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+    haptic_feedback::touchAction();
     // Back unwinds the hold branch one step at a time. From the confirm it goes
     // to the sheet, NOT to the grid: Back on a confirm means "not that", and
     // dropping the user two screens back would make them start the hold again
@@ -2635,6 +2637,9 @@ void WallpapersActivity::loop() {
     input.touchX = static_cast<int16_t>(ax);
     input.touchY = static_cast<int16_t>(ay);
     const fui::ActionEvent action = interactions_.route(input);
+    if (action.action != fui::NO_ACTION) {
+      haptic_feedback::touchAction();
+    }
     switch (action.action) {
       case wallpapersui::ActionGetSet:
       case wallpapersui::ActionRetry:
@@ -2744,15 +2749,24 @@ void WallpapersActivity::loop() {
   if (view_ != View::Grid) return;
 
   const int pages = pageCount();
-  if (mappedInput.wasReleased(MappedInputManager::Button::Down)) {
+  const MappedInputManager::SwipeDir swipe = mappedInput.wasSwipe();
+  const bool pageNext = mappedInput.wasReleased(MappedInputManager::Button::Down) ||
+                        swipe == MappedInputManager::SwipeDir::Left ||
+                        swipe == MappedInputManager::SwipeDir::Up;
+  const bool pagePrev = mappedInput.wasReleased(MappedInputManager::Button::Up) ||
+                        swipe == MappedInputManager::SwipeDir::Right ||
+                        swipe == MappedInputManager::SwipeDir::Down;
+  if (pageNext) {
     if (page_ + 1 < pages) {
+      haptic_feedback::touchAction();
       ++page_;
       requestUpdate();
     }
     return;
   }
-  if (mappedInput.wasReleased(MappedInputManager::Button::Up)) {
+  if (pagePrev) {
     if (page_ > 0) {
+      haptic_feedback::touchAction();
       --page_;
       requestUpdate();
     }
@@ -2778,6 +2792,7 @@ void WallpapersActivity::loop() {
         LOG_INF("WALL", "chip tap refused: surface not yet seen");
         return;
       }
+      haptic_feedback::touchAction();
       choosing_ = !choosing_;
       LOG_INF("WALL", "choose-a-set mode %s with %d chosen", choosing_ ? "on" : "off",
               static_cast<int>(chosen_.size()));
@@ -2798,6 +2813,7 @@ void WallpapersActivity::loop() {
       if (tapX >= x - kDotGap / 2 && tapX < x + kDotSize + kDotGap / 2 && tapY >= geom.pageDotsY - 16 &&
           tapY < geom.pageDotsY + kDotSize + 16) {
         if (p != page_) {
+          haptic_feedback::touchAction();
           page_ = p;
           requestUpdate();
         }
@@ -2837,6 +2853,7 @@ void WallpapersActivity::loop() {
   switch (specialAt(combined)) {
     case SpecialTile::Live:
       if (held) return;
+      haptic_feedback::touchAction();
       choosing_ = false;
       // The CAPTION is what settles where the tap goes, and the cell says
       // "Your phone" -- which is a destination, not an action. It used to open
@@ -2849,6 +2866,7 @@ void WallpapersActivity::loop() {
       return;
     case SpecialTile::GetSet:
       if (held) return;
+      haptic_feedback::touchAction();
       choosing_ = false;
       startSetDownload();
       return;
@@ -2881,17 +2899,20 @@ void WallpapersActivity::loop() {
   switch (wallpapers::cellAction(held, choosing_, idx, activeIndex_, static_cast<int>(chosen_.size()), sleepBlocked(),
                                  shadowedSet_)) {
     case wallpapers::CellAction::Sheet:
+      haptic_feedback::touchAction();
       openSheet(idx);
       return;
     case wallpapers::CellAction::None:
       return;
     case wallpapers::CellAction::Toggle:
+      haptic_feedback::touchAction();
       // Entering the mode IS the tap's answer when a set was already live: the
       // strip has said "Tap to change." and this is that change.
       choosing_ = true;
       toggleChosen(idx);
       return;
     case wallpapers::CellAction::Set:
+      haptic_feedback::touchAction();
       break;
   }
   if (setWallpaper(idx)) {
@@ -2950,10 +2971,8 @@ void WallpapersActivity::render(RenderLock&&) {
   //
   // The confirm is never the code screen: it is three facts and two buttons.
   const bool liveCode = view_ == View::Live && liveRevokeIndex_ < 0 && liveShowingCode();
-  fui::GfxRendererTarget target = toybox::makeTarget(
-      renderer, liveCode ? toybox::pairingCodeFaces()
-                         : (view_ == View::Add ? toybox::readingAddressFaces()
-                                               : (prose ? toybox::readingChromeFaces() : toybox::proseMenuFaces())));
+  fui::GfxRendererTarget target =
+      toybox::makeTarget(renderer, liveCode ? toybox::pairingCodeFaces() : toybox::toyboxFaces());
   const fui::DeviceContext device = target.deviceContext();
   const fui::InputSnapshot noInput{};
   interactionsReady_ = false;

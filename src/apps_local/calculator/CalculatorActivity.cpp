@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include "../Shelf.h"
+#include "../../HapticFeedback.h"
 #include "../ui/PixelMenuTheme.h"
 #include "../ui/Toybox.h"
 #include "../ui/ToyboxFonts.h"
@@ -170,6 +171,7 @@ void CalculatorActivity::loop() {
   // after Trivia shipped with no way out at all.
   if (mappedInput.wasReleased(MappedInputManager::Button::Back) ||
       mappedInput.wasPressed(MappedInputManager::Button::Back)) {
+    haptic_feedback::touchAction();
     shelf::leave(renderer, mappedInput);
     return;
   }
@@ -181,11 +183,15 @@ void CalculatorActivity::loop() {
   input.touchReleased = true;
   input.touchX = tapX;
   input.touchY = tapY;
-  sidebuttons::route(interactions, input, mappedInput, *this);
+  const fui::ActionEvent routed = sidebuttons::route(interactions, input, mappedInput, *this);
+  if (routed.action != fui::NO_ACTION) {
+    haptic_feedback::touchAction();
+  }
 
   const calc::PadGeom g = calc::padGeometry(renderer.getScreenWidth(), renderer.getScreenHeight());
   const int index = calc::keyAt(calc::kPad, g, tapX, tapY);
   if (index < 0) return;
+  haptic_feedback::touchAction();
   engine.press(calc::kPad.keys[index].key);
   requestUpdate();
 }

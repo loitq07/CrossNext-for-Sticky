@@ -86,7 +86,7 @@ inline Faces readingAddressFaces() { return Faces{kReadingBoldFontId, kReadingFo
 // capital there gets it as the DEFAULT for every string that does not ask for
 // something else -- one forgotten style and a sentence is drawn four lines tall.
 // In SMALL it is opt-in: nothing resolves to it unless a style names it.
-inline Faces pairingCodeFaces() { return Faces{kHugeFontId, kReadingFontId, kDisplayFontId}; }
+inline Faces pairingCodeFaces() { return Faces{kHugeFontId, kUiFontId, kDisplayFontId}; }
 
 // And for a screen whose header band carries a story's title rather than the
 // app's name: the title slot takes the bold reading cut so a whole headline

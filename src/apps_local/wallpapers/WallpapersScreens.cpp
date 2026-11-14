@@ -6,8 +6,11 @@
 #include <string>
 #include <string_view>
 
+#include "../ui/PixelMenu.h"
 #include "../ui/ToyboxIcons.h"
 #include "../ui/ToyboxText.h"
+#include "../ui/UnifiedDesignTokens.h"
+#include "../../components/UITheme.h"
 #include "../Shelf.h"
 #include "WallpapersCore.h"
 
@@ -126,10 +129,17 @@ constexpr int16_t kButtonH = 64;
 // 276px slab of solid black on an e-ink panel -- slow to refresh, and it ghosts.
 void drawButton(toybox::Screen& screen, const fui::Rect& box, const char* label, const fui::ActionId action,
                 const fui::Rect* hit = nullptr) {
-  screen.target().fill(box, fui::Paint::solid(fui::Color::Black));
+  const bool light = chrome::lightHeader;
+  const uint8_t rad = light ? cds::kRadiusControl : 0;
+  if (light) {
+    screen.target().fill(box, fui::Paint::solid(fui::Color::White), rad);
+    screen.target().stroke(box, fui::Paint::solid(fui::Color::Black), cds::kStrokeHairline, rad);
+  } else {
+    screen.target().fill(box, fui::Paint::solid(fui::Color::Black), rad);
+  }
   fui::TextStyle style = screen.theme().smallText;
   style.align = fui::TextAlign::Center;
-  style.color = fui::Color::White;
+  style.color = light ? fui::Color::Black : fui::Color::White;
   style.maxLines = 1;
   // Through the ladder, like every other string in this file. The labels here
   // were all short enough while every button on these screens was the full body
@@ -143,7 +153,10 @@ void drawButton(toybox::Screen& screen, const fui::Rect& box, const char* label,
 // The same finger target as drawButton, stroked rather than filled: a control
 // that is clearly a control and clearly not the primary one.
 void drawOutlineButton(toybox::Screen& screen, const fui::Rect& box, const char* label, const fui::ActionId action) {
-  screen.target().stroke(box, fui::Paint::solid(fui::Color::Black), 3);
+  const bool light = chrome::lightHeader;
+  const uint8_t rad = light ? cds::kRadiusControl : 0;
+  screen.target().fill(box, fui::Paint::solid(fui::Color::White), rad);
+  screen.target().stroke(box, fui::Paint::solid(fui::Color::Black), light ? cds::kStrokeHairline : 2, rad);
   fui::TextStyle style = screen.theme().smallText;
   style.align = fui::TextAlign::Center;
   style.color = fui::Color::Black;
@@ -231,26 +244,18 @@ void paintTruchet(fui::DrawTarget& t, const fui::Rect& r, const int cell) {
 // GLYPHS in one outline chip, never one glyph in two fills.
 void chrome(toybox::Screen& screen, const char* title, const char* rightLabel, const bool showChip = false,
             const bool choosing = false) {
-  fui::HeaderProps header;
+  pixelui::begin(screen);
+  pixelui::Header header;
   header.title = title;
-  if (showChip) {
-    // A glyph, not a word. An icon-only trailing button is square (band height
-    // less 8) where "CHOOSE" measured 91px at the BODY cut, and that width came
-    // straight out of the room the title is fitted to on a band that also
-    // carries the page count.
-    header.trailingIcon = fui::bitmapFromIcon(chooseChipIcon(choosing));
-    header.trailingAction = ActionChoose;
-    header.trailingStyles = toybox::bandOutlineStyles();
-    header.trailingRadius = toybox::kPillRadius / 2;
-  }
   header.rightLabel = rightLabel;
-  header.borderEdges = fui::EdgesNone;
-  if (rightLabel != nullptr) {
-    header.subtitleText = screen.theme().smallText;
-    header.subtitleText.color = fui::Color::White;
+  header.back = screen.device().hasTouch;
+  if (showChip) {
+    header.mark = fui::bitmapFromIcon(chooseChipIcon(choosing));
+    header.markAction = ActionChoose;
   }
-  toybox::headerBand(screen, header);
-  screen.insetContent(fui::Insets{toybox::kGutter * 3, toybox::kMargin, toybox::kMargin, toybox::kMargin});
+  pixelui::header(screen, header);
+  const auto g = pixelui::geometry(screen.device());
+  backui::publish(header.back, g.back);
 }
 
 }  // namespace

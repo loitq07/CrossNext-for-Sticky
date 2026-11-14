@@ -5,7 +5,9 @@
 #include <cstdio>
 #include <string>
 
+#include "../ui/PixelMenu.h"
 #include "../ui/ToyboxText.h"
+#include "../../components/UITheme.h"
 
 namespace instapaperui {
 namespace {
@@ -18,29 +20,17 @@ constexpr int kBodyTop = toybox::kBodyTop;
 
 constexpr int kFooterHeight = toybox::kPillHeight;
 
-// Header band, rule, and the page margin.
-//
-// `rightLabel` is drawn in paper, not ink. The band is solid black and the
-// header component draws rightLabel with `subtitleText`, whose default colour
-// is Black -- so a label left at the default is painted black on black and
-// simply is not there. Styling `trailingText` instead does nothing: the
-// component only consults that for its trailing BUTTON. Study and Hacker News
-// each paid for this once.
 void chrome(toybox::Screen& screen, const char* title, const char* rightLabel,
             const fui::TextStyle* titleText = nullptr) {
-  fui::HeaderProps header;
-  header.title = title;
-  header.rightLabel = rightLabel;
-  header.borderEdges = fui::EdgesNone;
-  if (titleText != nullptr) header.titleText = *titleText;
-  if (rightLabel != nullptr) {
-    header.subtitleText = screen.theme().smallText;
-    header.subtitleText.color = fui::Color::White;
-    header.subtitleText.align = fui::TextAlign::Right;
-  }
-  toybox::absoluteChrome(screen);
-  toybox::headerBand(screen, header);
-  screen.insetContent(fui::Insets{toybox::kGutter * 3, toybox::kMargin, toybox::kMargin, toybox::kMargin});
+  (void)titleText;
+  pixelui::begin(screen);
+  pixelui::Header heading;
+  heading.title = title;
+  heading.rightLabel = rightLabel;
+  heading.back = screen.device().hasTouch;
+  pixelui::header(screen, heading);
+  const auto g = pixelui::geometry(screen.device());
+  backui::publish(heading.back, g.back);
 }
 
 // Plain text into a rect, with the defaults every line on these screens wants.
@@ -162,18 +152,20 @@ void buildQueue(toybox::Screen& screen, const QueueModel& model) {
     fui::ButtonProps undo;
     undo.label = undoLabel;
     undo.action = ActionUndoArchive;
-    undo.styles = toybox::buttonStyles();
+    undo.styles = toybox::buttonStyles(chrome::lightHeader);
     screen.button(undo, fui::makeRect(toybox::kMargin, footerY, undoWidth, kFooterHeight));
 
     fui::ButtonProps sync;
     sync.label = "SYNC";
     sync.action = ActionSync;
+    sync.styles = toybox::buttonStyles(chrome::lightHeader);
     screen.button(sync, fui::makeRect(static_cast<int16_t>(toybox::kMargin + undoWidth + toybox::kGutter), footerY,
                                       static_cast<int16_t>(barWidth - undoWidth - toybox::kGutter), kFooterHeight));
   } else {
     fui::ButtonProps sync;
     sync.label = "SYNC";
     sync.action = ActionSync;
+    sync.styles = toybox::buttonStyles(chrome::lightHeader);
     screen.button(sync, fui::makeRect(toybox::kMargin, footerY, barWidth, kFooterHeight));
   }
 
@@ -185,7 +177,7 @@ void buildQueue(toybox::Screen& screen, const QueueModel& model) {
     account.icon = fui::bitmapFromIcon(*model.accountIcon);
     account.iconSize = toybox::kIconSize;
     account.action = ActionAccount;
-    account.styles = toybox::buttonStyles();
+    account.styles = toybox::buttonStyles(chrome::lightHeader);
     const int16_t accountX = static_cast<int16_t>(toybox::kMargin + barWidth + accountGap);
     screen.button(account, fui::makeRect(accountX, footerY, accountSide, kFooterHeight));
   }
@@ -247,7 +239,7 @@ uint32_t buildReader(toybox::Screen& screen, const ReaderModel& model, ReaderBod
   // sentence, in its own case -- so the band borrows the reading cut in paper,
   // the way a book's running header borrows the text's.
   fui::TextStyle bandTitle = screen.theme().bodyText;
-  bandTitle.color = fui::Color::White;
+  bandTitle.color = chrome::lightHeader ? fui::Color::Black : fui::Color::White;
   bandTitle.maxLines = 1;
   const fui::TextStyle& labelStyle = screen.theme().smallText;
   const int16_t labelWidth =
@@ -312,11 +304,11 @@ uint32_t buildReader(toybox::Screen& screen, const ReaderModel& model, ReaderBod
   };
 
   const int16_t left = toybox::kMargin;
-  const fui::StyleSet quiet = toybox::buttonStyles();
+  const fui::StyleSet quiet = toybox::buttonStyles(chrome::lightHeader);
   footerButton("ARCHIVE", ActionArchive, left, archiveWidth, true, &quiet);
   const int16_t prevX = static_cast<int16_t>(left + archiveWidth + moat);
-  footerButton("<", ActionPagePrev, prevX, arrow, model.canPagePrev);
-  footerButton(">", ActionPageNext, static_cast<int16_t>(prevX + arrow + toybox::kGutter), arrow, model.canPageNext);
+  footerButton("<", ActionPagePrev, prevX, arrow, model.canPagePrev, &quiet);
+  footerButton(">", ActionPageNext, static_cast<int16_t>(prevX + arrow + toybox::kGutter), arrow, model.canPageNext, &quiet);
 
   // Drawn into readerBody() rather than into the Screen's running content
   // rect, because the Activity counts the lines that fit in this exact rect to
@@ -352,6 +344,7 @@ void buildNotice(toybox::Screen& screen, const NoticeModel& model) {
     fui::ButtonProps action;
     action.label = model.actionLabel;
     action.action = ActionNotice;
+    action.styles = toybox::buttonStyles(chrome::lightHeader);
     screen.button(action, fui::makeRect(toybox::kMargin,
                                         static_cast<int16_t>(device.height - toybox::kMargin - toybox::kPillHeight),
                                         width, toybox::kPillHeight));
@@ -415,6 +408,7 @@ void buildDisconnectConfirm(toybox::Screen& screen, const DisconnectModel& model
   fui::ButtonProps keep;
   keep.label = "KEEP IT";
   keep.action = ActionDisconnectCancel;
+  keep.styles = toybox::buttonStyles(chrome::lightHeader);
   screen.button(keep, fui::makeRect(toybox::kMargin, keepY, width, toybox::kPillHeight));
 
   const int16_t disconnectY = static_cast<int16_t>(keepY - toybox::kPillHeight - toybox::kGutter * 3);
@@ -424,7 +418,7 @@ void buildDisconnectConfirm(toybox::Screen& screen, const DisconnectModel& model
   fui::ButtonProps disconnect;
   disconnect.label = "DISCONNECT";
   disconnect.action = ActionDisconnect;
-  disconnect.styles = toybox::buttonStyles();
+  disconnect.styles = toybox::buttonStyles(chrome::lightHeader);
   screen.button(disconnect, fui::makeRect(static_cast<int16_t>(toybox::kMargin + (width - disconnectWidth) / 2),
                                           disconnectY, disconnectWidth, toybox::kPillHeight));
 
