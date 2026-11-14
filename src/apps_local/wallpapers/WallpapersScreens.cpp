@@ -8,6 +8,7 @@
 
 #include "../ui/ToyboxIcons.h"
 #include "../ui/ToyboxText.h"
+#include "../Shelf.h"
 #include "WallpapersCore.h"
 
 namespace wallpapersui {
@@ -1599,7 +1600,7 @@ int markerBottomExtent(const fui::Rect& thumb) {
 // previews is the flash cost this whole download exists to avoid -- so the set
 // is sold with its NAMES, which cost nothing and are the actual draw.
 void buildOffer(toybox::Screen& screen, const OfferModel& model) {
-  chrome(screen, "WALLPAPERS", nullptr);
+  chrome(screen, shelf::label("WALLPAPERS"), nullptr);
 
   if (model.warning != nullptr && model.warning[0] != '\0') {
     fui::TextStyle warn = onPaper(screen.theme().smallText, fui::TextAlign::Left);
@@ -1692,7 +1693,7 @@ BarSpan fetchBarSpan(const FetchingModel& model) {
 }
 
 void buildFetching(toybox::Screen& screen, const FetchingModel& model) {
-  chrome(screen, "WALLPAPERS", nullptr);
+  chrome(screen, shelf::label("WALLPAPERS"), nullptr);
   const fui::Rect body = screen.body();
   const int16_t left = body.x;
 
@@ -1735,7 +1736,7 @@ void buildFetching(toybox::Screen& screen, const FetchingModel& model) {
 
 // FAILED, and every other "here is what happened". Always has a button.
 void buildNotice(toybox::Screen& screen, const NoticeModel& model) {
-  chrome(screen, "WALLPAPERS", nullptr);
+  chrome(screen, shelf::label("WALLPAPERS"), nullptr);
   const fui::Rect body = screen.body();
   const int16_t left = body.x;
 

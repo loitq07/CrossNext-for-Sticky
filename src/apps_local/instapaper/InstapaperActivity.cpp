@@ -783,7 +783,7 @@ void InstapaperActivity::render(RenderLock&&) {
   const fui::ThemeTokens& tokens = toybox::themeTokens();
   const fui::InputSnapshot noInput{};
   interactionsReady_ = false;
-  toybox::Frame frame(target, device, noInput, interactions_);
+  toybox::Frame frame(target, device, noInput, interactions_, nullptr, toybox::headerStatus(renderer));
   toybox::Screen screen(frame);
 
   const char* what = "Instapaper";

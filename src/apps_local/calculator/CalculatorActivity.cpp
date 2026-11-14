@@ -8,6 +8,7 @@
 #include <cstring>
 
 #include "../Shelf.h"
+#include "../ui/PixelMenuTheme.h"
 #include "../ui/Toybox.h"
 #include "../ui/ToyboxFonts.h"
 #include "../ui/ToyboxTheme.h"
@@ -58,18 +59,7 @@ void CalculatorActivity::onEnter() {
 // row: the eye sees past the bezel from below and reads a white strip above any
 // header that started at the safe top.
 void CalculatorActivity::drawChrome() {
-  const int w = renderer.getScreenWidth();
-  int safeTop = 0, safeRight = 0, safeBottom = 0, safeLeft = 0;
-  renderer.getOrientedViewableTRBL(&safeTop, &safeRight, &safeBottom, &safeLeft);
-  renderer.fillRect(0, 0, w, calc::kChromeHeight, true);
-  auto target = toybox::makeTarget(renderer);
-  const auto device = target.deviceContext();
-  const auto back = backui::rect(device, fui::makeRect(0, 0, w, calc::kChromeHeight));
-  backui::publish(device.hasTouch, back);
-  if (device.hasTouch) backui::paint(target, back);
-  const int titleX = calc::kMargin + (device.hasTouch ? backui::kReserve : 0);
-  calc::drawCapsCentered(renderer, calc::kLabelFontId, titleX, safeTop, calc::kChromeHeight - safeTop, "CALCULATOR",
-                         false);
+  pixelui::drawHeader(renderer, shelf::label("CALCULATOR"), true);
 }
 
 // Laid out TOP DOWN from the height calc::displayHeight() derived, band by band,
@@ -178,7 +168,8 @@ void CalculatorActivity::loop() {
   // arrived" return: a swipe is not a tap, and a Back read below that line is on
   // the frame path in name only. host-tests/backgesture enforces exactly this,
   // after Trivia shipped with no way out at all.
-  if (mappedInput.wasReleased(MappedInputManager::Button::Back)) {
+  if (mappedInput.wasReleased(MappedInputManager::Button::Back) ||
+      mappedInput.wasPressed(MappedInputManager::Button::Back)) {
     shelf::leave(renderer, mappedInput);
     return;
   }

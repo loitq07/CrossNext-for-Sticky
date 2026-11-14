@@ -1418,7 +1418,7 @@ void WallpapersActivity::renderPreview() {
   fui::GfxRendererTarget target = toybox::makeTarget(renderer, toybox::readingChromeFaces());
   const fui::DeviceContext device = target.deviceContext();
   const fui::InputSnapshot noInput{};
-  toybox::Frame frame(target, device, noInput, interactions_);
+  toybox::Frame frame(target, device, noInput, interactions_, nullptr, toybox::headerStatus(renderer));
   toybox::Screen surface(frame, toybox::themeTokens());
   if (!drawn) {
     LOG_ERR("WALL", "preview: cannot draw %s", path.c_str());
@@ -2957,7 +2957,7 @@ void WallpapersActivity::render(RenderLock&&) {
   const fui::DeviceContext device = target.deviceContext();
   const fui::InputSnapshot noInput{};
   interactionsReady_ = false;
-  toybox::Frame frame(target, device, noInput, interactions_);
+  toybox::Frame frame(target, device, noInput, interactions_, nullptr, toybox::headerStatus(renderer));
   toybox::Screen surface(frame);
 
   if (view_ == View::Add) {
@@ -3140,6 +3140,7 @@ void WallpapersActivity::render(RenderLock&&) {
       rightLabel_ = label;
     }
     wallpapersui::GridChromeModel model;
+    model.title = shelf::label("WALLPAPERS");
     model.rightLabel = rightLabel_.empty() ? nullptr : rightLabel_.c_str();
     model.warning = warning_.empty() ? nullptr : warning_.c_str();
     // A live SET counts as active. Without this the grid draws "Tap one to set
