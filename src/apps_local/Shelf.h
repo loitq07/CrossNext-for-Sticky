@@ -176,6 +176,9 @@ void autostartFromEnv(GfxRenderer& renderer, MappedInputManager& mappedInput);
 // store it could not leave.
 void leave(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
+// The App Store, opened from a folder's header; leaving it returns to that folder.
+void openAppStore(int fromFolder, GfxRenderer& renderer, MappedInputManager& mappedInput);
+
 // Which shelf row Home should select on entry, or -1 if the shelf was not the
 // last thing open. Home restores its own selection by matching the departing
 // activity's name against its HomeMenuItem list, which has no idea our rows
@@ -217,5 +220,8 @@ int resumeRowIn(int index);
 // reliable way out to hook: the idle timeout deep-sleeps wherever you are, and
 // wake is a chip reset. The write is ~20 bytes beside a full e-ink repaint.
 void rememberRowIn(int index, int row);
+
+// Force rescan and repopulate of dynamic apps and games from SD card
+void refreshApps();
 
 }  // namespace shelf

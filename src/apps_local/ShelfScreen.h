@@ -11,6 +11,7 @@ enum : fui::ActionId {
   ActionGoToPage = 3,
   ActionChoose = 4,
   ActionToggleShown = 5,
+  ActionOpenStore = 6,
 };
 extern const UiLabel kDoneChip;
 struct Paging {

@@ -1,0 +1,33 @@
+{
+  "name": "elf_loader",
+  "version": "2.1.0",
+  "description": "Espressif ELF Loader for ESP32 series",
+  "frameworks": "arduino",
+  "platforms": "espressif32",
+  "build": {
+    "includeDir": "include",
+    "srcDir": "src",
+    "srcFilter": [
+      "+<esp_elf.c>",
+      "+<esp_elf_symbol.c>",
+      "+<esp_elf_validate.c>",
+      "+<esp_elf_adapter.c>",
+      "+<esp_all_symbol.c>",
+      "+<arch/esp_elf_xtensa.c>",
+      "+<dlso/dlfcn.c>",
+      "+<dlso/dlmod.c>",
+      "-<arch/esp_elf_riscv.c>",
+      "-<soc/*>"
+    ],
+    "flags": [
+      "-DCONFIG_ELF_LOADER=1",
+      "-DCONFIG_ELF_DYNAMIC_LOAD_SHARED_OBJECT=1",
+      "-DCONFIG_ELF_LOADER_LOAD_PSRAM=1",
+      "-DCONFIG_ELF_LOADER_BUS_ADDRESS_MIRROR=1",
+      "-DCONFIG_ELF_LOADER_CACHE_OFFSET=1",
+      "-DCONFIG_ELF_LOADER_CUSTOMER_SYMBOLS=1",
+      "-DCONFIG_IDF_TARGET_ARCH_XTENSA=1",
+      "-DCONFIG_IDF_TARGET_ESP32S3=1"
+    ]
+  }
+}

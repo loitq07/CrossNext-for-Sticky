@@ -118,6 +118,14 @@ void header(fui::DrawTarget& target, const fui::DeviceContext& device, const Hea
   paintHeader(target, device, model);
 }
 
+void header(fui::DrawTarget& target, const fui::DeviceContext& device, const Header& model, fui::Rect* mark,
+            fui::Rect* secondaryMark) {
+  fui::Rect secondary{};
+  const fui::Rect primary = paintHeader(target, device, model, &secondary);
+  if (mark) *mark = primary;
+  if (secondaryMark) *secondaryMark = secondary;
+}
+
 static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& device, const Header& model,
                              fui::Rect* secondary) {
   fui::Rect mark{};

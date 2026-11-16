@@ -33,6 +33,7 @@
 #include "RecentBooksStore.h"
 #include "activities/plugins/PluginCatalogActivity.h"  // anyPluginInstalled()
 #include "activities/util/ConfirmationActivity.h"
+#include "apps_local/appstore/AppStoreActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
 #include "util/BookCacheUtils.h"
@@ -463,6 +464,18 @@ void HomeActivity::freeCoverBuffer() {
 }
 
 void HomeActivity::loop() {
+  // First visit to Home after a firmware update: native-module apps on the card
+  // were built for the old firmware. Offer to fetch the matching builds once
+  // per firmware build (AppStoreActivity::takeBootPrompt remembers the answer).
+  static bool moduleUpdateChecked = false;
+  if (!moduleUpdateChecked) {
+    moduleUpdateChecked = true;
+    if (AppStoreActivity::takeBootPrompt()) {
+      startActivityForResult(AppStoreActivity::createUpdater(renderer, mappedInput, false),
+                             [this](const ActivityResult&) { requestUpdate(); });
+      return;
+    }
+  }
   if (optionPopup.isActive()) {
     optionPopup.handleInput(mappedInput, [this] { requestUpdate(); });
     return;

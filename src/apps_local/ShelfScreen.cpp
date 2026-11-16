@@ -95,14 +95,18 @@ void buildMenu(toybox::Screen& screen, const MenuModel& model) {
   pixelui::Header heading;
   heading.title = model.title;
   heading.back = device.hasTouch;
+  // The page counter lives in the pager at the bottom only; the header carries
+  // the two folder actions instead: the eye (choose what the folder shows) and
+  // the App Store (get more), where the counter used to be.
   char counter[32];
-  if (model.pageCount > 1) {
-    std::snprintf(counter, sizeof(counter), "%d/%d", model.page + 1, model.pageCount);
-    heading.rightLabel = counter;
-  }
+  std::snprintf(counter, sizeof(counter), "%d/%d", model.page + 1, model.pageCount);
   if (choosing) heading.trailingLabel = kDoneChip;
-  if (!choosing) heading.mark = fui::bitmapFromIcon(icon_go_settings_32);
-  pixelui::header(screen.target(), device, heading);
+  if (!choosing) {
+    heading.mark = fui::bitmapFromIcon(extra_dashboard_eye_32);
+    heading.secondaryMark = fui::bitmapFromIcon(icon_download_32);
+  }
+  fui::Rect storeMark{};
+  pixelui::header(screen.target(), device, heading, nullptr, &storeMark);
   const auto geometry = pixelui::geometry(device);
   backui::publish(heading.back, geometry.back);
   fui::ButtonProps headerHit;
@@ -115,6 +119,9 @@ void buildMenu(toybox::Screen& screen, const MenuModel& model) {
     headerTarget.width = static_cast<int16_t>(device.width - headerTarget.x);
   }
   screen.button(headerHit, headerTarget);
+  // Registered after the header-wide toggle so the App Store mark wins its own
+  // area (routing takes the newest hit first).
+  if (!storeMark.empty()) screen.frame().hit(storeMark, ActionOpenStore, 0, fui::InputTouch);
 
   pixelui::begin(screen, model.pageCount > 1 ? pagerReserve() : 0);
   if (model.pageCount > 1) {

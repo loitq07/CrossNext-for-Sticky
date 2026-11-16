@@ -138,3 +138,8 @@ GEMINI.md
 /tools_local/trivia/us_shift_check.py
 /dev_log.txt
 /dev_serial.txt
+
+# Native modules: regenerated on every build / machine-local
+src/apps_local/modules/NativeModuleAbi.generated.h
+src/apps_local/modules/NativeModuleExports.generated.cpp
+tools_local/native_modules/compile_template.json

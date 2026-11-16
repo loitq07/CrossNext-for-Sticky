@@ -47,6 +47,10 @@ struct Header {
 };
 void header(toybox::Screen& screen, Header model);
 void header(fui::DrawTarget& target, const fui::DeviceContext& device, const Header& model);
+// As above, also reporting the mark and secondary-mark tap areas (empty when absent),
+// for a screen that routes those taps itself.
+void header(fui::DrawTarget& target, const fui::DeviceContext& device, const Header& model, fui::Rect* mark,
+            fui::Rect* secondaryMark);
 void text(fui::DrawTarget& target, fui::Rect box, const char* label, fui::FontId font = kBody,
           fui::Color color = fui::Color::Black, fui::TextAlign align = fui::TextAlign::Left, bool emphasis = false);
 fui::StyleSet rowStyles();

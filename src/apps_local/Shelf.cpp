@@ -5,85 +5,76 @@
 #include <Logging.h>
 #include <strings.h>
 
+#include <algorithm>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
+#include <map>
+#include <vector>
 
 #include "../activities/ActivityManager.h"
+#include "../activities/DynamicAppActivity.h"
 #include "ShelfFolderActivity.h"
 #include "ShelfHidden.h"
 #include "ShelfState.h"
-#include "battleship/BattleshipActivity.h"
-#include "calculator/CalculatorActivity.h"
-#include "carnivoro/CarnivoroActivity.h"
+#include "appstore/AppStoreActivity.h"
 #include "carnivoro/CarnivoroIcon.h"
-#include "checkers/DraughtsActivity.h"
-#include "chess/ChessActivity.h"
 #include "components/icons/listIcons.h"
-#include "connectfour/ConnectFourActivity.h"
 #include "flashcards/FlashcardsActivity.h"
-#include "game2048/Game2048Activity.h"
-#include "go/GoActivity.h"
-#include "habits/HabitsActivity.h"
-#include "hearts/HeartsActivity.h"
 #include "instapaper/InstapaperActivity.h"
-#include "intercept/InterceptActivity.h"
-#include "minesweeper/MinesweeperActivity.h"
-#include "murdle/MurdleActivity.h"
+#include "modules/NativeModule.h"
 #include "notes/NotesActivity.h"
-#include "pet/PetActivity.h"
-#include "picross/PicrossActivity.h"
 #include "player/PlayerActivity.h"
-#include "pocketgames/PocketGamesActivity.h"
-#include "pomodoro/PomodoroActivity.h"
 #include "pomodoro/PomodoroIcon.h"
-#include "quest/ReadingQuestActivity.h"
 #include "quotes/QuotesActivity.h"
-#include "solitaire/SolitaireActivity.h"
-#include "sudoku/SudokuActivity.h"
 #include "tools/ToolsActivity.h"
 #include "ui/ExtraIcons.h"
 #include "ui/ToyboxIcons.h"
 #include "voicenotes/VoiceNotesActivity.h"
 #include "wallpapers/WallpapersActivity.h"
-#include "wordle/WordleActivity.h"
 #include "words/WordsActivity.h"
 
 namespace {
+
+// Placeholder for a built-in app that ships as a native module (its original
+// source, built by tools_local/native_modules). The row keeps its title, icon
+// and position, and only appears once the module is on the card: the SD scan
+// swaps in the loader. Never actually called.
+std::unique_ptr<Activity> moduleNotInstalled(GfxRenderer&, MappedInputManager&) { return nullptr; }
 
 // Icons come from tools_local/toybox/icons.txt via Lucide. Picked for silhouette
 // rather than literalness: a crown, a hull, a grid and a card suit share no
 // shape, so a row is scannable before the label is read.
 constexpr shelf::Item kGames[] = {
-    {"CHESS", &icon_chess_32, &ChessActivity::create},
-    {"CHECKERS", &icon_checkers_32, &DraughtsActivity::create},
-    {"GO", &icon_go_32, &GoActivity::create},
-    {"MINESWEEPER", &icon_minesweeper_32, &MinesweeperActivity::create},
-    {"PICROSS", &icon_picross_32, &PicrossActivity::create},
-    {"WORDLE", &icon_wordle_32, &WordleActivity::create},
-    {"2048", &icon_connections_32, &Game2048Activity::create},
-    {"THE INTERCEPT", &icon_underhand_32, &InterceptActivity::create},
-    {"BATTLESHIP", &icon_battleship_32, &BattleshipActivity::create},
-    {"SOLITAIRE", &icon_solitaire_32, &SolitaireActivity::create},
-    {"HEARTS", &icon_hearts_32, &HeartsActivity::create},
-    {"MURDLE", &icon_murdle_32, &MurdleActivity::create},
-    {"CARNIVORO", &carnivoroPawIcon, &CarnivoroActivity::create},
-    {"CONNECT FOUR", &icon_connectfour_32, &ConnectFourActivity::create},
-    {"SUDOKU", &icon_sudoku_32, &SudokuActivity::create},
-    {"OTHELLO", &extra_circle_dot_32, &PocketGamesActivity::createOthello},
+    {"CHESS", &icon_chess_32, &moduleNotInstalled},
+    {"CHECKERS", &icon_checkers_32, &moduleNotInstalled},
+    {"GO", &icon_go_32, &moduleNotInstalled},
+    {"MINESWEEPER", &icon_minesweeper_32, &moduleNotInstalled},
+    {"PICROSS", &icon_picross_32, &moduleNotInstalled},
+    {"WORDLE", &icon_wordle_32, &moduleNotInstalled},
+    {"2048", &icon_connections_32, &moduleNotInstalled},
+    {"THE INTERCEPT", &icon_underhand_32, &moduleNotInstalled},
+    {"BATTLESHIP", &icon_battleship_32, &moduleNotInstalled},
+    {"SOLITAIRE", &icon_solitaire_32, &moduleNotInstalled},
+    {"HEARTS", &icon_hearts_32, &moduleNotInstalled},
+    {"MURDLE", &icon_murdle_32, &moduleNotInstalled},
+    {"CARNIVORO", &carnivoroPawIcon, &moduleNotInstalled},
+    {"CONNECT FOUR", &icon_connectfour_32, &moduleNotInstalled},
+    {"SUDOKU", &icon_sudoku_32, &moduleNotInstalled},
+    {"OTHELLO", &extra_circle_dot_32, &moduleNotInstalled},
 };
 constexpr shelf::Item kApps[] = {
-    {"READING QUEST", &icon_dungeon_32, &ReadingQuestActivity::create},
-    {"PET", &icon_cat_animals_32, &PetActivity::create},
-    {"HABITS", &icon_tick_24, &HabitsActivity::create},
+    {"READING QUEST", &icon_dungeon_32, &moduleNotInstalled},
+    {"PET", &icon_cat_animals_32, &moduleNotInstalled},
+    {"HABITS", &icon_tick_24, &moduleNotInstalled},
     {"TO DO LIST", &icon_murdle_face_clues_32, &NotesActivity::createTodo},
     {"NOTES", &extra_notes_32, &NotesActivity::create},
     {"VOICE NOTES", &extra_mic_32, &voicenotes::VoiceNotesActivity::create},
-    {"POMODORO", &pomodoro::timerIcon, &PomodoroActivity::create},
+    {"POMODORO", &pomodoro::timerIcon, &moduleNotInstalled},
     {"WALLPAPERS", &icon_wallpapers_32, &WallpapersActivity::create},
     {"INSTAPAPER", &icon_instapaper_32, &InstapaperActivity::create},
-    {"CALCULATOR", &icon_calculator_32, &CalculatorActivity::create},
+    {"CALCULATOR", &icon_calculator_32, &moduleNotInstalled},
     {"QUOTES", &icon_library_32, &QuotesActivity::create},
     {"FLASHCARDS", &extra_cards_32, &FlashcardsActivity::create},
     {"WORDS", &icon_library_32, &WordsActivity::create},
@@ -206,10 +197,9 @@ constexpr bool everyTitleFitsTheStateFile() {
 static_assert(everyTitleFitsTheStateFile(), "shelf item titles must fit shelf::MAX_ITEM_TITLE; see ShelfState.h");
 static_assert(kFolderCount <= shelf::MAX_FOLDERS, "raise shelf::MAX_FOLDERS in ShelfState.h");
 
-// Row limits as the registry stands now, for parseState's clamp.
 const int* itemLimits() {
   static int limits[shelf::MAX_FOLDERS] = {};
-  for (int i = 0; i < kFolderCount; ++i) limits[i] = kFolders[i].count - 1;
+  for (int i = 0; i < kFolderCount; ++i) limits[i] = shelf::folders()[i].count - 1;
   return limits;
 }
 
@@ -217,9 +207,10 @@ const int* itemLimits() {
 // place a title is turned back into a row, shared by wake and by the
 // autostart environment variable.
 bool findItemByTitle(const char* title, int& folder, int& item) {
+  const auto* fld = shelf::folders();
   for (int f = 0; f < kFolderCount; ++f) {
-    for (int i = 0; i < kFolders[f].count; ++i) {
-      if (strcasecmp(kFolders[f].items[i].title, title) == 0) {
+    for (int i = 0; i < fld[f].count; ++i) {
+      if (strcasecmp(fld[f].items[i].title, title) == 0) {
         folder = f;
         item = i;
         return true;
@@ -373,29 +364,138 @@ const char* label(const char* stableTitle) {
     if (I18N.getLanguage() == Language::ES) return "Notas de voz";
     return "Voice Notes";
   }
+  if (std::strcmp(stableTitle, "APP STORE") == 0) {
+    if (I18N.getLanguage() == Language::VI) return "Cửa hàng App";
+    if (I18N.getLanguage() == Language::ES) return "Tienda Apps";
+    return "App Store";
+  }
   if (std::strcmp(stableTitle, "Games") == 0) return tr(STR_SHORT_GAMES);
   if (std::strcmp(stableTitle, "Apps") == 0) return tr(STR_SHORT_APPS);
   return stableTitle;
 }
 
-const Folder* folders() { return kFolders; }
+namespace {
+std::vector<shelf::Item> s_games;
+std::vector<shelf::Item> s_apps;
+std::vector<std::string> s_dynamicTitles;
+std::map<std::string, std::string> s_dynamicPaths;
+shelf::Folder s_folders[kFolderCount];
+bool s_foldersInitialized = false;
+
+std::unique_ptr<Activity> launchDynamicApp(GfxRenderer& renderer, MappedInputManager& mappedInput) {
+  auto it = s_dynamicPaths.find(state.openTitle);
+  if (it == s_dynamicPaths.end()) return nullptr;
+  // A native module (an app's original source) first; anything else is a
+  // plugin on the small host API.
+  std::unique_ptr<Activity> activity;
+  switch (native_module::create(it->second, renderer, mappedInput, activity)) {
+    case native_module::Result::Ok:
+      return activity;
+    case native_module::Result::NotNative:
+      return DynamicAppActivity::create(it->second, renderer, mappedInput);
+    case native_module::Result::AbiMismatch:
+      // Built for another firmware (the device was updated since): the store
+      // lists it as needing an update.
+      LOG_ERR("SHELF", "%s was built for another firmware; opening the App Store", it->second.c_str());
+      return AppStoreActivity::createUpdater(renderer, mappedInput, true);
+    default:
+      LOG_ERR("SHELF", "Could not load module %s", it->second.c_str());
+      return nullptr;
+  }
+}
+
+void scanDirectoryForApps(const char* dirPath, std::vector<shelf::Item>& list, const freeink::Icon* icon) {
+  if (!Storage.exists(dirPath)) return;
+  std::vector<String> files = Storage.listFiles(dirPath, 50);
+  for (const auto& file : files) {
+    if (file.endsWith(".elf") || file.endsWith(".so")) {
+      if (file.endsWith(".stripped.elf")) continue;
+
+      String name = file;
+      int dot = name.lastIndexOf('.');
+      if (dot > 0) name = name.substring(0, dot);
+      name.toUpperCase();
+
+      std::string title = name.c_str();
+      std::string fullPath = std::string(dirPath) + "/" + file.c_str();
+
+      bool exists = false;
+      for (auto& item : list) {
+        // "CONNECT FOUR" ships as connectfour.elf: compare without spaces.
+        std::string bare = item.title;
+        bare.erase(std::remove(bare.begin(), bare.end(), ' '), bare.end());
+        if (title == item.title || title == bare) {
+          exists = true;
+          s_dynamicPaths[item.title] = fullPath;
+          item.create = &launchDynamicApp;
+          break;
+        }
+      }
+      if (exists) continue;
+
+      s_dynamicTitles.push_back(title);
+      const char* stableTitle = s_dynamicTitles.back().c_str();
+      s_dynamicPaths[stableTitle] = fullPath;
+
+      list.push_back(shelf::Item{stableTitle, icon, &launchDynamicApp});
+    }
+  }
+}
+
+void ensureFoldersPopulated() {
+  if (s_foldersInitialized) return;
+  s_games.assign(kGames, kGames + sizeof(kGames) / sizeof(kGames[0]));
+  s_apps.assign(kApps, kApps + sizeof(kApps) / sizeof(kApps[0]));
+
+#if defined(ARDUINO_ARCH_ESP32) || defined(SIMULATOR)
+  if (Storage.ready()) {
+    scanDirectoryForApps("/games", s_games, &icon_chess_32);
+    scanDirectoryForApps("/sdcard/games", s_games, &icon_chess_32);
+    scanDirectoryForApps("/apps", s_apps, &icon_calculator_32);
+    scanDirectoryForApps("/sdcard/apps", s_apps, &icon_calculator_32);
+  }
+#endif
+
+  // Module rows whose file is not on the card are not installed: hide them.
+  for (auto* list : {&s_games, &s_apps}) {
+    list->erase(std::remove_if(list->begin(), list->end(),
+                               [](const shelf::Item& item) { return item.create == &moduleNotInstalled; }),
+                list->end());
+  }
+
+  s_folders[0] = {kFolders[0].title, kFolders[0].icon, kFolders[0].mark, s_games.data(), static_cast<int>(s_games.size())};
+  s_folders[1] = {kFolders[1].title, kFolders[1].icon, kFolders[1].mark, s_apps.data(), static_cast<int>(s_apps.size())};
+  s_foldersInitialized = true;
+}
+}  // namespace
+
+const Folder* folders() {
+  ensureFoldersPopulated();
+  return s_folders;
+}
 
 int folderCount() { return kFolderCount; }
+
+void refreshApps() {
+  s_foldersInitialized = false;
+  s_games.clear();
+  s_apps.clear();
+  s_dynamicTitles.clear();
+  s_dynamicPaths.clear();
+  ensureFoldersPopulated();
+}
 
 void openFolder(const int index, GfxRenderer& renderer, MappedInputManager& mappedInput) {
   if (index < 0 || index >= kFolderCount) {
     LOG_ERR("SHELF", "Bad folder index: %d", index);
     return;
   }
-  // Opening a folder means nothing below it is open any more. Clearing here
-  // rather than in leave() keeps the fact true even when a folder is reached by
-  // some route that did not go through leave().
   openFolderIndex = -1;
   homeReturn = true;
   ensureLoaded();
   saveIfChanged(index, state.resumeRow[index]);
   setOpenTitle(nullptr);
-  replaceWith(ShelfFolderActivity::create(renderer, mappedInput, index), kFolders[index].title);
+  replaceWith(ShelfFolderActivity::create(renderer, mappedInput, index), folders()[index].title);
 }
 
 bool openItem(const int folder, const int item, GfxRenderer& renderer, MappedInputManager& mappedInput,
@@ -404,14 +504,12 @@ bool openItem(const int folder, const int item, GfxRenderer& renderer, MappedInp
     LOG_ERR("SHELF", "Bad folder index: %d", folder);
     return false;
   }
-  const Folder& parent = kFolders[folder];
+  const Folder& parent = folders()[folder];
   if (item < 0 || item >= parent.count) {
     LOG_ERR("SHELF", "Bad item index %d in %s", item, parent.title);
     return false;
   }
 
-  // Recorded before the launch, not after: replaceActivity destroys the caller,
-  // so there is no "after" to run in.
   openFolderIndex = origin == LaunchOrigin::Folder ? folder : -1;
   homeReturn = origin == LaunchOrigin::Folder;
   saveIfChanged(folder, item);
@@ -428,16 +526,15 @@ bool openItem(const int folder, const int item, GfxRenderer& renderer, MappedInp
   return true;
 }
 
-// A folder's titles, by row, for the conversions in ShelfHidden.h.
 auto titlesOf(const int folder) {
-  return [folder](const int i) { return kFolders[folder].items[i].title; };
+  return [folder](const int i) { return folders()[folder].items[i].title; };
 }
 
 bool isHidden(const int folder, const int item) {
   if (folder < 0 || folder >= kFolderCount) return false;
-  if (item < 0 || item >= kFolders[folder].count) return false;
+  if (item < 0 || item >= folders()[folder].count) return false;
   ensureHiddenLoaded();
-  return hiddenItems.contains(kFolders[folder].items[item].title);
+  return hiddenItems.contains(folders()[folder].items[item].title);
 }
 
 void setHidden(const int folder, const int item, const bool hide) {
@@ -445,35 +542,32 @@ void setHidden(const int folder, const int item, const bool hide) {
     LOG_ERR("SHELF", "Bad folder index: %d", folder);
     return;
   }
-  if (item < 0 || item >= kFolders[folder].count) {
-    LOG_ERR("SHELF", "Bad item index %d in %s", item, kFolders[folder].title);
+  if (item < 0 || item >= folders()[folder].count) {
+    LOG_ERR("SHELF", "Bad item index %d in %s", item, folders()[folder].title);
     return;
   }
   ensureHiddenLoaded();
-  if (!hiddenItems.set(kFolders[folder].items[item].title, hide)) return;
-  LOG_INF("SHELF", "%s is now %s", kFolders[folder].items[item].title, hide ? "hidden" : "shown");
+  if (!hiddenItems.set(folders()[folder].items[item].title, hide)) return;
+  LOG_INF("SHELF", "%s is now %s", folders()[folder].items[item].title, hide ? "hidden" : "shown");
   saveHiddenItems();
 }
 
-// The three of them are the same conversion asked three ways, and it lives in
-// ShelfHidden.h where a host test can reach it: this file cannot be built off a
-// device. All each one does here is bind the folder's titles to it.
 int shownCount(const int folder) {
   if (folder < 0 || folder >= kFolderCount) return 0;
   ensureHiddenLoaded();
-  return shownCountIn(hiddenItems, kFolders[folder].count, titlesOf(folder));
+  return shownCountIn(hiddenItems, folders()[folder].count, titlesOf(folder));
 }
 
 int shownItem(const int folder, const int row) {
   if (folder < 0 || folder >= kFolderCount) return -1;
   ensureHiddenLoaded();
-  return shownItemIn(hiddenItems, kFolders[folder].count, row, titlesOf(folder));
+  return shownItemIn(hiddenItems, folders()[folder].count, row, titlesOf(folder));
 }
 
 int shownRowFor(const int folder, const int item) {
   if (folder < 0 || folder >= kFolderCount) return 0;
   ensureHiddenLoaded();
-  return shownRowForIn(hiddenItems, kFolders[folder].count, item, titlesOf(folder));
+  return shownRowForIn(hiddenItems, folders()[folder].count, item, titlesOf(folder));
 }
 
 void autostartFromEnv(GfxRenderer& renderer, MappedInputManager& mappedInput) {
@@ -494,7 +588,7 @@ void autostartFromEnv(GfxRenderer& renderer, MappedInputManager& mappedInput) {
     LOG_ERR("SHELF", "Autostart: no item titled '%s'", wanted);
     return;
   }
-  LOG_INF("SHELF", "Autostart into %s", kFolders[folder].items[item].title);
+  LOG_INF("SHELF", "Autostart into %s", folders()[folder].items[item].title);
   openItem(folder, item, renderer, mappedInput);
 }
 
@@ -525,7 +619,7 @@ bool resumeFromWake(GfxRenderer& renderer, MappedInputManager& mappedInput) {
     return false;
   }
 
-  LOG_INF("SHELF", "Wake: resuming %s", kFolders[folder].items[item].title);
+  LOG_INF("SHELF", "Wake: resuming %s", folders()[folder].items[item].title);
   return openItem(folder, item, renderer, mappedInput, state.origin);
 }
 
@@ -540,6 +634,13 @@ void openPlayer(GfxRenderer& renderer, MappedInputManager& mappedInput) {
   if (!replaceWith(PlayerActivity::create(renderer, mappedInput), "Player")) {
     openFolderIndex = -1;
   }
+}
+
+void openAppStore(const int fromFolder, GfxRenderer& renderer, MappedInputManager& mappedInput) {
+  openFolderIndex = fromFolder >= 0 && fromFolder < kFolderCount ? fromFolder : -1;
+  homeReturn = true;
+  setOpenTitle(nullptr);
+  if (!replaceWith(AppStoreActivity::create(renderer, mappedInput), "APP STORE")) openFolderIndex = -1;
 }
 
 void leave(GfxRenderer& renderer, MappedInputManager& mappedInput) {
@@ -585,7 +686,7 @@ void rememberRowIn(const int index, const int row) {
   // guard the registry count used to give when the two were the same number.
   const int item = shownItem(index, row);
   if (item < 0) {
-    LOG_ERR("SHELF", "Bad row %d in %s", row, kFolders[index].title);
+    LOG_ERR("SHELF", "Bad row %d in %s", row, folders()[index].title);
     return;
   }
   saveIfChanged(index, item);
