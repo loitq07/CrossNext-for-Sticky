@@ -1,10 +1,12 @@
 name: Release CrossNext for Sticky
 
+# MANUAL ONLY -- do not add a tag trigger back. Sticky releases are cut
+# locally (docs/sticky-release.md): every firmware build stamps a fresh random
+# native-module ABI, and the App Store only serves modules linked against that
+# exact build. This job rebuilds the firmware without publishing modules, so on
+# a tag push it overwrote the tested release assets with an image whose ABI has
+# no modules -- every game and app 404'd after the update (v1.4.12, 2026-11-17).
 on:
-  push:
-    tags:
-      - 'v*'
-      - '[0-9]+.[0-9]+.[0-9]+*'
   workflow_dispatch:
     inputs:
       tag:
