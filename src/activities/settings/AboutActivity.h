@@ -10,14 +10,14 @@ class AboutActivity final : public UiListActivity {
  public:
   explicit AboutActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
-  static constexpr int ITEM_COUNT = 11;
+  static constexpr int ITEM_COUNT = 12;
 
   void onEnter() override;
 
  private:
   int listCount() const override { return ITEM_COUNT; }
   void buildScreen(UiScreen& screen) override;
-  void activateIndex(int) override {}
+  void activateIndex(int index) override;
   const char* headerTitle() const override;
 
   std::string rowValues_[ITEM_COUNT];

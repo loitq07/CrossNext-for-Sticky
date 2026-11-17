@@ -1,316 +1,465 @@
 <!DOCTYPE html>
-<html>
+<html lang="vi" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Settings - CrossNext</title>
+  <title>Cài đặt - CrossNext</title>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
     :root {
-      --font-color: #333;
-      --bg: #f5f5f5;
-      --title-color: #2c3e50;
-      --card-bg: #FFF;
-      --label-color: #7f8c8d;
-      --border-color: #eee;
-      --accent-color: rgb(110, 154, 130);
-      --accent-hover-color: #5a8c73;
-      --toggle-bg: #ccc;
+      --background: 0 0% 100%;
+      --foreground: 240 10% 3.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 240 10% 3.9%;
+      --primary: 240 5.9% 10%;
+      --primary-foreground: 0 0% 98%;
+      --secondary: 240 4.8% 95.9%;
+      --secondary-foreground: 240 5.9% 10%;
+      --muted: 240 4.8% 95.9%;
+      --muted-foreground: 240 3.8% 46.1%;
+      --accent: 240 4.8% 95.9%;
+      --accent-foreground: 240 5.9% 10%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 5.9% 90%;
+      --input: 240 5.9% 90%;
+      --ring: 240 5.9% 10%;
+      --radius: 0.625rem;
+      --sidebar-width: 250px;
     }
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --font-color: #f5f5f5;
-        --bg: #333;
-        --title-color: #ecf0f1;
-        --card-bg: #444;
-        --label-color: #bdc3c7;
-        --border-color: #555;
-        --toggle-bg: #666;
-        color-scheme: dark;
-      }
+    .dark {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 240 10% 5.5%;
+      --card-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 240 5.9% 10%;
+      --secondary: 240 3.7% 15.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 240 3.7% 14%;
+      --muted-foreground: 240 5% 64.9%;
+      --accent: 240 3.7% 15.9%;
+      --accent-foreground: 0 0% 98%;
+      --destructive: 0 62.8% 50.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 3.7% 17%;
+      --input: 240 3.7% 17%;
+      --ring: 240 4.9% 83.9%;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-        Oxygen, Ubuntu, sans-serif;
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      background-color: var(--bg);
-      color: var(--font-color);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
     }
-    h1 {
-      color: var(--title-color);
-      border-bottom: 2px solid var(--accent-color);
-      padding-bottom: 10px;
+    .app-shell { display: flex; width: 100%; position: relative; }
+
+    /* Sidebar / Mobile Sheet */
+    .sidebar {
+      width: var(--sidebar-width); background: hsl(var(--card)); border-right: 1px solid hsl(var(--border));
+      display: flex; flex-direction: column; flex-shrink: 0; padding: 1.25rem 1rem; gap: 1.5rem;
+      transition: transform 0.25s ease; z-index: 100;
     }
-    h2 {
-      color: var(--title-color);
-      margin-top: 0;
+    .sidebar-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 90;
     }
+    .sidebar-backdrop.show { display: block; }
+    .brand-box { display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.5rem; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: calc(var(--radius) - 2px); background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground)); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+    }
+    .brand-title { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 0.75rem; color: hsl(var(--muted-foreground)); display: flex; align-items: center; gap: 0.35rem; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block; }
+
+    .nav-section { display: flex; flex-direction: column; gap: 0.25rem; }
+    .nav-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground)); padding: 0.5rem 0.75rem 0.25rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: var(--radius);
+      color: hsl(var(--muted-foreground)); text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      transition: all 0.15s ease; cursor: pointer;
+    }
+    .nav-item:hover, .nav-item.active { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+    .nav-item.active { font-weight: 600; }
+
+    .sidebar-footer {
+      margin-top: auto; background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
+      border-radius: var(--radius); padding: 0.85rem; font-size: 0.8rem;
+    }
+    .device-row { display: flex; justify-content: space-between; margin-bottom: 0.3rem; color: hsl(var(--muted-foreground)); }
+    .device-row:last-child { margin-bottom: 0; }
+    .device-val { font-weight: 600; color: hsl(var(--foreground)); font-family: ui-monospace, monospace; }
+
+    /* Main Area */
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      height: 60px; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--card));
+      display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; gap: 0.75rem;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 0.5rem; }
+    .mobile-menu-btn {
+      display: none; width: 38px; height: 38px; border-radius: var(--radius); border: 1px solid hsl(var(--input));
+      background: transparent; color: hsl(var(--foreground)); align-items: center; justify-content: center; cursor: pointer; font-size: 1.25rem;
+    }
+    .breadcrumbs {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; white-space: nowrap;
+    }
+    .breadcrumbs a { color: hsl(var(--muted-foreground)); text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .breadcrumbs .sep { color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
+    .breadcrumbs .current { font-weight: 600; color: hsl(var(--foreground)); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 36px; padding: 0 0.85rem;
+      font-size: 0.825rem; font-weight: 500; border-radius: var(--radius); cursor: pointer; border: 1px solid transparent;
+      text-decoration: none; transition: all 0.15s ease;
+    }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+    .btn-outline { background: hsl(var(--background)); border-color: hsl(var(--input)); color: hsl(var(--foreground)); }
+    .btn-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+    .btn-sm { height: 30px; padding: 0 0.6rem; font-size: 0.775rem; }
+    .btn-icon {
+      width: 36px; height: 36px; padding: 0; border-radius: var(--radius); background: transparent;
+      border: 1px solid hsl(var(--input)); color: hsl(var(--muted-foreground)); display: inline-flex;
+      align-items: center; justify-content: center; cursor: pointer; font-size: 1.05rem;
+    }
+    .btn-icon:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+
+    .content-main { padding: 1.5rem; padding-bottom: 5rem; max-width: 900px; width: 100%; margin-bottom: 0; }
     .card {
-      background: var(--card-bg);
-      border-radius: 8px;
-      padding: 20px;
-      margin: 15px 0;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+      padding: 1.25rem; margin-bottom: 1.5rem;
     }
-    .nav-links {
-      margin: 20px 0;
-      display: flex;
-      gap: 10px;
-    }
-    .nav-links a {
-      padding: 10px 20px;
-      color: var(--font-color);
-      text-decoration: none;
-      border-radius: 4px;
-    }
-    .nav-links a.active {
-      background-color: var(--accent-color);
-      color: white;
-    }
-    .nav-links a:not(.active):hover {
-      background-color: var(--accent-hover-color);
-      color: white;
-    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+
     .setting-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 10px 0;
-      border-bottom: 1px solid var(--border-color);
+      display: flex; justify-content: space-between; align-items: center; padding: 0.85rem 0;
+      border-bottom: 1px solid hsl(var(--border)); gap: 1rem;
     }
-    .setting-row:last-child {
-      border-bottom: none;
-    }
-    .setting-name {
-      font-weight: 500;
-      color: var(--label-color);
-      flex: 1;
-      min-width: 0;
-      padding-right: 12px;
-    }
-    .setting-control {
-      flex-shrink: 0;
-    }
+    .setting-row:last-child { border-bottom: none; }
+    .setting-name { font-size: 0.875rem; font-weight: 500; color: hsl(var(--foreground)); flex: 1; }
+    .setting-control { flex-shrink: 0; display: flex; align-items: center; gap: 0.5rem; }
+
     .setting-control select,
     .setting-control input[type="number"],
     .setting-control input[type="text"],
     .setting-control input[type="password"] {
-      padding: 6px 10px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 0.95em;
-      background: var(--card-bg);
+      height: 36px; border: 1px solid hsl(var(--input)); border-radius: var(--radius);
+      background: hsl(var(--background)); color: hsl(var(--foreground)); padding: 0 0.65rem;
+      font-size: 0.85rem; outline: none;
     }
-    .setting-control select {
-      min-width: 160px;
-    }
-    .setting-control input[type="text"],
-    .setting-control input[type="password"] {
-      width: 220px;
-    }
-    .setting-control input[type="number"] {
-      width: 80px;
-    }
+    .setting-control select { min-width: 140px; }
+    .setting-control input[type="text"], .setting-control input[type="password"] { width: 180px; }
+    .setting-control input[type="number"] { width: 80px; }
+
     /* Toggle switch */
-    .toggle-switch {
-      display: inline-block;
-      position: relative;
-      width: 48px;
-      height: 26px;
-    }
-    .toggle-switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    .toggle-switch { position: relative; display: inline-block; width: 40px; height: 22px; }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
     .toggle-slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background-color: var(--toggle-bg);
-      border-radius: 26px;
-      transition: 0.3s;
+      position: absolute; cursor: pointer; inset: 0; background-color: hsl(var(--muted));
+      border-radius: 20px; transition: .2s;
     }
     .toggle-slider:before {
-      position: absolute;
-      content: "";
-      height: 20px;
-      width: 20px;
-      left: 3px;
-      bottom: 3px;
-      background-color: white;
-      border-radius: 50%;
-      transition: 0.3s;
+      position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px;
+      background-color: white; border-radius: 50%; transition: .2s;
     }
-    .toggle-switch input:checked + .toggle-slider {
-      background-color: var(--accent-color);
+    input:checked + .toggle-slider { background-color: #10b981; }
+    input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+    /* Sticky Save Bar */
+    .save-bar {
+      position: fixed; bottom: 0; left: var(--sidebar-width); right: 0;
+      background: hsl(var(--card) / 0.95); backdrop-filter: blur(8px);
+      border-top: 1px solid hsl(var(--border)); padding: 0.85rem 1.5rem;
+      display: flex; justify-content: flex-end; align-items: center; gap: 1rem; z-index: 80;
     }
-    .toggle-switch input:checked + .toggle-slider:before {
-      transform: translateX(22px);
+
+    .opds-server {
+      border: 1px solid hsl(var(--border)); border-radius: var(--radius); padding: 1rem; margin: 0.85rem 0;
+      background: hsl(var(--secondary) / 0.3);
     }
-    .save-container {
-      text-align: center;
-      margin: 20px 0;
-    }
-    .save-btn {
-      background-color: #27ae60;
-      color: white;
-      padding: 12px 40px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 1.1em;
-      font-weight: 600;
-    }
-    .save-btn:hover {
-      background-color: #219a52;
-    }
-    .save-btn:disabled {
-      background-color: #95a5a6;
-      cursor: not-allowed;
-    }
+    .opds-actions { display: flex; gap: 0.5rem; margin-top: 0.85rem; }
+
     .message {
-      padding: 12px;
-      border-radius: 4px;
-      margin: 15px 0;
-      text-align: center;
-      display: none;
+      padding: 0.75rem 1rem; border-radius: var(--radius); margin-bottom: 1rem; font-size: 0.85rem; display: none;
     }
-    .message.success {
-      background-color: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
+    .message.success { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); display: block !important; }
+    .message.error { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); display: block !important; }
+
+    /* shadcn/ui Tabs Component */
+    .tabs-wrapper {
+      margin-bottom: 1.5rem;
+      border-bottom: 1px solid hsl(var(--border));
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
     }
-    .message.error {
-      background-color: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-    .loader-container {
-      display: flex;
-      justify-content: center;
+    .tabs-wrapper::-webkit-scrollbar { display: none; }
+    .tabs-list {
+      display: inline-flex;
       align-items: center;
-      margin: 20px 0;
+      gap: 0.35rem;
+      background: hsl(var(--secondary) / 0.5);
+      border: 1px solid hsl(var(--border));
+      padding: 0.25rem;
+      border-radius: var(--radius);
+      min-width: max-content;
     }
-    .loader {
-      width: 48px;
-      height: 48px;
-      border: 5px solid #AAA;
-      border-bottom-color: transparent;
+    .tab-trigger {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      height: 34px;
+      padding: 0 0.85rem;
+      font-size: 0.825rem;
+      font-weight: 500;
+      color: hsl(var(--muted-foreground));
+      background: transparent;
+      border: 1px solid transparent;
+      border-radius: calc(var(--radius) - 2px);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.15s ease;
+      user-select: none;
+    }
+    .tab-trigger:hover {
+      color: hsl(var(--foreground));
+      background: hsl(var(--secondary));
+    }
+    .tab-trigger.active {
+      color: hsl(var(--foreground));
+      background: hsl(var(--card));
+      border-color: hsl(var(--border) / 0.8);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    }
+    .tab-trigger i { font-size: 1rem; }
+    .tab-unsaved-dot {
+      width: 6px;
+      height: 6px;
+      background: #f59e0b;
       border-radius: 50%;
+      margin-left: 0.2rem;
       display: inline-block;
-      box-sizing: border-box;
-      animation: rotation 1s linear infinite;
     }
-    @keyframes rotation {
+    .tab-pane { display: none; }
+    .tab-pane.active {
+      display: block;
+      animation: tab-fade-in 0.15s ease-out;
+    }
+    @keyframes tab-fade-in {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .loading-state {
+      padding: 3rem 1.5rem;
+      text-align: center;
+      color: hsl(var(--muted-foreground));
+      font-size: 0.875rem;
+    }
+    .spin-icon {
+      font-size: 1.75rem;
+      animation: spin 1s linear infinite;
+      margin-bottom: 0.5rem;
+      display: inline-block;
+    }
+    @keyframes spin {
       from { transform: rotate(0deg); }
       to { transform: rotate(360deg); }
     }
-    .opds-server {
-      border: 1px solid var(--border-color);
-      border-radius: 6px;
-      padding: 12px;
-      margin: 10px 0;
-    }
-    .opds-server .setting-row:last-child {
-      border-bottom: none;
-    }
-    .opds-actions {
-      display: flex;
-      gap: 8px;
-      margin-top: 8px;
-    }
-    .btn-small {
-      padding: 6px 14px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 0.9em;
-    }
-    .btn-add {
-      background-color: var(--accent-color);
-      color: white;
-    }
-    .btn-add:hover {
-      background-color: var(--accent-hover-color);
-    }
-    .btn-delete {
-      background-color: #e74c3c;
-      color: white;
-    }
-    .btn-delete:hover {
-      background-color: #c0392b;
-    }
-    .btn-save-server {
-      background-color: #27ae60;
-      color: white;
-    }
-    .btn-save-server:hover {
-      background-color: #219a52;
-    }
-    @media (max-width: 600px) {
-      body {
-        padding: 10px;
-        font-size: 14px;
+
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-btn { display: inline-flex; }
+      .save-bar { left: 0; }
+      .content-main { padding: 1rem; }
+      .tabs-wrapper {
+        margin: -0.25rem -1rem 1.25rem -1rem;
+        padding: 0 1rem 0.5rem 1rem;
       }
-      .card {
-        padding: 12px;
-        margin: 10px 0;
+      .tab-trigger {
+        height: 38px;
+        font-size: 0.85rem;
+        padding: 0 0.95rem;
       }
-      h1 {
-        font-size: 1.3em;
-      }
-      .nav-links a {
-        padding: 8px 12px;
-        font-size: 0.9em;
-      }
-      .setting-row {
-        flex-wrap: wrap;
-        gap: 6px;
-      }
-      .setting-control select,
-      .setting-control input[type="text"],
-      .setting-control input[type="password"] {
-        min-width: 0;
-        width: unset;
-      }
+      .setting-row { flex-wrap: wrap; }
+      .setting-control { width: 100%; justify-content: flex-end; }
     }
+<!--#include file="shared/Responsive.css.inc" -->
   </style>
 </head>
 <body>
-  <h1>CrossNext</h1>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-box">
+        <div class="brand-icon"><i class="ph ph-book-open"></i></div>
+        <div>
+          <div class="brand-title">CrossNext</div>
+          <div class="brand-sub"><span class="status-dot"></span> Sticky e-Paper</div>
+        </div>
+      </div>
+      <nav class="nav-section">
+        <div class="nav-label">Menu</div>
+        <a class="nav-item" href="/files"><i class="ph ph-folder"></i><span>Truyền tập tin</span></a>
+        <a class="nav-item active" href="/settings"><i class="ph ph-gear-six"></i><span>Cài đặt</span></a>
+        <a class="nav-item" href="/fonts"><i class="ph ph-text-t"></i><span>Phông chữ</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="footer-header">
+          <div class="footer-status-pill">
+            <span class="status-indicator" title="Trực tuyến"></span>
+            <span class="footer-title">Thiết bị</span>
+          </div>
+          <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="Nhấn để xem tính năng mới trong v1.4.12">v1.4.12</span>
+        </div>
+        <div class="device-details">
+          <div class="detail-row">
+            <span class="detail-label"><i class="ph ph-cpu"></i> Phần cứng</span>
+            <span class="detail-val device-name" id="sbDevice">Sticky</span>
+          </div>
+          <div class="detail-row ip-row" onclick="copyDeviceIp()" title="Nhấn để sao chép địa chỉ IP">
+            <span class="detail-label"><i class="ph ph-wifi-high"></i> IP</span>
+            <span class="detail-val ip-val"><span id="sbIp">192.168.0.174</span> <i class="ph ph-copy copy-icon"></i></span>
+          </div>
+        </div>
+      </div>
+    </aside>
 
-  <div class="nav-links">
-    <a href="/">Home</a>
-    <a href="/files">File Manager</a>
-    <a href="/settings" class="active">Settings</a>
-    <a href="/fonts">Fonts</a>
-  </div>
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileSidebar()"><i class="ph ph-list"></i></button>
+          <div class="breadcrumbs">
+            <a href="/files"><i class="ph ph-house"></i> Home</a>
+            <span class="sep"><i class="ph ph-caret-right"></i></span>
+            <span class="current">Cài đặt</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn btn-outline btn-sm" id="whatsNewBtn" onclick="openWhatsNewModal()" title="Xem tính năng mới trong v1.4.12">
+            <i class="ph ph-sparkle"></i> <span>Có gì mới?</span>
+          </button>
+          <button class="btn btn-primary btn-sm" id="topSaveBtn" onclick="saveSettings()" disabled>
+            <i class="ph ph-floppy-disk"></i> <span>Lưu cài đặt</span>
+          </button>
+          <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">
+            <i class="ph ph-sun" id="themeIcon"></i>
+          </button>
+        </div>
+      </header>
 
-  <div id="message" class="message"></div>
+      <main class="content-main">
+        <div id="message" class="message"></div>
 
-  <div id="settings-container">
-    <div class="loader-container">
-      <span class="loader"></span>
+        <!-- Tabs Navigation (shadcn TabsList style) -->
+        <div class="tabs-wrapper">
+          <div class="tabs-list" role="tablist">
+            <button class="tab-trigger active" role="tab" data-tab="reader" onclick="switchTab('reader')">
+              <i class="ph ph-book-open"></i><span>Trình đọc</span>
+            </button>
+            <button class="tab-trigger" role="tab" data-tab="display" onclick="switchTab('display')">
+              <i class="ph ph-sun"></i><span>Hiển thị</span>
+            </button>
+            <button class="tab-trigger" role="tab" data-tab="controls" onclick="switchTab('controls')">
+              <i class="ph ph-sliders"></i><span>Điều khiển</span>
+            </button>
+            <button class="tab-trigger" role="tab" data-tab="system" onclick="switchTab('system')">
+              <i class="ph ph-gear-six"></i><span>Hệ thống</span>
+            </button>
+            <button class="tab-trigger" role="tab" data-tab="wifi" onclick="switchTab('wifi')">
+              <i class="ph ph-wifi-high"></i><span>Wi-Fi</span>
+            </button>
+            <button class="tab-trigger" role="tab" data-tab="services" onclick="switchTab('services')">
+              <i class="ph ph-cloud-arrow-down"></i><span>Dịch vụ & Plugin</span>
+            </button>
+          </div>
+        </div>
+
+        <div id="settings-container">
+          <div id="tab-pane-reader" class="tab-pane active" role="tabpanel">
+            <div id="settings-reader">
+              <div class="loading-state">
+                <i class="ph ph-spinner-gap spin-icon"></i>
+                <div>Đang tải cài đặt thiết bị...</div>
+              </div>
+            </div>
+          </div>
+
+          <div id="tab-pane-display" class="tab-pane" role="tabpanel">
+            <div id="settings-display"></div>
+          </div>
+
+          <div id="tab-pane-controls" class="tab-pane" role="tabpanel">
+            <div id="settings-controls"></div>
+          </div>
+
+          <div id="tab-pane-system" class="tab-pane" role="tabpanel">
+            <div id="settings-system"></div>
+          </div>
+
+          <div id="tab-pane-wifi" class="tab-pane" role="tabpanel">
+            <div id="wifi-container"></div>
+          </div>
+
+          <div id="tab-pane-services" class="tab-pane" role="tabpanel">
+            <div id="opds-container"></div>
+            <div id="plugin-container"></div>
+          </div>
+
+          <div id="settings-fallback"></div>
+        </div>
+      </main>
+
+      <div class="save-bar" id="save-container" style="display:none;">
+        <span style="font-size:0.85rem; color:hsl(var(--muted-foreground));">Có thay đổi chưa được lưu</span>
+        <button class="btn btn-primary" id="saveBtn" onclick="saveSettings()" disabled>
+          <i class="ph ph-floppy-disk"></i> Lưu thay đổi
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="save-container" id="save-container" style="display:none;">
-    <button class="save-btn" id="saveBtn" onclick="saveSettings()">Save Settings</button>
-  </div>
+  <script>
+<!--#include file="shared/Responsive.js.inc" -->
 
-  <div id="wifi-container"></div>
-  <div id="opds-container"></div>
-  <div id="plugin-container"></div>
 
-  <div class="card">
-    <p style="text-align: center; color: #95a5a6; margin: 0;">
-      CrossNext • a fork of CrossPlay and CrossPoint • Open Source
-    </p>
-  </div>
+    let currentTheme = localStorage.getItem('cp_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    function applyTheme(t) {
+      document.documentElement.classList.toggle('dark', t === 'dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = t === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
+    }
+    applyTheme(currentTheme);
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('cp_theme', currentTheme);
+      applyTheme(currentTheme);
+    }
 
-<script>
+    async function fetchStatus() {
+      try {
+        const r = await fetch('/api/status');
+        if (r.ok) {
+          const d = await r.json();
+          if (document.getElementById('sbDevice')) document.getElementById('sbDevice').textContent = d.device || 'Sticky';
+          if (document.getElementById('sbVersion')) document.getElementById('sbVersion').textContent = 'v' + (d.version || '1.4.11');
+          if (document.getElementById('sbIp')) document.getElementById('sbIp').textContent = d.ip || window.location.hostname;
+        }
+      } catch (e) {}
+    }
+    fetchStatus();
+
+
   let allSettings = [];
   let originalValues = {};
   let preserveQuickResumeTimeoutOn = false;
@@ -397,6 +546,8 @@
 
   function markChanged() {
     document.getElementById('saveBtn').disabled = false;
+    document.getElementById('topSaveBtn').disabled = false;
+    document.getElementById('save-container').style.display = '';
   }
 
   function clearPassword(key) {
@@ -526,10 +677,65 @@
     setRowVisible('statusBarProgressBarThickness', progressBarVal !== undefined && progressBarVal !== 2);
   }
 
+  function switchTab(tabId) {
+    if (history.replaceState) {
+      history.replaceState(null, '', '#' + tabId);
+    } else {
+      location.hash = '#' + tabId;
+    }
+    document.querySelectorAll('.tab-trigger').forEach(function(btn) {
+      const active = btn.getAttribute('data-tab') === tabId;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.tab-pane').forEach(function(pane) {
+      const active = pane.id === 'tab-pane-' + tabId;
+      pane.classList.toggle('active', active);
+    });
+  }
+
+  function initTabFromHash() {
+    const hash = (location.hash || '').replace('#', '').trim();
+    const validTabs = ['reader', 'display', 'controls', 'system', 'wifi', 'services'];
+    if (hash && validTabs.includes(hash)) {
+      switchTab(hash);
+    }
+  }
+  window.addEventListener('hashchange', initTabFromHash);
+
+  function updateTabUnsavedIndicators() {
+    const tabHasChanges = {};
+    allSettings.forEach(function(s) {
+      const current = getValue(s);
+      if (current !== undefined && current !== originalValues[s.key]) {
+        const row = document.getElementById('row-setting-' + s.key);
+        const pane = row ? row.closest('.tab-pane') : null;
+        if (pane) {
+          const tabId = pane.id.replace('tab-pane-', '');
+          tabHasChanges[tabId] = true;
+        }
+      }
+    });
+    document.querySelectorAll('.tab-trigger').forEach(function(btn) {
+      const tabId = btn.getAttribute('data-tab');
+      let dot = btn.querySelector('.tab-unsaved-dot');
+      if (tabHasChanges[tabId]) {
+        if (!dot) {
+          dot = document.createElement('span');
+          dot.className = 'tab-unsaved-dot';
+          btn.appendChild(dot);
+        }
+      } else if (dot) {
+        dot.remove();
+      }
+    });
+  }
+
   function handleSettingChanged(key) {
     syncQuickResumeTimeoutForSleepScreen(key === 'sleepScreen', key === 'quickResumeSleepScreen');
     updateSettingsVisibility();
     markChanged();
+    updateTabUnsavedIndicators();
   }
 
   async function loadSettings() {
@@ -553,24 +759,48 @@
         groups[s.category].push(s);
       });
 
-      const container = document.getElementById('settings-container');
-      let html = '';
+      const tabContainers = {
+        reader: document.getElementById('settings-reader'),
+        display: document.getElementById('settings-display'),
+        controls: document.getElementById('settings-controls'),
+        system: document.getElementById('settings-system'),
+        fallback: document.getElementById('settings-fallback')
+      };
+      for (const k in tabContainers) {
+        if (tabContainers[k]) tabContainers[k].innerHTML = '';
+      }
+
+      function getCategoryTab(cat) {
+        const c = (cat || '').toLowerCase();
+        if (c.includes('đọc') || c.includes('read') || c.includes('sách') || c.includes('book')) return 'reader';
+        if (c.includes('hiển thị') || c.includes('display') || c.includes('màn hình') || c.includes('screen') || c.includes('giao diện') || c.includes('interface')) return 'display';
+        if (c.includes('điều khiển') || c.includes('control') || c.includes('phím') || c.includes('button') || c.includes('thao tác') || c.includes('gesture')) return 'controls';
+        if (c.includes('hệ thống') || c.includes('system')) return 'system';
+        return 'system';
+      }
 
       for (const category in groups) {
-        html += '<div class="card"><h2>' + escapeHtml(category) + '</h2>';
+        let cardHtml = '<div class="card"><h2>' + escapeHtml(category) + '</h2>';
         groups[category].forEach(function(s) {
-          html += '<div class="setting-row" id="row-setting-' + s.key + '">' +
+          cardHtml += '<div class="setting-row" id="row-setting-' + s.key + '">' +
             '<span class="setting-name">' + escapeHtml(s.name) + '</span>' +
             '<span class="setting-control">' + renderControl(s) + '</span>' +
             '</div>';
         });
-        html += '</div>';
+        cardHtml += '</div>';
+
+        const tabKey = getCategoryTab(category);
+        const targetContainer = tabContainers[tabKey] || tabContainers.system || tabContainers.fallback;
+        if (targetContainer) {
+          targetContainer.insertAdjacentHTML('beforeend', cardHtml);
+        }
       }
 
-      container.innerHTML = html;
       updateSettingsVisibility();
-      document.getElementById('save-container').style.display = '';
+      initTabFromHash();
+      document.getElementById('save-container').style.display = 'none';
       document.getElementById('saveBtn').disabled = true;
+      document.getElementById('topSaveBtn').disabled = true;
       preserveQuickResumeTimeoutOn = getControlValue('quickResumeSleepScreen') === 1;
       quickResumeTimeoutAutoEnabled = false;
       if (syncQuickResumeTimeoutForSleepScreen(true, false)) {
@@ -578,15 +808,19 @@
       }
     } catch (e) {
       console.error(e);
-      document.getElementById('settings-container').innerHTML =
-        '<div class="card"><p style="text-align:center;color:#e74c3c;">Failed to load settings</p></div>';
+      const readerEl = document.getElementById('settings-reader');
+      if (readerEl) {
+        readerEl.innerHTML = '<div class="card"><p style="text-align:center;color:#e74c3c;">Failed to load settings</p></div>';
+      }
     }
   }
 
   async function saveSettings() {
     const btn = document.getElementById('saveBtn');
+    if (btn.disabled) return;
     btn.disabled = true;
-    btn.textContent = 'Saving...';
+    document.getElementById('topSaveBtn').disabled = true;
+    btn.textContent = 'Đang lưu...';
 
     // Collect only changed values
     const changes = {};
@@ -598,8 +832,9 @@
     });
 
     if (Object.keys(changes).length === 0) {
-      showMessage('No changes to save.', false);
-      btn.textContent = 'Save Settings';
+      showMessage('Không có thay đổi cần lưu.', false);
+      document.getElementById('save-container').style.display = 'none';
+      btn.textContent = 'Lưu thay đổi';
       return;
     }
 
@@ -620,13 +855,17 @@
         originalValues[key] = changes[key];
       }
 
-      showMessage('Settings saved successfully!', false);
+      showMessage('Đã lưu cài đặt!', false);
+      document.getElementById('save-container').style.display = 'none';
+      updateTabUnsavedIndicators();
     } catch (e) {
       console.error(e);
-      showMessage('Error: ' + e.message, true);
+      showMessage('Lỗi: ' + e.message, true);
+      markChanged();
+      updateTabUnsavedIndicators();
     }
 
-    btn.textContent = 'Save Settings';
+    btn.textContent = 'Lưu thay đổi';
   }
 
   // --- Wi-Fi Network Management ---
@@ -867,6 +1106,7 @@
     await loadOpdsServers();
     await loadPlugins('settings');
   })();
-</script>
+
+  </script>
 </body>
 </html>

@@ -847,8 +847,23 @@ void CrossPointWebServer::handleDownload() const {
   }
 
   String contentType = "application/octet-stream";
+  String lowerPath = itemPath;
+  lowerPath.toLowerCase();
+
   if (isEpubFile(itemPath)) {
     contentType = "application/epub+zip";
+  } else if (lowerPath.endsWith(".png")) {
+    contentType = "image/png";
+  } else if (lowerPath.endsWith(".jpg") || lowerPath.endsWith(".jpeg")) {
+    contentType = "image/jpeg";
+  } else if (lowerPath.endsWith(".bmp")) {
+    contentType = "image/bmp";
+  } else if (lowerPath.endsWith(".webp")) {
+    contentType = "image/webp";
+  } else if (lowerPath.endsWith(".gif")) {
+    contentType = "image/gif";
+  } else if (lowerPath.endsWith(".txt") || lowerPath.endsWith(".md")) {
+    contentType = "text/plain; charset=utf-8";
   }
 
   char nameBuf[128] = {0};
@@ -858,7 +873,12 @@ void CrossPointWebServer::handleDownload() const {
   }
 
   server->setContentLength(file.size());
-  server->sendHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+  bool isInline = server->hasArg("inline") && server->arg("inline") == "1";
+  if (isInline || contentType.startsWith("image/")) {
+    server->sendHeader("Content-Disposition", "inline; filename=\"" + filename + "\"");
+  } else {
+    server->sendHeader("Content-Disposition", "attachment; filename=\"" + filename + "\"");
+  }
   server->send(200, contentType.c_str(), "");
   streamFileToClient(file);
   file.close();

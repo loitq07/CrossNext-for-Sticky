@@ -36,6 +36,7 @@ enum class SettingAction {
   UiPresentation,
   ReadingFormats,
   About,
+  WhatsNew,
   RebuildLibrary,
   LibraryFormats,
 };

@@ -470,11 +470,20 @@
 
     .cell-name a {
       color: hsl(var(--foreground));
-      text-decoration: none;
+      text-decoration: none !important;
       word-break: break-all;
     }
 
-    .cell-name a:hover { text-decoration: underline; }
+    .cell-name a.folder-link,
+    .folder-link {
+      color: hsl(var(--foreground));
+      text-decoration: none !important;
+      font-weight: 500;
+    }
+
+    .cell-name a.file-link:hover { text-decoration: underline; }
+    .cell-name a.folder-link:hover,
+    .folder-link:hover { text-decoration: none !important; color: hsl(var(--foreground)); opacity: 0.8; }
 
     .badge {
       display: inline-flex;
@@ -501,7 +510,8 @@
       justify-content: flex-end;
     }
 
-    .row-btn {
+    .row-btn,
+    a.row-btn {
       width: 30px;
       height: 30px;
       border-radius: calc(var(--radius) - 3px);
@@ -513,13 +523,16 @@
       justify-content: center;
       cursor: pointer;
       font-size: 0.95rem;
+      text-decoration: none !important;
       transition: all 0.15s ease;
     }
 
-    .row-btn:hover {
+    .row-btn:hover,
+    a.row-btn:hover {
       background: hsl(var(--secondary));
       color: hsl(var(--foreground));
       border-color: hsl(var(--border));
+      text-decoration: none !important;
     }
 
     .row-btn.btn-del:hover {
@@ -556,7 +569,63 @@
 
     .grid-checkbox { position: absolute; top: 0.75rem; left: 0.75rem; }
     .grid-icon { font-size: 2.5rem; margin: 0.75rem 0; color: hsl(var(--foreground)); }
-    .grid-name {
+    .grid-icon-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none !important;
+      color: inherit;
+      cursor: pointer;
+    }
+    .grid-icon-link:hover { text-decoration: none !important; }
+
+    .grid-thumb-box {
+      width: 100%;
+      height: 96px;
+      margin: 0.5rem 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: hsl(var(--secondary) / 0.5);
+      border-radius: calc(var(--radius) - 2px);
+      overflow: hidden;
+      cursor: pointer;
+      border: 1px solid hsl(var(--border) / 0.5);
+      transition: all 0.15s ease;
+    }
+
+    .grid-thumb-box:hover {
+      border-color: hsl(var(--ring));
+      background: hsl(var(--secondary));
+    }
+
+    .grid-thumb {
+      max-width: 100%;
+      max-height: 96px;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+      border-radius: calc(var(--radius) - 4px);
+      transition: transform 0.15s ease;
+    }
+
+    .grid-thumb-box:hover .grid-thumb {
+      transform: scale(1.05);
+    }
+
+    .table-thumb {
+      width: 28px;
+      height: 28px;
+      object-fit: cover;
+      border-radius: calc(var(--radius) - 4px);
+      border: 1px solid hsl(var(--border) / 0.8);
+      flex-shrink: 0;
+      cursor: pointer;
+      vertical-align: middle;
+    }
+
+    .grid-name,
+    a.grid-name {
       font-size: 0.85rem;
       font-weight: 600;
       width: 100%;
@@ -564,7 +633,19 @@
       text-overflow: ellipsis;
       white-space: nowrap;
       margin-bottom: 0.25rem;
+      color: hsl(var(--foreground));
+      text-decoration: none !important;
+      display: block;
+      cursor: pointer;
     }
+
+    .grid-name:hover,
+    a.grid-name:hover {
+      color: hsl(var(--foreground));
+      text-decoration: none !important;
+      opacity: 0.8;
+    }
+
     .grid-sub { font-size: 0.725rem; color: hsl(var(--muted-foreground)); margin-bottom: 0.75rem; }
     .grid-actions {
       display: flex;
@@ -573,6 +654,7 @@
       justify-content: center;
       border-top: 1px solid hsl(var(--border));
       padding-top: 0.65rem;
+      margin-top: auto;
     }
 
     /* Storage Panel */
@@ -861,13 +943,15 @@
       .recent-strip { grid-template-columns: 1fr 1fr; }
     }
 
+<!--#include file="shared/Responsive.css.inc" -->
   </style>
 </head>
-<body>
+<body class="files-page">
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
 
 <div class="app-shell">
   <!-- Left Sidebar -->
-  <aside class="sidebar">
+  <aside class="sidebar" id="sidebar">
     <div class="brand-box">
       <div class="brand-icon">
         <i class="ph ph-book-open"></i>
@@ -922,17 +1006,22 @@
     </nav>
 
     <div class="sidebar-footer">
-      <div class="device-row">
-        <span>Thiết bị</span>
-        <span class="device-val" id="sbDevice">Sticky</span>
+      <div class="footer-header">
+        <div class="footer-status-pill">
+          <span class="status-indicator" title="Trực tuyến"></span>
+          <span class="footer-title">Thiết bị</span>
+        </div>
+        <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="Nhấn để xem tính năng mới trong v1.4.12">v1.4.12</span>
       </div>
-      <div class="device-row">
-        <span>Phiên bản</span>
-        <span class="device-val" id="sbVersion">v1.4.11</span>
-      </div>
-      <div class="device-row">
-        <span>Địa chỉ IP</span>
-        <span class="device-val" id="sbIp">192.168.0.174</span>
+      <div class="device-details">
+        <div class="detail-row">
+          <span class="detail-label"><i class="ph ph-cpu"></i> Phần cứng</span>
+          <span class="detail-val device-name" id="sbDevice">Sticky</span>
+        </div>
+        <div class="detail-row ip-row" onclick="copyDeviceIp()" title="Nhấn để sao chép địa chỉ IP">
+          <span class="detail-label"><i class="ph ph-wifi-high"></i> IP</span>
+          <span class="detail-val ip-val"><span id="sbIp">192.168.0.174</span> <i class="ph ph-copy copy-icon"></i></span>
+        </div>
       </div>
     </div>
   </aside>
@@ -941,6 +1030,7 @@
   <div class="main-wrapper">
     <!-- Topbar -->
     <header class="topbar">
+<button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileSidebar()"><i class="ph ph-list"></i></button>
       <div class="breadcrumbs" id="directory-breadcrumbs">
         <a href="/files"><i class="ph ph-house"></i> Home</a>
       </div>
@@ -958,6 +1048,10 @@
         <button class="btn btn-outline" onclick="openFolderModal()">
           <i class="ph ph-folder-plus"></i>
           <span>Thư mục mới</span>
+        </button>
+        <button class="btn btn-outline" onclick="openWhatsNewModal()" title="Xem tính năng mới trong v1.4.12">
+          <i class="ph ph-sparkle"></i>
+          <span>Có gì mới?</span>
         </button>
         <button class="btn btn-destructive" style="display:none;" id="btnDeleteSelected" onclick="openDeleteSelectedModal()">
           <i class="ph ph-trash"></i>
@@ -1021,7 +1115,7 @@
       <!-- Right Storage & Device Panel -->
       <aside class="storage-panel">
         <div>
-          <div class="storage-title">Dung lượng bộ nhớ</div>
+          <div class="storage-title">Dung lượng tập tin trong thư mục</div>
           <div class="radial-container">
             <svg class="radial-svg" viewBox="0 0 140 140">
               <circle class="radial-bg" cx="70" cy="70" r="54"></circle>
@@ -1029,7 +1123,7 @@
             </svg>
             <div class="radial-text">
               <span class="radial-percent" id="storagePercentText">0%</span>
-              <span class="radial-caption">Đã dùng</span>
+              <span class="radial-caption">Tổng tập tin</span>
             </div>
           </div>
         </div>
@@ -1265,7 +1359,7 @@
 <div class="modal-overlay" id="moveModal">
   <div class="modal">
     <button class="modal-close" onclick="closeMoveModal()">&times;</button>
-    <h3><i class="ph ph-folder-simple-arrow-right"></i> Di chuyển tập tin</h3>
+    <h3><i class="ph ph-arrows-out-cardinal"></i> Di chuyển tập tin</h3>
     <p class="file-info">Di chuyển: <strong id="moveItemName"></strong></p>
     <input type="text" id="moveDestPath" class="folder-input" list="moveFolderOptions" placeholder="/Thư_mục_đích">
     <datalist id="moveFolderOptions"></datalist>
@@ -1297,9 +1391,10 @@
 
 
 <script>
+<!--#include file="shared/Responsive.js.inc" -->
 
   // Path state
-  const currentPath = decodeURIComponent(new URLSearchParams(window.location.search).get('path') || '/');
+  const currentPath = new URLSearchParams(window.location.search).get('path') || '/';
 
   if (currentPath !== '/') {
     const leaf = currentPath.split('/').filter(Boolean).pop();
@@ -1451,11 +1546,11 @@
     if (circle && percentText) {
       // 377 is approx 2 * pi * 60
       const circumference = 339; // 2 * pi * 54
-      const usedPct = Math.min(100, Math.max(5, Math.round((files.length / 50) * 100)));
+      const usedPct = files.some(f => !f.isDirectory) ? 100 : 0;
       const offset = circumference - (usedPct / 100) * circumference;
       circle.style.strokeDasharray = circumference;
       circle.style.strokeDashoffset = offset;
-      percentText.textContent = usedPct + '%';
+      percentText.textContent = formatFileSize(epubBytes + imgBytes + docBytes + otherBytes);
     }
   }
 
@@ -1511,6 +1606,9 @@
   function renderFiles() {
     const container = document.getElementById('file-table');
     if (!container) return;
+    document.getElementById('btnDeleteSelected').style.display = 'none';
+    document.getElementById('btnViewTable').classList.toggle('active', currentViewMode === 'table');
+    document.getElementById('btnViewGrid').classList.toggle('active', currentViewMode === 'grid');
 
     // Filter files
     let filtered = allFilesData.filter(file => {
@@ -1571,11 +1669,13 @@
               <td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(folderPath)}" data-name="${escapeHtml(file.name)}" data-type="folder" onchange="onRowCheckboxChange()"></td>
               <td>
                 <div class="cell-name">
-                  <i class="ph ph-folder" style="color: #f59e0b; font-size: 1.25rem;"></i>
-                  <a href="/files?path=${encodeURIComponent(folderPath)}" class="folder-link">${escapeHtml(file.name)}</a>
+                  <a href="/files?path=${encodeURIComponent(folderPath)}" class="folder-link" style="display:inline-flex; align-items:center; gap:0.75rem;">
+                    <i class="ph ph-folder" style="color: #f59e0b; font-size: 1.25rem;"></i>
+                    <span class="folder-link">${escapeHtml(file.name)}</span>
+                  </a>
                 </div>
               </td>
-              <td><span class="badge badge-folder">FOLDER</span></td>
+              <td>—</td>
               <td>—</td>
               <td>
                 <div class="action-group">
@@ -1611,20 +1711,23 @@
               <td><input type="checkbox" class="select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file" onchange="onRowCheckboxChange()"></td>
               <td>
                 <div class="cell-name">
-                  <i class="${iconClass}" style="font-size: 1.25rem;"></i>
-                  ${fileIsImage 
-                    ? `<a href="${downloadUrl(filePath)}" class="file-link image-preview-link">${escapeHtml(file.name)}</a>`
-                    : `<a rel="noopener noreferrer" target="_blank" href="${downloadUrl(filePath)}" class="file-link">${escapeHtml(file.name)}</a>`
-                  }
+                  ${fileIsImage ? `
+                    <img src="${downloadUrl(filePath, true)}" alt="" class="table-thumb" loading="lazy" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước ảnh" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                    <i class="${iconClass}" style="font-size: 1.25rem; display: none;"></i>
+                    <a href="${downloadUrl(filePath, true)}" class="file-link image-preview-link" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}">${escapeHtml(file.name)}</a>
+                  ` : `
+                    <i class="${iconClass}" style="font-size: 1.25rem;"></i>
+                    <a rel="noopener noreferrer" target="_blank" href="${downloadUrl(filePath)}" class="file-link">${escapeHtml(file.name)}</a>
+                  `}
                 </div>
               </td>
               <td><span class="badge ${badgeClass}">${file.isEpub ? 'EPUB' : escapeHtml(ext)}</span></td>
               <td>${formatFileSize(file.size)}</td>
               <td>
                 <div class="action-group">
-                  ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
+                  ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
                   <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
-                  <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-folder-simple-arrow-right"></i></button>
+                  <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-arrows-out-cardinal"></i></button>
                   <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
                   <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
                 </div>
@@ -1648,9 +1751,10 @@
           html += `
             <div class="grid-card">
               <input type="checkbox" class="grid-checkbox select-item" data-path="${encodeURIComponent(folderPath)}" data-name="${escapeHtml(file.name)}" data-type="folder" onchange="onRowCheckboxChange()">
-              <i class="ph ph-folder grid-icon" style="color: #f59e0b;"></i>
-              <a href="/files?path=${encodeURIComponent(folderPath)}" class="grid-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
-              <div class="grid-sub"><span class="badge badge-folder">FOLDER</span></div>
+              <a href="/files?path=${encodeURIComponent(folderPath)}" class="grid-icon-link" title="${escapeHtml(file.name)}">
+                <i class="ph ph-folder grid-icon" style="color: #f59e0b;"></i>
+              </a>
+              <a href="/files?path=${encodeURIComponent(folderPath)}" class="grid-name folder-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
               <div class="grid-actions">
                 <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Xóa thư mục">
                   <i class="ph ph-trash"></i>
@@ -1679,13 +1783,20 @@
           html += `
             <div class="grid-card">
               <input type="checkbox" class="grid-checkbox select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file" onchange="onRowCheckboxChange()">
-              <i class="${iconClass} grid-icon" style="color: ${iconColor};"></i>
+              ${fileIsImage ? `
+                <div class="grid-thumb-box" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước ảnh">
+                  <img src="${downloadUrl(filePath, true)}" alt="${escapeHtml(file.name)}" class="grid-thumb" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                  <i class="ph ph-image grid-icon" style="color: #3b82f6; display: none;"></i>
+                </div>
+              ` : `
+                <i class="${iconClass} grid-icon" style="color: ${iconColor};"></i>
+              `}
               <div class="grid-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
               <div class="grid-sub">${formatFileSize(file.size)} • ${escapeHtml(ext)}</div>
               <div class="grid-actions">
-                ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
+                ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
                 <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
-                <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-folder-simple-arrow-right"></i></button>
+                <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-arrows-out-cardinal"></i></button>
                 <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
                 <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
               </div>
@@ -1791,8 +1902,10 @@ function isImageFile(name) {
     return /\.(png|jpe?g|bmp|gif|webp)$/i.test(name);
   }
 
-  function downloadUrl(filePath) {
-    return `/download?path=${encodeURIComponent(filePath)}`;
+  function downloadUrl(filePath, inline = false) {
+    let url = `/download?path=${encodeURIComponent(filePath)}`;
+    if (inline) url += '&inline=1';
+    return url;
   }
 
   function openImagePreview(url, name) {
@@ -1800,7 +1913,7 @@ function isImageFile(name) {
     document.getElementById('imagePreviewName').textContent = name;
     img.src = url;
     img.alt = name;
-    document.getElementById('imagePreviewDownload').href = url;
+    document.getElementById('imagePreviewDownload').href = url.replace('&inline=1', '');
     document.getElementById('imagePreviewModal').classList.add('open');
   }
 
@@ -1953,10 +2066,10 @@ function isImageFile(name) {
     const content = document.getElementById('advancedSettingsContent');
     const arrow = document.getElementById('advancedOptionsArrow');
     const isExpanding = !content.classList.contains('visible');
-    
+
     content.classList.toggle('visible');
     arrow.classList.toggle('expanded');
-    
+
     // When expanding, show image picker if an EPUB is selected
     if (isExpanding) {
       const fileInput = document.getElementById('fileInput');
@@ -2252,11 +2365,11 @@ function isImageFile(name) {
 
       // Get dimensions
       const dims = await getImageDimensions(data);
-      
+
       // Check if this is the cover image
-      const isCover = (path === coverImagePath) || 
+      const isCover = (path === coverImagePath) ||
                       path.toLowerCase().includes('cover') && images.length === 0;
-      
+
       // Check if this is a separator/ornament (skip cover check)
       const filename = path.split('/').pop();
       let isSeparator = false;
@@ -2267,7 +2380,7 @@ function isImageFile(name) {
           console.warn('Separator check failed for', filename, e);
         }
       }
-      
+
       // Tiny images (<200x200) are locked like separators
       const isTiny = (dims.width < 200 && dims.height < 200);
       const isLockedImage = isCover || isSeparator || isTiny;
@@ -2279,7 +2392,7 @@ function isImageFile(name) {
           console.warn('Auto-crop preview failed for', path, e);
         }
       }
-      
+
       // Images that fit screen can only rotate, not split
       const fitsScreen = (dims.width <= MAX_WIDTH && dims.height <= MAX_HEIGHT);
 
@@ -2333,23 +2446,23 @@ function isImageFile(name) {
   async function isSeparatorImage(dataUrl, width, height, filename) {
     const MAX_DIMENSION = 150;
     const SYMMETRY_THRESHOLD = 0.85;
-    
+
     // First check: must be small in at least one dimension
     const isSmall = (height < MAX_DIMENSION || width < MAX_DIMENSION);
     if (!isSmall) return false;
-    
+
     // Filename hints (instant match if small + named correctly)
     const separatorNames = ['separator', 'divider', 'ornament', 'break', 'flourish', 'scene', 'divid', 'decor'];
     const lowerName = filename.toLowerCase();
     if (separatorNames.some(n => lowerName.includes(n))) return true;
-    
+
     // Extreme aspect ratio check (>10:1 or <1:10) - these are definitely separators/lines
     const aspectRatio = width / height;
     if (aspectRatio > 10 || aspectRatio < 0.1) return true;
-    
+
     // Symmetry check (skip for very thin images - too few pixels)
     if (width < 10 || height < 10) return true; // Very small = separator
-    
+
     try {
       const isSymmetric = await checkHorizontalSymmetry(dataUrl, width, height, SYMMETRY_THRESHOLD);
       return isSymmetric;
@@ -2370,32 +2483,32 @@ function isImageFile(name) {
         const scale = Math.min(1, 100 / width);
         const w = Math.max(2, Math.floor(width * scale));  // Minimum 2px
         const h = Math.max(1, Math.floor(height * scale)); // Minimum 1px
-        
+
         const canvas = document.createElement('canvas');
         canvas.width = w;
         canvas.height = h;
         const ctx = canvas.getContext('2d');
-        
+
         // Draw scaled image
         ctx.drawImage(img, 0, 0, w, h);
         const imageData = ctx.getImageData(0, 0, w, h);
         const pixels = imageData.data;
-        
+
         // Compare left half with flipped right half
         const halfW = Math.floor(w / 2);
         let matchingPixels = 0;
         let totalPixels = 0;
-        
+
         for (let y = 0; y < h; y++) {
           for (let x = 0; x < halfW; x++) {
             const leftIdx = (y * w + x) * 4;
             const rightIdx = (y * w + (w - 1 - x)) * 4;
-            
+
             // Compare RGB (ignore alpha)
             const rDiff = Math.abs(pixels[leftIdx] - pixels[rightIdx]);
             const gDiff = Math.abs(pixels[leftIdx + 1] - pixels[rightIdx + 1]);
             const bDiff = Math.abs(pixels[leftIdx + 2] - pixels[rightIdx + 2]);
-            
+
             // Allow some tolerance for JPEG artifacts (threshold of 30)
             if (rDiff < 30 && gDiff < 30 && bDiff < 30) {
               matchingPixels++;
@@ -2403,7 +2516,7 @@ function isImageFile(name) {
             totalPixels++;
           }
         }
-        
+
         const symmetryScore = matchingPixels / totalPixels;
         resolve(symmetryScore >= threshold);
       };
@@ -2457,7 +2570,7 @@ function isImageFile(name) {
       const separatorCount = images.filter(img => img.isSeparator).length;
       const lockedCount = coverCount + separatorCount;
       const selectableCount = images.length - lockedCount;
-      
+
       if (lockedCount > 0) {
         const lockedParts = [];
         if (coverCount > 0) lockedParts.push(`${coverCount} cover`);
@@ -2521,12 +2634,12 @@ function isImageFile(name) {
         `;
       } else {
         // All other images are selectable - all modes allowed
-        
+
         // Determine which overlay to show based on state
         const showRotation = (state === 1 || state === 3); // H-Split or Rotate
         const showSplitLines = (state === 1 || state === 2); // H-Split or V-Split
         const rotateClass = showRotation ? (HANDEDNESS === 'right' ? 'rotate-cw' : 'rotate-ccw') : '';
-        
+
         // Calculate actual number of parts for split preview
         let numParts = 1;
         if (showSplitLines) {
@@ -2546,7 +2659,7 @@ function isImageFile(name) {
             if (numParts < 2) numParts = 2;
           }
         }
-        
+
         // Generate split line elements (numParts - 1 lines at evenly distributed positions)
         let splitLinesHtml = '';
         if (showSplitLines && numParts > 1) {
@@ -2558,14 +2671,14 @@ function isImageFile(name) {
           }
           splitLinesHtml = `<div class="split-lines">${lines.join('')}</div>`;
         }
-        
+
         // Build tooltip
         const stateText = stateLabels[state] || 'Normal';
         const partsText = numParts > 1 ? ` (${numParts} parts)` : '';
         const showCropPreview = ENABLE_AUTO_CROP && img.autoCropPreview;
         const previewSrc = showCropPreview ? img.autoCropPreview.dataUrl : img.dataUrl;
         const cropText = showCropPreview ? ` | Auto-crop: ${img.autoCropPreview.width}×${img.autoCropPreview.height}` : '';
-        
+
         item.className = `image-item ${stateClasses[state]} ${rotateClass} ${showCropPreview ? 'crop-preview' : ''}`.trim();
         item.onclick = () => cycleImageState(img.path);
         item.title = `${img.width}×${img.height} - ${stateText}${partsText}${cropText}`;
@@ -2604,11 +2717,11 @@ function isImageFile(name) {
     epubImagesCache.forEach(img => {
       // Skip locked images
       if (img.isCover || img.isSeparator) return;
-      
+
       const canHSplit = img.canHSplit && !img.fitsScreen;
       const canVSplit = img.canVSplit && !img.fitsScreen;
       const isLandscape = img.width > img.height;
-      
+
       if (state === 0) {
         // Normal - applies to all selectable
         imageStates[img.path] = 0;
@@ -2684,7 +2797,9 @@ function isImageFile(name) {
       if (!btn) return;
       const name = btn.dataset.name;
       const path = btn.dataset.path;
-      if (btn.dataset.action === 'move') {
+      if (btn.dataset.action === 'preview') {
+        openImagePreview(path, name);
+      } else if (btn.dataset.action === 'move') {
         openMoveModal(name, path);
       } else if (btn.dataset.action === 'rename') {
         openRenameModal(name, path);
@@ -2743,6 +2858,7 @@ function isImageFile(name) {
     document.getElementById('folderPathDisplay').textContent = currentPath === '/' ? '/ 🏠' : currentPath;
     document.getElementById('folderModal').classList.add('open');
     document.getElementById('folderName').value = '';
+    document.getElementById('createFolderBtn').disabled = true;
     setTimeout(() => document.getElementById('folderName').focus(), 50);
     document.getElementById('folderName').onkeydown = (e) => { if (e.key === 'Enter' && e.target.value.trim()) createFolder(); };
   }
@@ -2757,6 +2873,7 @@ function isImageFile(name) {
     document.querySelectorAll('.select-item').forEach(cb => {
       cb.checked = checked;
     });
+    onRowCheckboxChange();
   }
 
   function getSelectedItems() {
@@ -2860,7 +2977,7 @@ function isImageFile(name) {
   (function setupFileInputListener() {
     const fileInput = document.getElementById('fileInput');
     if (!fileInput) return;
-    
+
     fileInput.addEventListener('click', function() {
       // Small delay to allow browser to process click before checking files
       setTimeout(() => {
@@ -3141,6 +3258,12 @@ async function fetchVersion() {
     if (response.ok) {
       const data = await response.json();
       crosspointVersion = data.version || 'Unknown';
+      document.getElementById('sbVersion').textContent = 'v' + crosspointVersion;
+      document.getElementById('sbDevice').textContent = data.device || '—';
+      document.getElementById('sbIp').textContent = data.ip || location.hostname;
+      document.getElementById('specFreeHeap').textContent = formatFileSize(data.freeHeap);
+      document.getElementById('specRssi').textContent = Number.isFinite(data.rssi) ? data.rssi + ' dBm' : '—';
+      document.getElementById('specUptime').textContent = Number.isFinite(data.uptime) ? Math.floor(data.uptime / 60) + ' phút' : '—';
       if (data.device === 'X3' || data.device === 'X4') {
         DETECTED_DEVICE = data.device;
         applyDeviceTarget();
@@ -4482,7 +4605,7 @@ async function processImage(data, imageState = 0, imagePath = '') {
           // Split by WIDTH (vertical cuts) - from RIGHT to LEFT for CW, LEFT to RIGHT for CCW
           const parts = [];
           const maxW = MAX_WIDTH;  // 480
-          
+
           // Centered distribution: calculate numParts first, then distribute evenly
           let overlapPx, step, numParts;
           const minOverlapPx = Math.round(maxW * (OVERLAP_PERCENT / 100));  // Configurable overlap
@@ -4583,7 +4706,7 @@ async function processImage(data, imageState = 0, imagePath = '') {
           // Split by WIDTH (vertical cuts) - LEFT to RIGHT (natural reading order)
           const parts = [];
           const maxW = MAX_WIDTH;
-          
+
           // Centered distribution: calculate numParts first, then distribute evenly
           let overlapPx, step, numParts;
           const minOverlapPx = Math.round(maxW * (OVERLAP_PERCENT / 100));  // Configurable overlap
@@ -4665,7 +4788,7 @@ async function processImage(data, imageState = 0, imagePath = '') {
 
         // Step 2: Scale to fit 480x800 (if needed)
         const fitsInScreen = rotW <= MAX_WIDTH && rotH <= MAX_HEIGHT;
-        
+
         if (fitsInScreen && !sourceWasCropped) {
           // Already fits after rotation - just apply grayscale
           applyGrayscale(rotCtx, rotW, rotH);
@@ -5891,4 +6014,8 @@ function retryAllFailedUploads() {
   }
 <!--#include file="shared/PluginHost.js.inc" -->
   hydrate();
+
+</script>
+</body>
+</html>
 

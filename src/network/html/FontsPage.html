@@ -1,153 +1,283 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CrossNext - Fonts</title>
-    <style>
-      :root {
-        --font-color: #333;
-        --bg: #f5f5f5;
-        --title-color: #2c3e50;
-        --card-bg: #FFF;
-        --label-color: #7f8c8d;
-        --border-color: #eee;
-        --accent-color: rgb(110, 154, 130);
-        --accent-hover-color: #5a8c73;
-        --danger-color: #e74c3c;
-        --danger-hover: #c0392b;
-      }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --font-color: #f5f5f5;
-          --bg: #333;
-          --title-color: #ecf0f1;
-          --card-bg: #444;
-          --label-color: #bdc3c7;
-          --border-color: #555;
-          color-scheme: dark;
-        }
-      }
-      body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-          Oxygen, Ubuntu, sans-serif;
-        max-width: 800px;
-        margin: 0 auto;
-        padding: 20px;
-        background-color: var(--bg);
-        color: var(--font-color);
-      }
-      h1 {
-        color: var(--title-color);
-        border-bottom: 2px solid var(--accent-color);
-        padding-bottom: 10px;
-      }
-      h2 { color: var(--title-color); margin-top: 0; }
-      h3 { margin: 0 0 8px 0; }
-      .card {
-        background: var(--card-bg);
-        border-radius: 8px;
-        padding: 20px;
-        margin: 15px 0;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-      }
-      .nav-links {
-        margin: 20px 0;
-        display: flex;
-        gap: 10px;
-      }
-      .nav-links a {
-        padding: 10px 20px;
-        color: var(--font-color);
-        text-decoration: none;
-        border-radius: 4px;
-      }
-      .nav-links a.active {
-        background-color: var(--accent-color);
-        color: white;
-      }
-      .nav-links a:not(.active):hover {
-        background-color: var(--accent-hover-color);
-        color: white;
-      }
-      .family {
-        border-bottom: 1px solid var(--border-color);
-        padding: 12px 0;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-      }
-      .family:last-child { border-bottom: none; }
-      .family-info { flex: 1; }
-      .family-meta { color: var(--label-color); font-size: 0.9em; }
-      .btn {
-        padding: 6px 16px;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        font-size: 0.9em;
-      }
-      .btn-danger {
-        background: var(--danger-color);
-        color: white;
-      }
-      .btn-danger:hover { background: var(--danger-hover); }
-      .btn-primary {
-        background: var(--accent-color);
-        color: white;
-      }
-      .btn-primary:hover { background: var(--accent-hover-color); }
-      .upload-form {
-        display: flex;
-        gap: 10px;
-        align-items: center;
-        flex-wrap: wrap;
-      }
-      .upload-form input[type="text"] {
-        padding: 6px 10px;
-        border: 1px solid var(--border-color);
-        border-radius: 4px;
-        background: var(--bg);
-        color: var(--font-color);
-      }
-      .upload-form input[type="file"] { flex: 1; min-width: 200px; }
-      #status {
-        margin-top: 10px;
-        padding: 8px;
-        border-radius: 4px;
-        display: none;
-      }
-      .status-ok { background: #d4edda; color: #155724; display: block !important; }
-      .status-err { background: #f8d7da; color: #721c24; display: block !important; }
-      .empty { color: var(--label-color); text-align: center; padding: 20px; }
-    </style>
-  </head>
-  <body>
-    <h1>CrossNext</h1>
+<html lang="vi" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Phông chữ - CrossNext</title>
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <style>
+    :root {
+      --background: 0 0% 100%;
+      --foreground: 240 10% 3.9%;
+      --card: 0 0% 100%;
+      --card-foreground: 240 10% 3.9%;
+      --primary: 240 5.9% 10%;
+      --primary-foreground: 0 0% 98%;
+      --secondary: 240 4.8% 95.9%;
+      --secondary-foreground: 240 5.9% 10%;
+      --muted: 240 4.8% 95.9%;
+      --muted-foreground: 240 3.8% 46.1%;
+      --accent: 240 4.8% 95.9%;
+      --accent-foreground: 240 5.9% 10%;
+      --destructive: 0 84.2% 60.2%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 5.9% 90%;
+      --input: 240 5.9% 90%;
+      --ring: 240 5.9% 10%;
+      --radius: 0.625rem;
+      --sidebar-width: 250px;
+    }
+    .dark {
+      --background: 240 10% 3.9%;
+      --foreground: 0 0% 98%;
+      --card: 240 10% 5.5%;
+      --card-foreground: 0 0% 98%;
+      --primary: 0 0% 98%;
+      --primary-foreground: 240 5.9% 10%;
+      --secondary: 240 3.7% 15.9%;
+      --secondary-foreground: 0 0% 98%;
+      --muted: 240 3.7% 14%;
+      --muted-foreground: 240 5% 64.9%;
+      --accent: 240 3.7% 15.9%;
+      --accent-foreground: 0 0% 98%;
+      --destructive: 0 62.8% 50.6%;
+      --destructive-foreground: 0 0% 98%;
+      --border: 240 3.7% 17%;
+      --input: 240 3.7% 17%;
+      --ring: 240 4.9% 83.9%;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: hsl(var(--background));
+      color: hsl(var(--foreground));
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      display: flex;
+    }
+    .app-shell { display: flex; width: 100%; position: relative; }
 
-    <div class="nav-links">
-      <a href="/">Home</a>
-      <a href="/files">File Manager</a>
-      <a href="/settings">Settings</a>
-      <a href="/fonts" class="active">Fonts</a>
-    </div>
+    /* Sidebar / Mobile Sheet */
+    .sidebar {
+      width: var(--sidebar-width); background: hsl(var(--card)); border-right: 1px solid hsl(var(--border));
+      display: flex; flex-direction: column; flex-shrink: 0; padding: 1.25rem 1rem; gap: 1.5rem;
+      transition: transform 0.25s ease; z-index: 100;
+    }
+    .sidebar-backdrop {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); z-index: 90;
+    }
+    .sidebar-backdrop.show { display: block; }
+    .brand-box { display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.5rem; }
+    .brand-icon {
+      width: 36px; height: 36px; border-radius: calc(var(--radius) - 2px); background: hsl(var(--primary));
+      color: hsl(var(--primary-foreground)); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
+    }
+    .brand-title { font-weight: 700; font-size: 1.05rem; letter-spacing: -0.02em; }
+    .brand-sub { font-size: 0.75rem; color: hsl(var(--muted-foreground)); display: flex; align-items: center; gap: 0.35rem; }
+    .status-dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; display: inline-block; }
 
-    <div class="card">
-      <h2>Installed Fonts</h2>
-      <div id="families"><p class="empty">Loading...</p></div>
-    </div>
+    .nav-section { display: flex; flex-direction: column; gap: 0.25rem; }
+    .nav-label {
+      font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;
+      color: hsl(var(--muted-foreground)); padding: 0.5rem 0.75rem 0.25rem;
+    }
+    .nav-item {
+      display: flex; align-items: center; gap: 0.75rem; padding: 0.55rem 0.75rem; border-radius: var(--radius);
+      color: hsl(var(--muted-foreground)); text-decoration: none; font-size: 0.875rem; font-weight: 500;
+      transition: all 0.15s ease; cursor: pointer;
+    }
+    .nav-item:hover, .nav-item.active { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+    .nav-item.active { font-weight: 600; }
 
-    <div class="card">
-      <h2>Upload Font</h2>
-      <form class="upload-form" id="uploadForm">
-        <input type="file" id="fontFiles" webkitdirectory directory multiple required />
-        <button type="submit" class="btn btn-primary">Upload</button>
-      </form>
-      <p id="pickedInfo" class="family-meta" style="margin: 8px 0 0;"></p>
-      <div id="status"></div>
+    .sidebar-footer {
+      margin-top: auto; background: hsl(var(--secondary)); border: 1px solid hsl(var(--border));
+      border-radius: var(--radius); padding: 0.85rem; font-size: 0.8rem;
+    }
+    .device-row { display: flex; justify-content: space-between; margin-bottom: 0.3rem; color: hsl(var(--muted-foreground)); }
+    .device-row:last-child { margin-bottom: 0; }
+    .device-val { font-weight: 600; color: hsl(var(--foreground)); font-family: ui-monospace, monospace; }
+
+    /* Main Area */
+    .main-wrapper { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+    .topbar {
+      height: 60px; border-bottom: 1px solid hsl(var(--border)); background: hsl(var(--card));
+      display: flex; align-items: center; justify-content: space-between; padding: 0 1.25rem; gap: 0.75rem;
+    }
+    .topbar-left { display: flex; align-items: center; gap: 0.5rem; }
+    .mobile-menu-btn {
+      display: none; width: 38px; height: 38px; border-radius: var(--radius); border: 1px solid hsl(var(--input));
+      background: transparent; color: hsl(var(--foreground)); align-items: center; justify-content: center; cursor: pointer; font-size: 1.25rem;
+    }
+    .breadcrumbs {
+      display: flex; align-items: center; gap: 0.35rem; font-size: 0.85rem; white-space: nowrap;
+    }
+    .breadcrumbs a { color: hsl(var(--muted-foreground)); text-decoration: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+    .breadcrumbs .sep { color: hsl(var(--muted-foreground)); font-size: 0.75rem; }
+    .breadcrumbs .current { font-weight: 600; color: hsl(var(--foreground)); }
+
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; height: 36px; padding: 0 0.85rem;
+      font-size: 0.825rem; font-weight: 500; border-radius: var(--radius); cursor: pointer; border: 1px solid transparent;
+      text-decoration: none; transition: all 0.15s ease;
+    }
+    .btn-primary { background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+    .btn-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+    .btn-icon {
+      width: 36px; height: 36px; padding: 0; border-radius: var(--radius); background: transparent;
+      border: 1px solid hsl(var(--input)); color: hsl(var(--muted-foreground)); display: inline-flex;
+      align-items: center; justify-content: center; cursor: pointer; font-size: 1.05rem;
+    }
+    .btn-icon:hover { background: hsl(var(--accent)); color: hsl(var(--foreground)); }
+
+    .content-main { padding: 1.5rem; max-width: 900px; width: 100%; }
+    .card {
+      background: hsl(var(--card)); border: 1px solid hsl(var(--border)); border-radius: var(--radius);
+      padding: 1.25rem; margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+
+    .family {
+      border-bottom: 1px solid hsl(var(--border)); padding: 0.85rem 0;
+      display: flex; justify-content: space-between; align-items: center; gap: 1rem;
+    }
+    .family:last-child { border-bottom: none; }
+    .family-info { flex: 1; min-width: 0; }
+    .family-info h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; }
+    .family-meta { color: hsl(var(--muted-foreground)); font-size: 0.8rem; }
+
+    .upload-form { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; }
+    .upload-form input[type="file"] {
+      flex: 1; min-width: 200px; padding: 0.5rem; background: hsl(var(--secondary) / 0.5);
+      border: 1px dashed hsl(var(--border)); border-radius: var(--radius); color: hsl(var(--foreground));
+      font-size: 0.85rem;
+    }
+
+    #status {
+      margin-top: 1rem; padding: 0.75rem; border-radius: var(--radius); font-size: 0.85rem; display: none;
+    }
+    .status-ok { background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.3); display: block !important; }
+    .status-err { background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3); display: block !important; }
+    .empty { color: hsl(var(--muted-foreground)); text-align: center; padding: 2rem; font-size: 0.9rem; }
+
+    @media (max-width: 768px) {
+      .sidebar { position: fixed; top: 0; bottom: 0; left: 0; transform: translateX(-100%); }
+      .sidebar.mobile-open { transform: translateX(0); }
+      .mobile-menu-btn { display: inline-flex; }
+      .content-main { padding: 1rem; }
+      .topbar { padding: 0 0.75rem; }
+    }
+<!--#include file="shared/Responsive.css.inc" -->
+  </style>
+</head>
+<body>
+  <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-box">
+        <div class="brand-icon"><i class="ph ph-book-open"></i></div>
+        <div>
+          <div class="brand-title">CrossNext</div>
+          <div class="brand-sub"><span class="status-dot"></span> Sticky e-Paper</div>
+        </div>
+      </div>
+      <nav class="nav-section">
+        <div class="nav-label">Menu</div>
+        <a class="nav-item" href="/files"><i class="ph ph-folder"></i><span>Truyền tập tin</span></a>
+        <a class="nav-item" href="/settings"><i class="ph ph-gear-six"></i><span>Cài đặt</span></a>
+        <a class="nav-item active" href="/fonts"><i class="ph ph-text-t"></i><span>Phông chữ</span></a>
+      </nav>
+      <div class="sidebar-footer">
+        <div class="footer-header">
+          <div class="footer-status-pill">
+            <span class="status-indicator" title="Trực tuyến"></span>
+            <span class="footer-title">Thiết bị</span>
+          </div>
+          <span class="badge-ver" id="sbVersion">v1.4.11</span>
+        </div>
+        <div class="device-details">
+          <div class="detail-row">
+            <span class="detail-label"><i class="ph ph-cpu"></i> Phần cứng</span>
+            <span class="detail-val device-name" id="sbDevice">Sticky</span>
+          </div>
+          <div class="detail-row ip-row" onclick="copyDeviceIp()" title="Nhấn để sao chép địa chỉ IP">
+            <span class="detail-label"><i class="ph ph-wifi-high"></i> IP</span>
+            <span class="detail-val ip-val"><span id="sbIp">192.168.0.174</span> <i class="ph ph-copy copy-icon"></i></span>
+          </div>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileSidebar()"><i class="ph ph-list"></i></button>
+          <div class="breadcrumbs">
+            <a href="/files"><i class="ph ph-house"></i> Home</a>
+            <span class="sep"><i class="ph ph-caret-right"></i></span>
+            <span class="current">Phông chữ</span>
+          </div>
+        </div>
+        <div class="topbar-actions">
+          <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">
+            <i class="ph ph-sun" id="themeIcon"></i>
+          </button>
+        </div>
+      </header>
+
+      <main class="content-main">
+        <div class="card">
+          <h2><i class="ph ph-text-aa"></i> Phông chữ đã cài đặt</h2>
+          <div id="families"><p class="empty">Đang tải danh sách phông chữ...</p></div>
+        </div>
+
+        <div class="card">
+          <h2><i class="ph ph-upload-simple"></i> Cài đặt phông chữ mới</h2>
+          <p style="font-size:0.825rem; color:hsl(var(--muted-foreground)); margin-bottom:1rem;">
+            Chọn thư mục hoặc tệp chứa định dạng .cpfont, .ttf hoặc .otf để cài đặt lên thẻ nhớ.
+          </p>
+          <form class="upload-form" id="uploadForm">
+            <label for="fontPickMode">Chọn theo</label><select id="fontPickMode"><option value="files">Tập tin</option><option value="folder">Thư mục</option></select>
+            <input type="file" id="fontFiles" accept=".cpfont,.ttf,.otf" multiple required aria-label="Chọn tập tin phông chữ" />
+            <button type="submit" class="btn btn-primary"><i class="ph ph-upload-simple"></i> Tải lên</button>
+          </form>
+          <p id="pickedInfo" class="family-meta" style="margin-top: 0.75rem;"></p>
+          <div id="status"></div>
+        </div>
+      </main>
     </div>
+  </div>
 
   <script>
+<!--#include file="shared/Responsive.js.inc" -->
+
+
+    let currentTheme = localStorage.getItem('cp_theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    function applyTheme(t) {
+      document.documentElement.classList.toggle('dark', t === 'dark');
+      const icon = document.getElementById('themeIcon');
+      if (icon) icon.className = t === 'dark' ? 'ph ph-sun' : 'ph ph-moon';
+    }
+    applyTheme(currentTheme);
+    function toggleTheme() {
+      currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('cp_theme', currentTheme);
+      applyTheme(currentTheme);
+    }
+
+    async function fetchStatus() {
+      try {
+        const r = await fetch('/api/status');
+        if (r.ok) {
+          const d = await r.json();
+          if (document.getElementById('sbDevice')) document.getElementById('sbDevice').textContent = d.device || 'Sticky';
+          if (document.getElementById('sbVersion')) document.getElementById('sbVersion').textContent = 'v' + (d.version || '1.4.11');
+          if (document.getElementById('sbIp')) document.getElementById('sbIp').textContent = d.ip || window.location.hostname;
+        }
+      } catch (e) {}
+    }
+    fetchStatus();
+
+
     function formatSize(bytes) {
       if (bytes >= 1048576) return (bytes / 1048576).toFixed(1) + ' MB';
       if (bytes >= 1024) return (bytes / 1024).toFixed(0) + ' KB';
@@ -169,6 +299,7 @@
       const el = document.getElementById('families');
       try {
         const res = await fetch('/api/fonts');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
         allowVector = !!data.vectorFonts;
         // Build rows with DOM APIs and textContent so on-device family names
@@ -178,7 +309,7 @@
         if (!data.families || data.families.length === 0) {
           const p = document.createElement('p');
           p.className = 'empty';
-          p.textContent = 'No fonts installed';
+          p.textContent = 'Chưa có phông chữ nào được cài đặt';
           el.appendChild(p);
           return;
         }
@@ -201,8 +332,8 @@
           info.appendChild(meta);
 
           const btn = document.createElement('button');
-          btn.className = 'btn btn-danger';
-          btn.textContent = 'Delete';
+          btn.className = 'btn btn-destructive';
+          btn.textContent = 'Xóa';
           // Capture name in the closure rather than interpolating into onclick.
           const familyName = f.name;
           btn.addEventListener('click', () => deleteFamily(familyName));
@@ -215,7 +346,7 @@
         el.replaceChildren();
         const p = document.createElement('p');
         p.className = 'empty';
-        p.textContent = 'Failed to load font list';
+        p.textContent = 'Không tải được danh sách phông chữ. Hãy tải lại trang.';
         el.appendChild(p);
       }
     }
@@ -264,6 +395,14 @@
     function supportedFontFilesOnly(fileList) {
       return Array.from(fileList).filter(f => fontExtRe().test(f.name));
     }
+
+    document.getElementById('fontPickMode').addEventListener('change', function() {
+      const input = document.getElementById('fontFiles');
+      input.toggleAttribute('webkitdirectory', this.value === 'folder');
+      input.toggleAttribute('directory', this.value === 'folder');
+      input.value = '';
+      document.getElementById('pickedInfo').textContent = '';
+    });
 
     document.getElementById('fontFiles').addEventListener('change', function() {
       const info = document.getElementById('pickedInfo');
@@ -334,6 +473,7 @@
     });
 
     loadFonts();
+
   </script>
-  </body>
+</body>
 </html>

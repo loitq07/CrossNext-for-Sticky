@@ -15,6 +15,7 @@
 #include <cstring>
 
 #include "AboutActivity.h"
+#include "WhatsNewActivity.h"
 #include "ButtonRemapActivity.h"
 #include "ClearCacheActivity.h"
 #include "../../util/LibrarySync.h"
@@ -289,6 +290,7 @@ void SettingsActivity::rebuildSettingsLists() {
   systemSettings.push_back(SettingInfo::Action(StrId::STR_PLUGINS, SettingAction::Plugins));
   systemSettings.push_back(SettingInfo::Action(StrId::STR_KEYBOARD_LAYOUTS, SettingAction::KeyboardLayouts));
   systemSettings.push_back(SettingInfo::Action(StrId::STR_ABOUT, SettingAction::About));
+  systemSettings.push_back(SettingInfo::Action(StrId::STR_WHATS_NEW, SettingAction::WhatsNew));
   systemSettings.push_back(SettingInfo::Action(StrId::STR_LANGUAGE, SettingAction::Language));
   // The fork's own System rows go last, under every upstream row, so a reader
   // looking for a CrossPoint setting never scrolls past one of ours to reach
@@ -426,6 +428,7 @@ void SettingsActivity::rebuildRowItems() {
                   : s.action == SettingAction::SdFirmwareUpdate            ? settingsart::Sd
                   : s.action == SettingAction::Plugins                     ? settingsart::Puzzle
                   : s.action == SettingAction::About                       ? settingsart::Info
+                  : s.action == SettingAction::WhatsNew                    ? settingsart::Info
                   : s.nameId == StrId::STR_DEV_MODE                        ? settingsart::Code
                   : selectedCategoryIndex == 4                             ? settingsart::Grid
                                                                            : settingsart::Book;
@@ -826,6 +829,13 @@ void SettingsActivity::toggleCurrentSetting() {
           startActivityForResult(std::move(activity), nullptr);
         } else {
           LOG_ERR("SETTINGS", "OOM: AboutActivity");
+        }
+        break;
+      case SettingAction::WhatsNew:
+        if (auto activity = makeUniqueNoThrow<WhatsNewActivity>(renderer, mappedInput)) {
+          startActivityForResult(std::move(activity), nullptr);
+        } else {
+          LOG_ERR("SETTINGS", "OOM: WhatsNewActivity");
         }
         break;
       case SettingAction::RebuildLibrary: {

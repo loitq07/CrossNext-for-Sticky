@@ -45,6 +45,7 @@
 #include "activities/Activity.h"
 #include "activities/ActivityManager.h"
 #include "activities/settings/SdFirmwareUpdateActivity.h"
+#include "activities/settings/WhatsNewActivity.h"
 #include "apps_local/Shelf.h"
 #include "apps_local/power/PowerButtonPolicy.h"
 #include "apps_local/power/PowerMenuActivity.h"
@@ -941,6 +942,11 @@ void setup() {
     // Boot to home screen if no book is open, last sleep was not from reader, back button is held, or reader activity
     // crashed (indicated by readerActivityLoadCount > 0)
     activityManager.goHome(HomeMenuItem::NONE, needsWakeRefresh);
+    if (resume == BootResume::Splash && APP_STATE.lastSeenVersion != CROSSPOINT_VERSION) {
+      if (auto whatsNew = makeUniqueNoThrow<WhatsNewActivity>(renderer, mappedInputManager)) {
+        activityManager.pushActivity(std::move(whatsNew));
+      }
+    }
   } else {
     // Clear app state to avoid getting into a boot loop if the epub doesn't load
     const auto path = APP_STATE.openEpubPath;
