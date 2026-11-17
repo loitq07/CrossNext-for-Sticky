@@ -14,12 +14,12 @@ WhatsNewActivity::WhatsNewActivity(GfxRenderer& renderer, MappedInputManager& ma
     : UiListActivity("WhatsNew", renderer, mappedInput, false, true) {}
 
 const char* WhatsNewActivity::headerTitle() const {
-  return I18N.getLanguage() != Language::EN ? "Có gì mới (v" CROSSPOINT_VERSION ")" : "What's New (v" CROSSPOINT_VERSION ")";
+  return I18N.getLanguage() == Language::VI ? "Có gì mới (v" CROSSPOINT_VERSION ")" : "What's New (v" CROSSPOINT_VERSION ")";
 }
 
 void WhatsNewActivity::onEnter() {
   UiListActivity::onEnter();
-  const bool isVi = I18N.getLanguage() != Language::EN;
+  const bool isVi = I18N.getLanguage() == Language::VI;
 
   if (isVi) {
     rowLabels_[0] = "1. Kho ứng dụng App Store";
@@ -37,7 +37,7 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[4] = "5. Tối ưu hệ thống & sửa lỗi";
     rowSubtitles_[4] = "Sửa lỗi đơ SPI tải file, nhận diện màn hình";
 
-    rowLabels_[5] = "✓ Đóng & Tiếp tục sử dụng";
+    rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
     rowLabels_[0] = "1. Native App Store";
@@ -55,7 +55,7 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[4] = "5. System Fixes & Stability";
     rowSubtitles_[4] = "Fix SPI freeze on download, auto display detect";
 
-    rowLabels_[5] = "✓ Done & Continue";
+    rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";
   }
 

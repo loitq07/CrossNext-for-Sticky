@@ -78,37 +78,37 @@ inline const StoreItem kStoreItems[] = {
   {
     "chess", "CHESS", "Cờ Vua",
     "Chess with puzzles", "Cờ vua và câu đố cờ",
-    StoreCategory::Games, "/games", "chess.elf", 0, "", true
+    StoreCategory::Games, "/games", "chess.elf", 267600, "261.3 KB", true
   },
   {
     "go", "GO", "Cờ Vây",
     "The board game Go", "Cờ vây",
-    StoreCategory::Games, "/games", "go.elf", 0, "", true
+    StoreCategory::Games, "/games", "go.elf", 219088, "214.0 KB", true
   },
   {
     "theintercept", "THE INTERCEPT", "The Intercept",
     "Decode the intercepted message", "Giải mã thông điệp",
-    StoreCategory::Games, "/games", "theintercept.elf", 0, "", true
+    StoreCategory::Games, "/games", "theintercept.elf", 81796, "79.9 KB", true
   },
   {
     "solitaire", "SOLITAIRE", "Xếp Bài",
     "Klondike solitaire", "Xếp bài Solitaire",
-    StoreCategory::Games, "/games", "solitaire.elf", 0, "", true
+    StoreCategory::Games, "/games", "solitaire.elf", 134264, "131.1 KB", true
   },
   {
     "hearts", "HEARTS", "Bài Hearts",
     "Card game Hearts", "Đánh bài Hearts",
-    StoreCategory::Games, "/games", "hearts.elf", 0, "", true
+    StoreCategory::Games, "/games", "hearts.elf", 121480, "118.6 KB", true
   },
   {
     "murdle", "MURDLE", "Murdle",
     "Logic murder mysteries", "Giải đố phá án",
-    StoreCategory::Games, "/games", "murdle.elf", 0, "", true
+    StoreCategory::Games, "/games", "murdle.elf", 279476, "272.9 KB", true
   },
   {
     "carnivoro", "CARNIVORO", "Carnivoro",
     "Party deduction game", "Trò chơi suy luận",
-    StoreCategory::Games, "/games", "carnivoro.elf", 0, "", true
+    StoreCategory::Games, "/games", "carnivoro.elf", 160144, "156.4 KB", true
   },
   {
     "pet", "PET", "Thú Cưng",

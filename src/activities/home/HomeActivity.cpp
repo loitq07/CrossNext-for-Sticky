@@ -33,6 +33,7 @@
 #include "RecentBooksStore.h"
 #include "activities/plugins/PluginCatalogActivity.h"  // anyPluginInstalled()
 #include "activities/util/ConfirmationActivity.h"
+#include "activities/settings/WhatsNewActivity.h"
 #include "apps_local/appstore/AppStoreActivity.h"
 #include "components/UITheme.h"
 #include "fontIds.h"
@@ -464,6 +465,14 @@ void HomeActivity::freeCoverBuffer() {
 }
 
 void HomeActivity::loop() {
+  // First Home after a version change: What's New stacks over Home and pops
+  // back here, ahead of the module-update prompt below (next loop).
+  if (WhatsNewActivity::takeBootPending()) {
+    if (auto whatsNew = makeUniqueNoThrow<WhatsNewActivity>(renderer, mappedInput)) {
+      startActivityForResult(std::move(whatsNew), [this](const ActivityResult&) { requestUpdate(); });
+      return;
+    }
+  }
   // First visit to Home after a firmware update: native-module apps on the card
   // were built for the old firmware. Offer to fetch the matching builds once
   // per firmware build (AppStoreActivity::takeBootPrompt remembers the answer).

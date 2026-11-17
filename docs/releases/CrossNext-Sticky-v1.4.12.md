@@ -1,5 +1,10 @@
 # CrossNext for Seeed reTerminal Sticky v1.4.12
 
+> **Lưu ý khi cập nhật OTA / OTA update note:** sau khi bấm Cập nhật, màn hình có thể **đứng ở 0% khoảng 1 phút** (máy đang xoá vùng nhớ cũ) và nút bấm tạm không phản hồi. Đừng tắt hay reset máy — thanh tiến trình sẽ chạy tiếp, toàn bộ mất khoảng 2–3 phút.
+> After tapping Update, the screen may **sit at 0% for about a minute** while the old slot is erased, and buttons won't respond. Don't power off or reset — progress resumes on its own; the whole update takes about 2–3 minutes.
+>
+> Sau khi cập nhật, vào Home máy sẽ đề nghị tải lại các game/app native cho firmware mới — hãy đồng ý (cần WiFi). / After the update, Home offers to re-download native games and apps built for the new firmware — accept it (needs Wi-Fi).
+
 ## Tiếng Việt
 
 - **What's New tích hợp trên thiết bị & Web UI**:
@@ -35,3 +40,5 @@
 ## Validation
 
 Built for `gh_release_sticky` (ESP32-S3, 16MB Flash, 8MB PSRAM). All embedded web assets pass node syntax tests.
+
+Verified on hardware: clean boot, What's New → Home, native module refresh (module ABI `ffbc2fc1`, published on the `appstore` branch) and games running, plus the OTA install path of the public v1.4.11 build.

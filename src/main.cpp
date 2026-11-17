@@ -942,10 +942,9 @@ void setup() {
     // Boot to home screen if no book is open, last sleep was not from reader, back button is held, or reader activity
     // crashed (indicated by readerActivityLoadCount > 0)
     activityManager.goHome(HomeMenuItem::NONE, needsWakeRefresh);
+    // Not pushed here: see WhatsNewActivity::armForBoot.
     if (resume == BootResume::Splash && APP_STATE.lastSeenVersion != CROSSPOINT_VERSION) {
-      if (auto whatsNew = makeUniqueNoThrow<WhatsNewActivity>(renderer, mappedInputManager)) {
-        activityManager.pushActivity(std::move(whatsNew));
-      }
+      WhatsNewActivity::armForBoot();
     }
   } else {
     // Clear app state to avoid getting into a boot loop if the epub doesn't load
