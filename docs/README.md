@@ -71,6 +71,11 @@ the disk (`build-cache.md`), the pixel budget an unwrapped string has in 32
 languages (`i18n-overflow.md`), and where Trivia's questions come from
 (`trivia-curation.md`).
 
+**Cutting a Sticky release** (`loitq07/CrossNext-for-Sticky`) follows
+[`sticky-release.md`](sticky-release.md), not the upstream release flow below:
+one build, its native modules published for that build's ABI, released
+exactly as tested.
+
 **Two files, and only one of them is published.** `release-body.md` is what a
 tag publishes, and it is deliberately tiny: one line of links, then this
 release's `### What is new in <version>` block. Nothing else. It describes
