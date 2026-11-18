@@ -43,7 +43,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "minesweeper", "MINESWEEPER", "Dò Mìn",
     "Classic grid minefield", "Trò chơi dò mìn kinh điển",
-    StoreCategory::Games, "/games", "minesweeper.elf", 112964, "110.3 KB", true
+    StoreCategory::Games, "/games", "minesweeper.elf", 112968, "110.3 KB", true
   },
   {
     "picross", "PICROSS", "Picross",
@@ -88,7 +88,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "go", "GO", "Cờ Vây",
     "The board game Go", "Cờ vây",
-    StoreCategory::Games, "/games", "go.elf", 219088, "214.0 KB", true
+    StoreCategory::Games, "/games", "go.elf", 219076, "213.9 KB", true
   },
   {
     "theintercept", "THE INTERCEPT", "The Intercept",
@@ -148,7 +148,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
-    StoreCategory::Apps, "/languages", "vi.cplang", 193332, "188.8 KB", true, true
+    StoreCategory::Apps, "/languages", "vi.cplang", 193383, "188.9 KB", true, true
   },
 };
 

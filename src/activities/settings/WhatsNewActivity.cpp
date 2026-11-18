@@ -33,38 +33,38 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Kho ứng dụng App Store";
-    rowSubtitles_[0] = "Cài đặt & cập nhật game, app trực tiếp";
+    rowLabels_[0] = "1. Tiếng Việt trên thẻ nhớ";
+    rowSubtitles_[0] = "Tự tải qua App Store, firmware nhẹ hơn";
 
-    rowLabels_[1] = "2. Ghi âm (Voice Notes)";
-    rowSubtitles_[1] = "Ghi âm qua mic tích hợp, chuyển văn bản";
+    rowLabels_[1] = "2. Cách mở cài đặt sách";
+    rowSubtitles_[1] = "Vuốt lên, chạm giữa trang hoặc chạm mép";
 
-    rowLabels_[2] = "3. Instapaper & Máy tính";
-    rowSubtitles_[2] = "Đọc báo offline & máy tính tiện lợi";
+    rowLabels_[2] = "3. Ghi âm không mất tiếng";
+    rowSubtitles_[2] = "Voice Notes thu đủ âm, hiện thời lượng tối đa";
 
-    rowLabels_[3] = "4. Web truyền tệp mới";
-    rowSubtitles_[3] = "Giao diện tab hiện đại, xem ảnh trực tiếp";
+    rowLabels_[3] = "4. Nhận bản Beta & mở nhanh hơn";
+    rowSubtitles_[3] = "Cài đặt, Trò chơi, Ứng dụng mở nhanh hơn";
 
-    rowLabels_[4] = "5. Tối ưu hệ thống & sửa lỗi";
-    rowSubtitles_[4] = "Sửa lỗi đơ SPI tải file, nhận diện màn hình";
+    rowLabels_[4] = "5. Web truyền tệp offline";
+    rowSubtitles_[4] = "Icon không cần Internet, kéo thả để tải lên";
 
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. Native App Store";
-    rowSubtitles_[0] = "Browse & install on-device games and apps";
+    rowLabels_[0] = "1. Vietnamese on the microSD";
+    rowSubtitles_[0] = "Fetched by the App Store; lighter firmware";
 
-    rowLabels_[1] = "2. Voice Notes";
-    rowSubtitles_[1] = "Audio recording via mic & transcription";
+    rowLabels_[1] = "2. Open book settings your way";
+    rowSubtitles_[1] = "Swipe up, tap page center or tap an edge";
 
-    rowLabels_[2] = "3. Instapaper & Calculator";
-    rowSubtitles_[2] = "Read saved articles offline & calculator";
+    rowLabels_[2] = "3. Voice Notes keep every word";
+    rowSubtitles_[2] = "No dropped audio; real recording limit shown";
 
-    rowLabels_[3] = "4. Modern Web Portal";
-    rowSubtitles_[3] = "Tabbed UI, image preview & inline download";
+    rowLabels_[3] = "4. Beta updates & faster menus";
+    rowSubtitles_[3] = "Settings, Games and Apps open faster";
 
-    rowLabels_[4] = "5. System Fixes & Stability";
-    rowSubtitles_[4] = "Fix SPI freeze on download, auto display detect";
+    rowLabels_[4] = "5. Offline web file portal";
+    rowSubtitles_[4] = "Icons without Internet, drag & drop uploads";
 
     rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";

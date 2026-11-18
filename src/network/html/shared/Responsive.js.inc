@@ -80,7 +80,7 @@
         <div class="modal" style="max-width: 580px; width: 92%;">
           <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.75rem;">
             <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem;">
-              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> ${cnText("What's new in v1.4.12", 'Có gì mới trong v1.4.12')}
+              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> ${cnText("What's new in v1.4.13", 'Có gì mới trong v1.4.13')}
             </h3>
             <button class="btn-icon" onclick="closeWhatsNewModal()" aria-label="${cnText('Close', 'Đóng')}" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: hsl(var(--muted-foreground));">
               <i class="ph ph-x"></i>
@@ -88,15 +88,15 @@
           </div>
           <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 65vh; overflow-y: auto; padding-right: 0.5rem;">
             <div style="margin-bottom: 1rem; padding: 0.75rem; background: hsl(var(--secondary) / 0.5); border-radius: 8px; border-left: 3px solid #10b981;">
-              <strong>${cnText('v1.4.12 update for Seeed reTerminal Sticky:', 'Bản cập nhật v1.4.12 cho Seeed reTerminal Sticky:')}</strong><br>
-              ${cnText('A bigger native app store, voice notes, Instapaper reading and a modern web interface.', 'Nâng cấp kho ứng dụng native, ghi âm giọng nói, đọc báo Instapaper và giao diện web hiện đại.')}
+              <strong>${cnText('v1.4.13 update for Seeed reTerminal Sticky:', 'Bản cập nhật v1.4.13 cho Seeed reTerminal Sticky:')}</strong><br>
+              ${cnText('Vietnamese moves to a microSD language pack, more ways to open book settings, Voice Notes that keep every word and a portal that works offline.', 'Tiếng Việt chuyển thành gói ngôn ngữ trên thẻ nhớ, thêm cách mở cài đặt sách, Voice Notes thu đủ âm và trang web chạy offline.')}
             </div>
             <ul style="padding-left: 1.25rem; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
-              <li><strong>${cnText('🛒 App Store:', '🛒 Cửa hàng ứng dụng (App Store):')}</strong> ${cnText('Native modules let you install games and apps directly on Sticky.', 'Hỗ trợ các native module cho phép cài đặt game và ứng dụng trực tiếp trên Sticky.')}</li>
-              <li><strong>${cnText('🎙️ Voice Notes:', '🎙️ Voice Notes (Ghi âm giọng nói):')}</strong> ${cnText('A PDM microphone recorder with built-in audio normalization and AI transcription support.', 'Ứng dụng ghi âm micro PDM tích hợp với bộ chuẩn hóa âm thanh và hỗ trợ phiên âm AI.')}</li>
-              <li><strong>${cnText('📰 Instapaper & Calculator:', '📰 Instapaper & Máy tính:')}</strong> ${cnText('Read Instapaper articles offline, plus a handy calculator, both in the matching pixel style.', 'Đọc báo offline từ Instapaper và máy tính tiện dụng với giao diện pixel đồng bộ.')}</li>
-              <li><strong>${cnText('🌐 New file transfer web UI:', '🌐 Giao diện Web truyền file mới:')}</strong> ${cnText('Tabbed settings, live image thumbnails and inline file downloads.', 'Quản lý cài đặt theo Tabs, xem trước ảnh thumbnail trực tiếp, hỗ trợ tải file inline.')}</li>
-              <li><strong>${cnText('⚡ Performance & fixes:', '⚡ Tối ưu & Sửa lỗi:')}</strong> ${cnText('Automatic detection of the new display panel, a fix for SPI stalls during transfers, and instant touch response.', 'Tự động nhận diện panel màn hình mới, khắc phục lỗi đơ SPI khi tải tệp, phản hồi chạm tức thì.')}</li>
+              <li><strong>${cnText('🇻🇳 Vietnamese language pack:', '🇻🇳 Gói tiếng Việt:')}</strong> ${cnText('Vietnamese now lives on the microSD (/languages/vi.cplang). After updating, accept the app update offered on Home: it downloads the pack and switches the interface back to Vietnamese. The firmware is lighter.', 'Tiếng Việt nay nằm trên thẻ nhớ (/languages/vi.cplang). Sau khi cập nhật, hãy đồng ý cập nhật ứng dụng ở trang chủ: máy sẽ tải gói và tự chuyển lại sang tiếng Việt. Firmware nhẹ hơn.')}</li>
+              <li><strong>${cnText('📖 Open book settings:', '📖 Mở cài đặt sách:')}</strong> ${cnText('Choose a swipe up, a tap on the page centre, or a tap on the bottom or top edge (Settings → Controls).', 'Chọn vuốt từ dưới lên, chạm giữa trang, hoặc chạm mép dưới / mép trên (Cài đặt → Điều khiển).')}</li>
+              <li><strong>${cnText('🎙️ Voice Notes:', '🎙️ Voice Notes (Ghi âm):')}</strong> ${cnText('Recordings no longer drop audio, so transcriptions are complete, and the real recording limit is shown.', 'Bản ghi không còn mất tiếng nên phiên âm đầy đủ hơn, và hiển thị đúng thời lượng ghi tối đa.')}</li>
+              <li><strong>${cnText('🧪 Beta updates & speed:', '🧪 Bản Beta & tốc độ:')}</strong> ${cnText('Opt in to prerelease builds in Settings → System. Settings, Games and Apps open faster.', 'Bật nhận bản thử nghiệm trong Cài đặt → Hệ thống. Cài đặt, Trò chơi và Ứng dụng mở nhanh hơn.')}</li>
+              <li><strong>${cnText('🌐 Offline web portal:', '🌐 Trang web chạy offline:')}</strong> ${cnText('Icons work without Internet on the Sticky hotspot, and you can drop files or whole folders anywhere on the page to upload them.', 'Icon hiển thị cả khi không có Internet (hotspot của Sticky), và có thể kéo thả tệp hoặc cả thư mục vào trang để tải lên.')}</li>
             </ul>
           </div>
           <div class="modal-actions" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
