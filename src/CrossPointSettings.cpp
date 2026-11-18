@@ -2,6 +2,7 @@
 
 #include <BoardConfig.h>
 #include <I18n.h>
+#include <LanguagePack.h>
 #include <Logging.h>
 #include <ObfuscationUtils.h>
 
@@ -141,11 +142,12 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   // display-index mapping and is skipped by the generic persistence loop.
   doc["longPressMenuFunction"] = longPressMenuFunction;
   doc["shortPwrBtn"] = shortPwrBtn;
-
   doc["readerTextTrigger"] = readerTextTrigger;
+
   // Language -- managed by LanguageSelectActivity, not in SettingsList.
   // Stored as ISO code string ("EN", "DE", ...) for stability across enum reorders.
   doc["language"] = (language < getLanguageCount()) ? LANGUAGE_CODES[language] : "EN";
+  if (languagePack[0]) doc["languagePack"] = languagePack;
 
   // A uint16_t mask, so it does not fit the uint8_t generic loop. Omitted while
   // unconfigured, so the default keeps following the UI language.
@@ -354,11 +356,11 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   longPressMenuFunction = clamp(doc["longPressMenuFunction"] | (uint8_t)LP_MENU_DISABLED,
                                 (uint8_t)(LP_MENU_CREATE_CLIPPING + 1), (uint8_t)LP_MENU_DISABLED);
   shortPwrBtn = clamp(doc["shortPwrBtn"] | (uint8_t)IGNORE, (uint8_t)SHORT_PWRBTN_COUNT, (uint8_t)IGNORE);
-  if (BoardConfig::hasHomeKey() && doc["homeButtonLongPressAction"].isNull() &&
-      !doc["longPressMenuFunction"].isNull()) {
   // Out-of-range values read as SwipeUp (readertext::menuTrigger); the reader
   // also treats the hold triggers this board does not offer as SwipeUp.
   readerTextTrigger = doc["readerTextTrigger"] | (uint8_t)0;
+  if (BoardConfig::hasHomeKey() && doc["homeButtonLongPressAction"].isNull() &&
+      !doc["longPressMenuFunction"].isNull()) {
     static constexpr HomeButtonAction LEGACY[] = {HomeButtonAction::Sync,       HomeButtonAction::Ignore,
                                                   HomeButtonAction::Bookmark,   HomeButtonAction::Dictionary,
                                                   HomeButtonAction::ReaderMenu, HomeButtonAction::CreateClipping};
@@ -411,6 +413,10 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   // Language -- stored as code string for stability across enum reorders.
   if (doc["language"].is<const char*>()) {
     language = static_cast<uint8_t>(I18n::languageFromCode(doc["language"].as<const char*>()));
+  }
+  {
+    const char* pack = doc["languagePack"] | "";
+    copyToField(languagePack, languagepack::validFilename(pack) ? pack : "", sizeof(languagePack));
   }
 
   // Absent means unconfigured, which is the default.

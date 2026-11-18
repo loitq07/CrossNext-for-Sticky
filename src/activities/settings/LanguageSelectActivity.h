@@ -2,34 +2,43 @@
 
 #include <GfxRenderer.h>
 #include <I18n.h>
+#include <LanguagePack.h>
+
+#include <vector>
 
 #include "activities/UiListActivity.h"
 
 class MappedInputManager;
 
 /**
- * Activity for selecting UI language
+ * Activity for selecting UI language.
+ *
+ * FORK CHANGE (upstream 2.0 language packs): rows are the languages compiled
+ * into this build (custom_i18n_builtin_langs) followed by the .cplang packs
+ * found in /languages on the microSD. Switching applies in place, as before;
+ * only replacing an already loaded pack with another one needs a restart.
  */
 class LanguageSelectActivity final : public UiListActivity {
  public:
   explicit LanguageSelectActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
 
   void onEnter() override;
+  void onExit() override;
 
  private:
-  int listCount() const override { return totalItems; }
+  static constexpr const auto& builtinLanguages = SORTED_LANGUAGE_INDICES;
+  static constexpr int builtinCount = static_cast<int>(sizeof(SORTED_LANGUAGE_INDICES));
+
+  int listCount() const override { return static_cast<int>(rowItems.size()); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
   const char* headerTitle() const override;
+  bool isActive(int index) const;
+  void buildRows();
+  void finishSelection();
 
-  // Only the languages compiled into this build (custom_i18n_builtin_langs), not the whole enum.
-  static constexpr const auto& availableLanguages = SORTED_LANGUAGE_INDICES;
-  static constexpr uint8_t totalItems = sizeof(SORTED_LANGUAGE_INDICES);
-
-  // Row storage: totalItems is a compile-time constant, so a fixed-capacity
-  // array avoids any heap allocation for the row list. Built once in
-  // onEnter() — activateIndex() finishes the activity immediately on
-  // selection, so buildScreen() never needs to see a different "Selected"
-  // row within one visit.
-  freeink::ui::ListItem rowItems[totalItems]{};
+  // Borrowed by rowItems' labels while this screen is open.
+  languagepack::Catalog catalog;
+  bool catalogFailed = false;
+  std::vector<freeink::ui::ListItem> rowItems;
 };

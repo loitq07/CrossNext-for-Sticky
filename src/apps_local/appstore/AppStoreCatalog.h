@@ -24,6 +24,11 @@ struct StoreItem {
   // tools_local/native_modules): fetched from modules/<firmware ABI>/ and
   // flagged for update when the card holds a build for another firmware.
   bool module = false;
+  // FORK CHANGE: an upstream 2.0 interface language pack (/languages/*.cplang).
+  // Published with the modules of each firmware build (its string keys change
+  // with the firmware); needed, and refreshed after every firmware update, when
+  // the saved interface language uses it. Requires module = true for the URL.
+  bool languagePack = false;
 };
 
 // Only apps with no built-in copy are listed. A small host-API plugin named
@@ -139,6 +144,11 @@ inline const StoreItem kStoreItems[] = {
     "dice", "DICE", "Xúc Xắc",
     "3D Dice roller physics", "Đổ xúc xắc 3D mô phỏng",
     StoreCategory::Games, "/games", "dice.elf", 4752, "4.7 KB"
+  },
+  {
+    "lang-vi", "VIETNAMESE", "Tiếng Việt",
+    "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
+    StoreCategory::Apps, "/languages", "vi.cplang", 193332, "188.8 KB", true, true
   },
 };
 

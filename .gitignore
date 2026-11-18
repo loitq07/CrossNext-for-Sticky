@@ -10,6 +10,7 @@ lib/EpdFont/fontsrc
 lib/I18n/I18nKeys.h
 lib/I18n/I18nStrings.h
 lib/I18n/I18nStrings.cpp
+lib/I18n/I18nPackKeys.h
 *.generated.h
 .vs
 build

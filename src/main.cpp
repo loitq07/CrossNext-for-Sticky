@@ -47,6 +47,7 @@
 #include "activities/settings/SdFirmwareUpdateActivity.h"
 #include "activities/settings/WhatsNewActivity.h"
 #include "apps_local/Shelf.h"
+#include "apps_local/i18n/UiLanguage.h"
 #include "apps_local/power/PowerButtonPolicy.h"
 #include "apps_local/power/PowerMenuActivity.h"
 #include "apps_local/ui/ToyboxFonts.h"
@@ -718,8 +719,10 @@ void setup() {
   // Push the saved timezone's POSIX rule into the clock (migrating the legacy
   // UTC-offset setting on first boot after the update).
   timezones::applyToClock();
-  I18N.setLanguage(static_cast<Language>(SETTINGS.language));
-  if (dictionarydefaults::apply(SETTINGS)) SETTINGS.saveToFile();
+  // FORK CHANGE: English is the only built-in language; Vietnamese and the
+  // others load from /languages/*.cplang (upstream 2.0 language packs).
+  const bool languageAdopted = uilanguage::applyAtBoot();
+  if (dictionarydefaults::apply(SETTINGS) || languageAdopted) SETTINGS.saveToFile();
   UITheme::getInstance().reload();
   ButtonNavigator::setMappedInputManager(mappedInputManager);
   pluginevents::refreshSubscriptions();

@@ -3,6 +3,9 @@
 #include <cstdint>
 
 #include "I18nKeys.h"
+namespace languagepack {
+class Pack;
+}
 /**
  * Internationalization (i18n) system for CrossPoint Reader
  */
@@ -23,6 +26,16 @@ class I18n {
   Language getLanguage() const { return _language; }
   void setLanguage(Language lang);
   const char* getLanguageName(Language lang) const;
+  const char* getLanguageName() const;
+  bool loadLanguagePack(const char* filename);
+  bool hasLanguagePack() const { return externalActive; }
+  // FORK CHANGE (Sticky): the fork switches language without a restart. Loads
+  // `filename` from /languages once, or re-activates it when that same pack is
+  // already resident. The PSRAM arena lives until reset, so a different pack
+  // after one was loaded needs a restart (returns false, language unchanged).
+  bool useLanguagePack(const char* filename);
+  bool languagePackResident() const;
+  const char* residentLanguagePack() const { return packFilename; }
   static Language languageFromCode(const char* code);
 
   // Get all unique characters used in a specific language
@@ -33,6 +46,9 @@ class I18n {
   I18n() : _language(Language::EN) {}
 
   Language _language;
+  static languagepack::Pack externalPack;
+  bool externalActive = false;
+  char packFilename[64] = {};
 };
 
 // Convenience macros

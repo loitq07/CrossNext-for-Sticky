@@ -3,6 +3,7 @@
 #include <GfxRenderer.h>
 #include <I18n.h>
 
+#include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "MappedInputManager.h"
 #include "apps_local/ui/PixelMenuTheme.h"
@@ -10,16 +11,26 @@
 
 namespace fui = freeink::ui;
 
+namespace {
+// What's New opens on the first boot after an update, before the App Store has
+// fetched the Vietnamese pack (English is the only built-in language), so it
+// also follows the saved language. Its strings are literals, not pack text.
+bool isViText() {
+  return I18N.getLanguage() == Language::VI ||
+         (!I18N.hasLanguagePack() && SETTINGS.language == static_cast<uint8_t>(Language::VI));
+}
+}  // namespace
+
 WhatsNewActivity::WhatsNewActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("WhatsNew", renderer, mappedInput, false, true) {}
 
 const char* WhatsNewActivity::headerTitle() const {
-  return I18N.getLanguage() == Language::VI ? "Có gì mới (v" CROSSPOINT_VERSION ")" : "What's New (v" CROSSPOINT_VERSION ")";
+  return isViText() ? "Có gì mới (v" CROSSPOINT_VERSION ")" : "What's New (v" CROSSPOINT_VERSION ")";
 }
 
 void WhatsNewActivity::onEnter() {
   UiListActivity::onEnter();
-  const bool isVi = I18N.getLanguage() == Language::VI;
+  const bool isVi = isViText();
 
   if (isVi) {
     rowLabels_[0] = "1. Kho ứng dụng App Store";
@@ -68,7 +79,7 @@ void WhatsNewActivity::onEnter() {
 }
 
 void WhatsNewActivity::buildScreen(UiScreen& screen) {
-  pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
+  pixelui::FontScope fonts(uiTarget, renderer, isViText() || I18N.getLanguage() != Language::EN);
   useCompactSettingsRows();
   const auto& metrics = UITheme::getInstance().getMetrics();
   pixelui::begin(screen, mappedInput.hasTouch() ? 0 : metrics.buttonHintsHeight);

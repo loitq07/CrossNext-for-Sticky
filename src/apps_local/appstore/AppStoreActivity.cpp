@@ -18,6 +18,9 @@
 #include "../ui/SettingsMenuStyle.h"
 #include "../ui/ToyboxFonts.h"
 #include "../modules/NativeModule.h"
+#include "../i18n/UiLanguage.h"
+#include "../../CrossPointSettings.h"
+#include "../../activities/RenderLock.h"
 
 namespace fui = freeink::ui;
 
@@ -25,7 +28,12 @@ namespace {
 
 static const char* TAG = "AppStore";
 
-bool isVi() { return I18N.getLanguage() == Language::VI; }
+// FORK CHANGE: also Vietnamese while the saved language is Vietnamese but its
+// pack is not loaded yet (first boot after an OTA, before the store fetches it).
+bool isVi() {
+  return I18N.getLanguage() == Language::VI ||
+         (!I18N.hasLanguagePack() && SETTINGS.language == static_cast<uint8_t>(Language::VI));
+}
 
 // Where a catalog item sits on the card, or "" when it is not installed.
 std::string installedPathOf(const StoreItem& item) {
@@ -36,7 +44,34 @@ std::string installedPathOf(const StoreItem& item) {
   return "";
 }
 
+// Language packs: whether the saved interface language uses this pack file.
+bool languagePackNeeded(const StoreItem& item) {
+  if (SETTINGS.languagePack[0]) return strcmp(SETTINGS.languagePack, item.filename) == 0;
+  if (uilanguage::builtIn(SETTINGS.language)) return false;
+  char wanted[sizeof(SETTINGS.languagePack)];
+  return uilanguage::defaultPackFilename(SETTINGS.language, wanted, sizeof(wanted)) &&
+         strcmp(wanted, item.filename) == 0;
+}
+
+// The firmware build a language pack was last fetched for. A pack carries no
+// ABI word of its own, and its keys follow the firmware's string table.
+std::string languagePackStampPath(const StoreItem& item) {
+  return std::string("/.crosspoint/") + item.filename + ".abi";
+}
+
+std::string firmwareAbiText() {
+  char abi[12];
+  snprintf(abi, sizeof(abi), "%08x", static_cast<unsigned>(native_module::firmwareAbi()));
+  return abi;
+}
+
 bool isOutdated(const StoreItem& item) {
+  if (item.languagePack) {
+    if (!languagePackNeeded(item)) return false;
+    if (installedPathOf(item).empty()) return true;
+    const std::string stamp = languagePackStampPath(item);
+    return !Storage.exists(stamp.c_str()) || Storage.readFile(stamp.c_str()) != firmwareAbiText().c_str();
+  }
   if (!item.module) return false;
   const std::string path = installedPathOf(item);
   return !path.empty() && native_module::fileAbi(path.c_str()) != native_module::firmwareAbi();
@@ -217,7 +252,7 @@ void AppStoreActivity::stepTab(const int direction) {
 void AppStoreActivity::drawChrome() { pixelui::drawHeader(renderer, isVi() ? "Cửa hàng ứng dụng" : "App Store", true); }
 
 void AppStoreActivity::buildScreen(UiScreen& screen) {
-  pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
+  pixelui::FontScope fonts(uiTarget, renderer, isVi() || I18N.getLanguage() != Language::EN);
   uiTarget.setFont(0, toybox::kButtonFontId);
   uiTarget.setFont(4, toybox::kLibraryFontId);
   const int hints = mappedInput.hasTouch() ? 0 : UITheme::getInstance().getMetrics().buttonHintsHeight;
@@ -491,6 +526,20 @@ void AppStoreActivity::finishUpdates() {
   requestUpdate(true);
 }
 
+// Records the firmware build the pack was fetched for and, when the saved
+// language was waiting for it (running in English since boot), switches to it.
+bool AppStoreActivity::languagePackInstalled(const StoreItem& item) {
+  Storage.writeFile(languagePackStampPath(item).c_str(), String(firmwareAbiText().c_str()));
+  if (I18N.hasLanguagePack() || !languagePackNeeded(item)) return false;
+  bool changed = false;
+  {
+    RenderLock lock(*this);
+    changed = uilanguage::applyAtBoot();
+  }
+  if (changed) SETTINGS.saveToFile();
+  return I18N.hasLanguagePack();
+}
+
 void AppStoreActivity::executeDownload() {
   if (selectedCatalogIndex < 0 || selectedCatalogIndex >= static_cast<int>(kStoreItemCount)) {
     downloading = false;
@@ -560,6 +609,7 @@ void AppStoreActivity::executeDownload() {
       HttpDownloader::downloadToFile(url, destPath, progressCb, &cancelDownload);
 
   downloading = false;
+  const bool languageActivated = err == HttpDownloader::OK && item.languagePack && languagePackInstalled(item);
   if (updating) {
     if (err == HttpDownloader::OK) {
       ++updateOk;
@@ -572,7 +622,15 @@ void AppStoreActivity::executeDownload() {
     startNextUpdate();
     return;
   }
-  if (err == HttpDownloader::OK) {
+  if (err == HttpDownloader::OK && item.languagePack) {
+    haptic_feedback::touchAction();
+    rebuildRows();
+    showNotice(isVi() ? "Đã cài đặt" : "Installed",
+               languageActivated ? (isVi() ? "Giao diện đã chuyển sang ngôn ngữ vừa tải."
+                                           : "The interface now uses the downloaded language.")
+                                 : (isVi() ? "Chọn ngôn ngữ này trong Cài đặt > Hệ thống > Ngôn ngữ."
+                                           : "Choose it in Settings > System > Language."));
+  } else if (err == HttpDownloader::OK) {
     haptic_feedback::touchAction();
     shelf::refreshApps();
     rebuildRows();

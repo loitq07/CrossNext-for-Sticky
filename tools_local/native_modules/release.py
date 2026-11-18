@@ -8,6 +8,10 @@
 4. with --publish: copy the modules to <checkout>/modules/<abi>/<folder>/ (the
    App Store fetches from there), commit, and push the `appstore` branch
 
+The interface language packs (tools_local/sticky_language_packs.py, English is
+the only language in flash) are built into OUT/languages/ first and published
+the same way: their string keys follow the firmware, so each build gets its own.
+
 A module only runs on the firmware it was linked with, so steps 2-4 always go
 together: flash the firmware from this run and publish these modules with it.
 """
@@ -52,6 +56,7 @@ def main():
         publish = sys.argv[sys.argv.index("--publish") + 1]
 
     step([PY, os.path.join(HERE, "build_module.py"), "objects"])
+    step([PY, os.path.join(ROOT, "tools_local", "sticky_language_packs.py"), os.path.join(OUT, "languages")])
     update_catalog_sizes()
     step(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", BUILD])
     step([PY, os.path.join(HERE, "build_module.py"), "link"])

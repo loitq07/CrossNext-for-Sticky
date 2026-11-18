@@ -472,6 +472,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t frontlightRestoreOnWake = 1;
   // Language setting (Language enum index, default 0 = EN)
   uint8_t language = 0;
+  // Interface translation pack under /languages (upstream 2.0 .cplang), empty
+  // for a built-in language. FORK CHANGE: Vietnamese ships as vi.cplang.
+  char languagePack[64] = {};
   // Keyboard layouts the user can reach, using keyboard_layouts::ALL table bits.
   // 0 means "not configured", resolved to the UI language's layout plus English.
   // Any other value is an explicit choice and is used as-is: the language of the

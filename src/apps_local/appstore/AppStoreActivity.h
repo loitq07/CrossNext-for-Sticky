@@ -73,6 +73,7 @@ class AppStoreActivity final : public UiTabListActivity {
   void launchWifiSetup();
 
   bool isItemInstalled(const StoreItem& item) const;
+  bool languagePackInstalled(const StoreItem& item);
   std::string getInstalledPath(const StoreItem& item) const;
   const char* displayName(const StoreItem& item) const;
 
