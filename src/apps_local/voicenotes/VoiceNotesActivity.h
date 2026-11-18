@@ -23,6 +23,13 @@ class VoiceNotesActivity final : public Activity {
   void loop() override;
   void render(RenderLock&&) override;
 
+  // The main loop otherwise sleeps 10-50 ms per pass (and downclocks the CPU
+  // after 300 ms without a touch). The I2S RX DMA ring only holds ~90 ms of
+  // audio, so at a 50 ms poll most of the recording overflowed and was lost,
+  // leaving Whisper a short, chopped, near-silent clip to hallucinate on.
+  bool skipLoopDelay() override { return state_ == State::RECORDING; }
+  bool preventAutoSleep() override { return state_ == State::RECORDING || state_ == State::TRANSCRIBING; }
+
  private:
   enum class State {
     READY,

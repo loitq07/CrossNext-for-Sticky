@@ -33,6 +33,10 @@ class VoiceRecorder {
   size_t recordedBytes() const { return samplesCount_ * sizeof(int16_t); }
   uint32_t durationMs() const;
 
+  // Recording limit in seconds for the buffer begin() actually got (60, 30 or
+  // 15 depending on what memory allowed; 0 before begin()).
+  int maxSeconds() const { return static_cast<int>(bufferCapacitySamples_ / kSampleRate); }
+
   // Real-time audio activity level (0 to 100) for UI VU meter
   int audioLevel() const { return currentLevel_; }
 

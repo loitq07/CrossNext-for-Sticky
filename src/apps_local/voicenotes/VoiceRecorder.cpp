@@ -78,14 +78,20 @@ void VoiceRecorder::update() {
     return;
   }
 
-  // Read up to 512 samples per pump
+  // Drain everything the DMA ring holds, not just one chunk: a single 512-sample
+  // read per loop pass falls behind whenever a pass takes longer than 32 ms.
   constexpr size_t kChunkSize = 512;
+  constexpr int kMaxChunksPerPump = 16;  // ~0.5 s of audio, bounds time spent here
   int16_t temp[kChunkSize];
-  const size_t room = bufferCapacitySamples_ - samplesCount_;
-  const size_t toRead = std::min<size_t>(kChunkSize, room);
+  for (int chunk = 0; chunk < kMaxChunksPerPump; ++chunk) {
+    const size_t room = bufferCapacitySamples_ - samplesCount_;
+    if (room == 0) break;
+    const size_t toRead = std::min<size_t>(kChunkSize, room);
 
-  const int readCount = mic_.read(temp, toRead, 25);
-  if (readCount > 0) {
+    // First read may wait briefly for data; follow-ups only take what is queued.
+    const int readCount = mic_.read(temp, toRead, chunk == 0 ? 25 : 0);
+    if (readCount <= 0) break;
+
     std::memcpy(&pcmBuffer_[samplesCount_], temp, readCount * sizeof(int16_t));
     samplesCount_ += readCount;
 
@@ -102,6 +108,8 @@ void VoiceRecorder::update() {
     // Map 0..32767 to 0..100 with gentle decay
     int level = std::min(100, static_cast<int>((peak * 100) / 16000));
     currentLevel_ = (currentLevel_ * 3 + level) / 4;
+
+    if (static_cast<size_t>(readCount) < toRead) break;  // ring drained
   }
 }
 
@@ -111,8 +119,11 @@ void VoiceRecorder::stopRecording() {
   elapsedMs_ = millis() - startMs_;
   mic_.end();
   currentLevel_ = 0;
-  LOG_INF("VOICE", "Recording stopped: %u samples (%u ms), maxPeak: %ld", static_cast<unsigned>(samplesCount_),
-          static_cast<unsigned>(durationMs()), static_cast<long>(maxRecordedPeak_));
+  // Captured audio vs wall clock: a large gap means the loop did not pump the
+  // I2S ring fast enough and samples were dropped.
+  LOG_INF("VOICE", "Recording stopped: %u samples (%u ms audio / %u ms wall), maxPeak: %ld",
+          static_cast<unsigned>(samplesCount_), static_cast<unsigned>(durationMs()),
+          static_cast<unsigned>(elapsedMs_), static_cast<long>(maxRecordedPeak_));
 
   // Software AGC / normalization:
   // If recording has valid speech (peak >= 30) but is quiet (peak < 16000),

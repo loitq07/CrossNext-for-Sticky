@@ -482,7 +482,9 @@ void VoiceNotesActivity::render(RenderLock&&) {
       // Big Timer
       const int sec = static_cast<int>(recorder_.durationMs() / 1000);
       char timeBuf[32];
-      std::snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d / 00:30", sec / 60, sec % 60);
+      const int maxSec = recorder_.maxSeconds();
+      std::snprintf(timeBuf, sizeof(timeBuf), "%02d:%02d / %02d:%02d", sec / 60, sec % 60, maxSec / 60,
+                    maxSec % 60);
       dashboard::text(screen, fui::makeRect(cardBox.x + 12, cardBox.y + 60, cardBox.width - 24, 48),
                       timeBuf, pixelui::kTitle, fui::TextAlign::Center);
 
