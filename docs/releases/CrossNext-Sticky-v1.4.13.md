@@ -8,9 +8,9 @@
 
 ## Tiếng Việt
 
-- **Tiếng Việt trên thẻ nhớ**: firmware chỉ còn tích hợp tiếng Anh; tiếng Việt là gói `/languages/vi.cplang` (định dạng gói ngôn ngữ của CrossNext 2.0), nạp một lần vào PSRAM. Firmware nhẹ hơn 59,5 KB so với v1.4.12 dù có thêm tính năng mới. Gói được tải qua App Store và tự cập nhật theo mỗi bản firmware. Cài đặt → Hệ thống → Ngôn ngữ hiển thị các gói tìm thấy trên thẻ.
+- **Tiếng Việt trên thẻ nhớ**: firmware chỉ còn tích hợp tiếng Anh; tiếng Việt là gói `/languages/vi.cplang` (định dạng gói ngôn ngữ của CrossNext 2.0), nạp một lần vào PSRAM. Firmware nhẹ hơn 98,8 KB so với v1.4.12. Gói được tải qua App Store và tự cập nhật theo mỗi bản firmware. Cài đặt → Hệ thống → Ngôn ngữ hiển thị các gói tìm thấy trên thẻ.
 - **Chọn cách mở cài đặt sách** (Cài đặt → Điều khiển → Mở cài đặt sách): vuốt từ dưới lên (mặc định), chạm giữa trang, chạm mép dưới hoặc chạm mép trên. Chạm không mở khi đang có thanh công cụ, popup hay khi chạm vào link; nút Confirm vẫn mở như cũ.
-- **Voice Notes không còn mất tiếng**: bản ghi được thu đủ (trước đây phần lớn âm thanh bị tràn bộ đệm), nên phiên âm chính xác hơn; hiển thị đúng thời lượng ghi tối đa (60, 30 hoặc 15 giây tuỳ bộ nhớ).
+- **Voice Notes tạm ẩn**: ứng dụng ghi âm được gỡ khỏi kệ Ứng dụng trong bản này trong lúc sửa lỗi ghi âm và phiên âm; sẽ quay lại ở bản sau.
 - **Nhận bản thử nghiệm (Beta)** trong Cài đặt → Hệ thống: bật để được cập nhật cả bản prerelease trước khi phát hành chính thức. Mặc định tắt.
 - **Mở nhanh hơn**: Cài đặt không còn quét font và từ điển trên thẻ trước khi hiện danh mục; thư mục Trò chơi/Ứng dụng hiện ra trước khi ghi trạng thái xuống thẻ (từ CrossNext 2.0.1).
 - **Trang web truyền tệp**: icon hiển thị cả khi không có Internet (khi kết nối hotspot của Sticky); kéo thả tệp hoặc cả thư mục vào bất kỳ đâu trên trang để tải lên; giao diện mặc định tiếng Anh, chuyển được sang tiếng Việt.
@@ -18,9 +18,9 @@
 
 ## English
 
-- **Vietnamese on the microSD**: English is the only built-in interface language; Vietnamese is `/languages/vi.cplang` (CrossNext 2.0 language-pack format), loaded once into PSRAM. The image is 59.5 KB smaller than v1.4.12 despite the new features. The App Store fetches the pack and refreshes it with every firmware build. Settings → System → Language lists the packs found on the card.
+- **Vietnamese on the microSD**: English is the only built-in interface language; Vietnamese is `/languages/vi.cplang` (CrossNext 2.0 language-pack format), loaded once into PSRAM. The image is 98.8 KB smaller than v1.4.12. The App Store fetches the pack and refreshes it with every firmware build. Settings → System → Language lists the packs found on the card.
 - **Choose how book settings open** (Settings → Controls → Open book settings): swipe up from the bottom (default), tap the page centre, tap the bottom edge or tap the top edge. A tap never opens it over a toolbar, a popup or a link; Confirm still opens it.
-- **Voice Notes keep every word**: recordings no longer overflow the audio buffer, so transcriptions are complete, and the real recording limit (60, 30 or 15 s, depending on memory) is shown.
+- **Voice Notes is hidden for now**: the recording app is off the Apps shelf in this release while its recording and transcription are being fixed; it will return in a later release.
 - **Beta updates** in Settings → System: opt in to prerelease builds before they ship to everyone. Off by default.
 - **Faster menus**: Settings no longer scans SD fonts and dictionaries before showing its categories; Games/Apps folders appear before their state is written to the card (from CrossNext 2.0.1).
 - **Web file portal**: icons work without Internet (on the Sticky's own hotspot); drop files or whole folders anywhere on the page to upload them; English by default with a Vietnamese switch.
@@ -37,4 +37,6 @@
 
 ## Validation
 
-Built for `gh_release_sticky` (ESP32-S3, 16MB Flash, 8MB PSRAM). Host checks: Beta OTA release parser (104 checks), Go diagonal neighbours, `vi.cplang` header/CRC and key mapping (3,917 of 3,917 translations map to firmware keys), Phosphor icon subset.
+Built for `gh_release_sticky` (ESP32-S3, 16MB Flash, 8MB PSRAM). Host checks: Beta OTA release parser (104 checks), Go diagonal neighbours, `vi.cplang` header/CRC and key mapping (3,918 of 3,918 translations map to firmware keys), Phosphor icon subset.
+
+Verified on hardware (Seeed reTerminal Sticky, from v1.4.12): clean boot, What's New → Home, the first-Home app update fetching the native modules (module ABI `bf30e3cd`, published on the `appstore` branch) and the Vietnamese pack, switching the interface to Vietnamese, Vietnamese loaded at boot, games and apps opening, Voice Notes absent from the Apps shelf (an open Voice Notes is not resumed on wake), and opening book settings with a top-edge tap.

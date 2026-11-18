@@ -64,13 +64,22 @@ constexpr shelf::Item kGames[] = {
     {"SUDOKU", &icon_sudoku_32, &moduleNotInstalled},
     {"OTHELLO", &extra_circle_dot_32, &moduleNotInstalled},
 };
+// FORK CHANGE (v1.4.13): Voice Notes is hidden from the Apps shelf while its
+// recording/transcription path is being fixed. Its code stays in the tree;
+// build with -DCROSSNEXT_SHELF_VOICE_NOTES=1 to bring the row back.
+#ifndef CROSSNEXT_SHELF_VOICE_NOTES
+#define CROSSNEXT_SHELF_VOICE_NOTES 0
+#endif
+
 constexpr shelf::Item kApps[] = {
     {"READING QUEST", &icon_dungeon_32, &moduleNotInstalled},
     {"PET", &icon_cat_animals_32, &moduleNotInstalled},
     {"HABITS", &icon_tick_24, &moduleNotInstalled},
     {"TO DO LIST", &icon_murdle_face_clues_32, &NotesActivity::createTodo},
     {"NOTES", &extra_notes_32, &NotesActivity::create},
+#if CROSSNEXT_SHELF_VOICE_NOTES
     {"VOICE NOTES", &extra_mic_32, &voicenotes::VoiceNotesActivity::create},
+#endif
     {"POMODORO", &pomodoro::timerIcon, &moduleNotInstalled},
     {"WALLPAPERS", &icon_wallpapers_32, &WallpapersActivity::create},
     {"INSTAPAPER", &icon_instapaper_32, &InstapaperActivity::create},

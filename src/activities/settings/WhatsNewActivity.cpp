@@ -39,10 +39,10 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[1] = "2. Cách mở cài đặt sách";
     rowSubtitles_[1] = "Vuốt lên, chạm giữa trang hoặc chạm mép";
 
-    rowLabels_[2] = "3. Ghi âm không mất tiếng";
-    rowSubtitles_[2] = "Voice Notes thu đủ âm, hiện thời lượng tối đa";
+    rowLabels_[2] = "3. Nhận bản thử nghiệm (Beta)";
+    rowSubtitles_[2] = "Bật trong Cài đặt > Hệ thống";
 
-    rowLabels_[3] = "4. Nhận bản Beta & mở nhanh hơn";
+    rowLabels_[3] = "4. Menu mở nhanh hơn";
     rowSubtitles_[3] = "Cài đặt, Trò chơi, Ứng dụng mở nhanh hơn";
 
     rowLabels_[4] = "5. Web truyền tệp offline";
@@ -57,10 +57,10 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[1] = "2. Open book settings your way";
     rowSubtitles_[1] = "Swipe up, tap page center or tap an edge";
 
-    rowLabels_[2] = "3. Voice Notes keep every word";
-    rowSubtitles_[2] = "No dropped audio; real recording limit shown";
+    rowLabels_[2] = "3. Beta updates";
+    rowSubtitles_[2] = "Opt in under Settings > System";
 
-    rowLabels_[3] = "4. Beta updates & faster menus";
+    rowLabels_[3] = "4. Faster menus";
     rowSubtitles_[3] = "Settings, Games and Apps open faster";
 
     rowLabels_[4] = "5. Offline web file portal";
