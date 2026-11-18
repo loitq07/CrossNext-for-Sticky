@@ -282,6 +282,30 @@ inline SettingInfo buildLongPressMenuSetting() {
                                   setLongPressMenuFromDisplayValue, "longPressMenuFunction", StrId::STR_CAT_CONTROLS);
 }
 
+// Upstream 2.0 "Open book settings". Display index -> readertext::MenuTrigger
+// raw value: the hold triggers are left out (no Home key, and the Sticky's
+// up/down buttons turn pages), so a stored hold value shows as the swipe.
+inline constexpr uint8_t kReaderTextTriggerValues[] = {0 /*SwipeUp*/, 1 /*CenterTap*/, 6 /*BottomTap*/,
+                                                       7 /*TopTap*/};
+
+inline uint8_t readerTextTriggerDisplayValue() {
+  for (uint8_t i = 0; i < sizeof(kReaderTextTriggerValues); ++i)
+    if (kReaderTextTriggerValues[i] == SETTINGS.readerTextTrigger) return i;
+  return 0;
+}
+
+inline SettingInfo buildReaderTextTriggerSetting() {
+  return SettingInfo::DynamicEnum(
+      StrId::STR_READER_TEXT_TRIGGER,
+      {StrId::STR_READER_TRIGGER_SWIPE, StrId::STR_READER_TRIGGER_CENTER, StrId::STR_READER_TRIGGER_BOTTOM_TAP,
+       StrId::STR_READER_TRIGGER_TOP_TAP},
+      readerTextTriggerDisplayValue,
+      [](const uint8_t v) {
+        SETTINGS.readerTextTrigger = kReaderTextTriggerValues[v < sizeof(kReaderTextTriggerValues) ? v : 0];
+      },
+      "readerTextTrigger", StrId::STR_CAT_CONTROLS);
+}
+
 inline std::vector<StrId> buildShortPowerButtonValues() {
   std::vector<StrId> values = {StrId::STR_IGNORE, StrId::STR_SLEEP, StrId::STR_PAGE_TURN, StrId::STR_FORCE_REFRESH,
                                StrId::STR_FOOTNOTES};
@@ -521,6 +545,7 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                           {StrId::STR_TAP_AND_SWIPE, StrId::STR_TAP_ONLY, StrId::STR_SWIPE_ONLY,
                            StrId::STR_INVERTED_TAP, StrId::STR_DISABLED},
                           "previousPageGesture", StrId::STR_CAT_CONTROLS),
+        buildReaderTextTriggerSetting(),
         SettingInfo::Toggle(StrId::STR_XTC_COVER_CCW, &CrossPointSettings::xtcCoverRotation, "xtcCoverRotation",
                             StrId::STR_CAT_READER),
         SettingInfo::Toggle(StrId::STR_XTC_INVERT_DIRECTION, &CrossPointSettings::xtcInvertPageDirection,
@@ -574,6 +599,10 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
         // declaration order: it is the one setting that opens the device to
         // the network, so it should not sit next to a reading preference.
         SettingInfo::Toggle(StrId::STR_DEV_MODE, &CrossPointSettings::devMode, "devMode", StrId::STR_CAT_SYSTEM),
+        // Also a fork row (rendered after the upstream ones): it changes where
+        // this device's firmware comes from.
+        SettingInfo::Toggle(StrId::STR_BETA_UPDATES, &CrossPointSettings::betaUpdates, "betaUpdates",
+                            StrId::STR_CAT_SYSTEM),
 
         // Trivia ships international by default; this opts a US player back into
         // the US-centric questions. Persisted + web-exposed, but CATEGORY-LESS
@@ -599,10 +628,6 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                           {StrId::STR_FMT_AUTHOR_TITLE, StrId::STR_FMT_TITLE_AUTHOR, StrId::STR_FMT_TITLE},
                           "opdsFilenameFormat"),
 
-        // Also a fork row (rendered after the upstream ones): it changes where
-        // this device's firmware comes from.
-        SettingInfo::Toggle(StrId::STR_BETA_UPDATES, &CrossPointSettings::betaUpdates, "betaUpdates",
-                            StrId::STR_CAT_SYSTEM),
         // Frontlight quick-panel state: persisted and web-exposed, but hidden
         // from the on-device Settings screen because the swipe panel owns it.
         SettingInfo::Value(StrId::STR_BRIGHTNESS, &CrossPointSettings::frontlightBrightness, {0, 100, 5},
@@ -803,7 +828,8 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                            [](const SettingInfo& s) {
                              return s.nameId == StrId::STR_TOUCH_READER_CONTROLS ||
                                     s.nameId == StrId::STR_NEXT_PAGE_GESTURE ||
-                                    s.nameId == StrId::STR_PREV_PAGE_GESTURE;
+                                    s.nameId == StrId::STR_PREV_PAGE_GESTURE ||
+                                    s.nameId == StrId::STR_READER_TEXT_TRIGGER;
                            }),
             v.end());
   }

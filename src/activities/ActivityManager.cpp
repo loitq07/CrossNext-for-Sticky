@@ -228,7 +228,10 @@ void ActivityManager::loop() {
   if (currentActivity) {
     // Reading reserves the bottom edge for format-aware text/page settings.
     // Resolve it before the global Home gesture on boards without a Home key.
-    if (mappedInput.wasReaderTextSettingsGesture() && currentActivity->handleReaderTextSettingsGesture()) {
+    // Readers are always asked (upstream 2.0) so a configured menu tap is
+    // resolved before the page-turn zones see it.
+    if ((currentActivity->isReaderActivity() || mappedInput.wasReaderTextSettingsGesture()) &&
+        currentActivity->handleReaderTextSettingsGesture()) {
       return;
     }
     if (!currentActivity->isHomeActivity() && mappedInput.wasHomeGesture()) {
@@ -683,3 +686,7 @@ void RenderLock::unlock() {
  *
  */
 bool RenderLock::peek() { return xQueuePeek(activityManager.renderingMutex, NULL, 0) != pdTRUE; };
+
+bool RenderLock::heldByCurrentTask() {
+  return xSemaphoreGetMutexHolder(activityManager.renderingMutex) == xTaskGetCurrentTaskHandle();
+}

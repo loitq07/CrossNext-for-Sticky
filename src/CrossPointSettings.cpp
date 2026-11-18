@@ -142,6 +142,7 @@ void CrossPointSettings::toJson(JsonDocument& doc) const {
   doc["longPressMenuFunction"] = longPressMenuFunction;
   doc["shortPwrBtn"] = shortPwrBtn;
 
+  doc["readerTextTrigger"] = readerTextTrigger;
   // Language -- managed by LanguageSelectActivity, not in SettingsList.
   // Stored as ISO code string ("EN", "DE", ...) for stability across enum reorders.
   doc["language"] = (language < getLanguageCount()) ? LANGUAGE_CODES[language] : "EN";
@@ -355,6 +356,9 @@ bool CrossPointSettings::fromJson(JsonVariantConst doc) {
   shortPwrBtn = clamp(doc["shortPwrBtn"] | (uint8_t)IGNORE, (uint8_t)SHORT_PWRBTN_COUNT, (uint8_t)IGNORE);
   if (BoardConfig::hasHomeKey() && doc["homeButtonLongPressAction"].isNull() &&
       !doc["longPressMenuFunction"].isNull()) {
+  // Out-of-range values read as SwipeUp (readertext::menuTrigger); the reader
+  // also treats the hold triggers this board does not offer as SwipeUp.
+  readerTextTrigger = doc["readerTextTrigger"] | (uint8_t)0;
     static constexpr HomeButtonAction LEGACY[] = {HomeButtonAction::Sync,       HomeButtonAction::Ignore,
                                                   HomeButtonAction::Bookmark,   HomeButtonAction::Dictionary,
                                                   HomeButtonAction::ReaderMenu, HomeButtonAction::CreateClipping};

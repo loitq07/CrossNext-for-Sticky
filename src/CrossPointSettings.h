@@ -433,6 +433,10 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t tiltPageTurn = TILT_OFF;
   // Master reader-touch toggle on boards with a touch controller.
   uint8_t touchReaderControls = TOUCH_READER_ON;
+  // How book settings open while reading (upstream 2.0 readertext::MenuTrigger
+  // raw values, so saves stay compatible with a later 2.0 merge). The Sticky
+  // offers SwipeUp(0), CenterTap(1), BottomTap(6) and TopTap(7).
+  uint8_t readerTextTrigger = 0;
   uint8_t touchScreenLocked = 0;
   char homeButtonShortcutTitle[40] = "READING QUEST";
   char homeButtonDoubleShortcutTitle[40] = "READING QUEST";

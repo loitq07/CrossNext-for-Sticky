@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdio>
 #include <cstring>
+#include <optional>
 
 #include "AboutActivity.h"
 #include "WhatsNewActivity.h"
@@ -159,6 +160,8 @@ SettingsActivity::SettingsActivity(GfxRenderer& renderer, MappedInputManager& ma
 }
 
 void SettingsActivity::rebuildSettingsLists() {
+  std::optional<RenderLock> lock;
+  if (!RenderLock::heldByCurrentTask()) lock.emplace();
   displaySettings.clear();
   readerSettings.clear();
   controlsSettings.clear();
@@ -174,20 +177,26 @@ void SettingsActivity::rebuildSettingsLists() {
   connectivitySettings.reserve(8);
   deviceSettings.reserve(16);
 
-  // Pick up any fonts uploaded/deleted over the web server since the last
-  // reader activity ran — otherwise the font-family picker shows stale list.
-  sdFontSystem.refreshIfDirty();
-
-  // Rescan /dictionaries on every rebuild: cheap (one directory listing) and
-  // picks up dictionaries copied to the SD card since the last visit.
+  // Upstream 2.0.1: the category menu does not depend on SD fonts or
+  // dictionaries, so discover them only when a category that lists them opens.
+  // FORK CHANGE: Display needs the registry too (sleep highlight font family),
+  // not only Reading; without it that row would offer only Noto Serif and a
+  // tap would clear a saved SD family.
+  readingResourcesReady = !categoryHome && needsReadingResources(selectedCategoryIndex);
   std::vector<DictionaryEntry> dictionaries;
-  DictionaryRegistry::discover(dictionaries);
+  if (readingResourcesReady) {
+    // Pick up fonts uploaded/deleted over the web server since the last
+    // reader activity ran, and dictionaries copied to the card since.
+    sdFontSystem.refreshIfDirty();
+    DictionaryRegistry::discover(dictionaries);
+  }
 
   // Filled by the loop, drained after the action rows below.
   std::vector<SettingInfo> forkSystemSettings;
-  forkSystemSettings.reserve(2);
+  forkSystemSettings.reserve(3);
 
-  for (auto& setting : getSettingsList(&sdFontSystem.registry(), &dictionaries)) {
+  for (auto& setting : getSettingsList(readingResourcesReady ? &sdFontSystem.registry() : nullptr,
+                                       readingResourcesReady ? &dictionaries : nullptr)) {
     if (setting.nameId == StrId::STR_DEVICE_REPORT) continue;
     // home_button::isSetting: upstream's Home Button Gestures rows render on
     // their own screen, not in this list.
@@ -334,6 +343,7 @@ void SettingsActivity::rebuildSettingsLists() {
   }
   librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_SHOW_FILES, SettingAction::LibraryFormats));
   librarySettings.push_back(SettingInfo::Action(StrId::STR_LIBRARY_REBUILD, SettingAction::RebuildLibrary));
+  settingsListsReady = true;
   if (categoryHome) {
     showCategoryHome();
   } else {
@@ -360,12 +370,18 @@ void SettingsActivity::onEnter() {
   quickResumeTimeoutAutoEnabled = false;
   syncQuickResumeTimeoutForSleepScreen(/*sleepScreenChanged=*/true, /*quickResumeTimeoutChanged=*/false);
 
-  rebuildSettingsLists();
+  showCategoryHome();
 }
 
 void SettingsActivity::selectCategory(const int categoryIndex) {
+  std::optional<RenderLock> lock;
+  if (!RenderLock::heldByCurrentTask()) lock.emplace();
   selectedCategoryIndex = categoryIndex;
   categoryHome = false;
+  if (!settingsListsReady || (needsReadingResources(categoryIndex) && !readingResourcesReady)) {
+    rebuildSettingsLists();
+    return;
+  }
   const std::vector<SettingInfo>* categories[] = {&displaySettings, &readerSettings,       &controlsSettings,
                                                   &librarySettings, &connectivitySettings, &systemSettings,
                                                   &deviceSettings};

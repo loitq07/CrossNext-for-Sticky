@@ -16,4 +16,6 @@ class RenderLock {
   bool ownsLock() const { return isLocked; }
   void unlock();
   static bool peek();
+  // True when the calling task already owns the rendering mutex (upstream 2.0.1).
+  static bool heldByCurrentTask();
 };

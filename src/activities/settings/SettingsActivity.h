@@ -183,6 +183,10 @@ struct SettingInfo {
 
 class SettingsActivity final : public UiTabListActivity {
   bool categoryHome = true;
+  bool settingsListsReady = false;
+  bool readingResourcesReady = false;
+  // Display (sleep highlight font) and Reading (font family/size, dictionaries).
+  static bool needsReadingResources(int categoryIndex) { return categoryIndex == 0 || categoryIndex == 1; }
   int selectedCategoryIndex = 0;  // Currently selected category
   int settingsCount = 0;
 

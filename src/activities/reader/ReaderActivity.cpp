@@ -13,6 +13,7 @@
 #include <cstdio>
 
 #include "../../apps_local/reading/ReadingStatsStore.h"
+#include "../../apps_local/readertext/ReaderMenuTrigger.h"
 #include "CrossPointSettings.h"
 #include "CrossPointState.h"
 #include "EpubReaderActivity.h"
@@ -303,6 +304,35 @@ void ReaderActivity::clearEndOfBookOptionsIfNeeded() {
   endCompletionAttempted = false;
   endOfBookOptionsReady.store(false, std::memory_order_release);
   endOfBookOptions.reset();
+}
+
+// Upstream 2.0 "Open book settings" selector, without the side/Home-hold
+// triggers (the Sticky has no Home key and only up/down/confirm buttons; those
+// values fall back to the bottom swipe). The Home-key reader menu action and
+// Confirm keep opening the sheet whatever is selected.
+bool ReaderActivity::handleReaderTextSettingsGesture() {
+  const bool button = mappedInput.homeButtonAction() == HomeButtonAction::ReaderMenu;
+  const bool bottom = mappedInput.wasReaderTextSettingsGesture() && !button;
+  auto trigger = readertext::menuTrigger(SETTINGS.readerTextTrigger);
+  if (trigger != readertext::MenuTrigger::CenterTap && trigger != readertext::MenuTrigger::BottomTap &&
+      trigger != readertext::MenuTrigger::TopTap)
+    trigger = readertext::MenuTrigger::SwipeUp;
+  int x = 0, y = 0;
+  const bool tap = trigger != readertext::MenuTrigger::SwipeUp && SETTINGS.touchReaderControls &&
+                   mappedInput.wasScreenTapped(x, y) &&
+                   readertext::menuTap(trigger, x, y, renderer.getScreenWidth(), renderer.getScreenHeight());
+  if (!bottom && !button && !tap) return false;
+  if (tap) {
+    RenderLock lock(*this);
+    if (!pageRendered.load(std::memory_order_acquire) || hasReadingOverlay() || !readerMenuTapAllowed(x, y))
+      return false;
+  }
+  if (button || tap || (bottom && trigger == readertext::MenuTrigger::SwipeUp)) {
+    openTextSettings();
+    return true;
+  }
+  // The reader reserves this edge even when a different opening gesture is selected.
+  return bottom;
 }
 
 bool ReaderActivity::endOfBookMenuActive() const {

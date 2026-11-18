@@ -654,6 +654,11 @@ void EpubReaderActivity::openClippings() {
   });
 }
 
+bool EpubReaderActivity::readerMenuTapAllowed(int x, int y) const {
+  // Links keep priority over the menu tap zone.
+  return !EpubReaderUtils::linkAtPoint(currentPageLinks, x, y, currentPageLinkMarginLeft, currentPageLinkMarginTop);
+}
+
 void EpubReaderActivity::openTextSettings() {
   if (!epub || loadFailurePopup.isActive() || isAtEndOfBook()) return;
   {

@@ -50,6 +50,7 @@ class XtcReaderActivity final : public ReaderActivity {
 
   bool pageTurn(bool isForward) override;
   void openTextSettings() override;
+  bool hasReadingOverlay() const override { return ReaderActivity::hasReadingOverlay() || pageSettings != nullptr; }
   bool skipPages(int amount) override;
   bool isAtEndOfBook() const override;
   void onReturnFromEndOfBook() override;

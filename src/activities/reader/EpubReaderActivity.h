@@ -274,6 +274,11 @@ class EpubReaderActivity final : public ReaderActivity {
   void loop() override;
   void openTextSettings() override;
   void render(RenderLock&& lock) override;
+  bool readerMenuTapAllowed(int x, int y) const override;
+  bool hasReadingOverlay() const override {
+    return ReaderActivity::hasReadingOverlay() || overlay != Overlay::None || overlayPopup.isActive() ||
+           loadFailurePopup.isActive();
+  }
 
   bool pageTurn(bool isForward) override;
   bool skipPages(int amount) override;

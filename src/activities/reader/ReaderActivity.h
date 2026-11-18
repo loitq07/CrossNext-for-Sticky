@@ -72,6 +72,13 @@ class ReaderActivity : public Activity {
   virtual bool handleFormatInput() { return false; }
   virtual bool pageTurn(bool isForward) = 0;
   virtual bool skipPages(int amount) { return pageTurn(amount > 0); }
+  // Upstream 2.0 menu-tap guards. A tap opens book settings only over the bare
+  // page: never while a toolbar, sheet, popup or the end-of-book screen owns
+  // input, and never on a link.
+  virtual bool readerMenuTapAllowed(int, int) const { return true; }
+  virtual bool hasReadingOverlay() const {
+    return endOfBookMenuActive() || contentsReturnActive.load(std::memory_order_acquire);
+  }
   virtual bool isAtEndOfBook() const = 0;
   // Called with the render lock held, after the completion record is durable.
   virtual bool saveFinishedPosition() = 0;
@@ -107,10 +114,10 @@ class ReaderActivity : public Activity {
   void render(RenderLock&& lock) override;
 
   bool isReaderActivity() const final { return true; }
-  bool handleReaderTextSettingsGesture() final {
-    openTextSettings();
-    return true;
-  }
+  // Called every loop while a book is open (upstream 2.0): resolves the bottom
+  // swipe, the Home-key reader menu and the configured menu tap
+  // (SETTINGS.readerTextTrigger) before the activity sees the input.
+  bool handleReaderTextSettingsGesture() final;
   virtual void openTextSettings() = 0;
   bool handleForcedRefresh() final;
 };
