@@ -251,11 +251,13 @@ void SettingsActivity::rebuildSettingsLists() {
       // rather than pushed here, because the action rows below are appended
       // after this loop and would otherwise sit underneath them.
       //
-      // Both of these are DEVICE-wide: what the device reports, and whether it
-      // accepts firmware over Wi-Fi. An app's own option never belongs here --
+      // All of these are DEVICE-wide: what the device reports, whether it
+      // accepts firmware over Wi-Fi, and whether OTA offers prereleases
+      // (Beta updates). An app's own option never belongs here --
       // triviaShowUsCentric was in this list until card #311 and is now
       // category-less, so it never reaches this switch at all.
-      if (setting.valuePtr == &CrossPointSettings::deviceReport || setting.valuePtr == &CrossPointSettings::devMode) {
+      if (setting.valuePtr == &CrossPointSettings::deviceReport || setting.valuePtr == &CrossPointSettings::devMode ||
+          setting.valuePtr == &CrossPointSettings::betaUpdates) {
         forkSystemSettings.push_back(setting);
         continue;
       }

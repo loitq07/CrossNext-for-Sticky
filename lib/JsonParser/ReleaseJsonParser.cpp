@@ -24,8 +24,11 @@ void ReleaseJsonParser::setFirmwareAssetName(const char* name) {
   safeCopy(firmwareAssetName, sizeof(firmwareAssetName), name, strlen(name));
 }
 
+void ReleaseJsonParser::setListMode(bool enabled) { listMode = enabled; }
+
 void ReleaseJsonParser::reset() {
   parser.reset();
+  releaseChosen = false;
   position = Position::TOP_LEVEL;
   lastKey = LastKey::NONE;
   depth = 0;
@@ -40,7 +43,12 @@ void ReleaseJsonParser::reset() {
   currentAssetSize = 0;
 }
 
-void ReleaseJsonParser::feed(const char* data, size_t len) { parser.feed(data, len); }
+void ReleaseJsonParser::feed(const char* data, size_t len) {
+  // List mode: the newest qualifying release is already chosen; later (older)
+  // releases must not overwrite it, so the rest of the stream is dropped.
+  if (releaseChosen) return;
+  parser.feed(data, len);
+}
 
 bool ReleaseJsonParser::foundTag() const { return tagFound; }
 bool ReleaseJsonParser::foundFirmware() const { return firmwareFound; }
@@ -49,7 +57,7 @@ const char* ReleaseJsonParser::getFirmwareUrl() const { return firmwareUrl; }
 size_t ReleaseJsonParser::getFirmwareSize() const { return firmwareSize; }
 
 void ReleaseJsonParser::commitAsset() {
-  if (strcmp(currentAssetName, firmwareAssetName) == 0) {
+  if (!releaseChosen && strcmp(currentAssetName, firmwareAssetName) == 0) {
     memcpy(firmwareUrl, currentAssetUrl, sizeof(firmwareUrl));
     firmwareSize = currentAssetSize;
     firmwareFound = true;
@@ -59,6 +67,22 @@ void ReleaseJsonParser::commitAsset() {
   currentAssetSize = 0;
 }
 
+void ReleaseJsonParser::endRelease() {
+  // One feed() can carry several releases, so the choice is also guarded here,
+  // in commitAsset() and on tag_name, not only at the top of feed().
+  if (releaseChosen) return;
+  if (tagFound && firmwareFound) {
+    releaseChosen = true;
+    return;
+  }
+  // This release carries no firmware for us (or no tag): forget it, try the next.
+  tagName[0] = '\0';
+  firmwareUrl[0] = '\0';
+  firmwareSize = 0;
+  tagFound = false;
+  firmwareFound = false;
+}
+
 // -- SAX callbacks (static trampolines) -------------------------------------
 
 void ReleaseJsonParser::sOnKey(void* ctx, const char* key, size_t len) {
@@ -66,7 +90,7 @@ void ReleaseJsonParser::sOnKey(void* ctx, const char* key, size_t len) {
 
   switch (self->position) {
     case Position::TOP_LEVEL:
-      if (self->depth == 1) {
+      if (self->depth == self->releaseDepth()) {
         if (len == 8 && memcmp(key, "tag_name", 8) == 0)
           self->lastKey = LastKey::TAG_NAME;
         else if (len == 6 && memcmp(key, "assets", 6) == 0)
@@ -97,7 +121,7 @@ void ReleaseJsonParser::sOnString(void* ctx, const char* value, size_t len) {
 
   switch (self->lastKey) {
     case LastKey::TAG_NAME:
-      if (self->position == Position::TOP_LEVEL && self->depth == 1) {
+      if (!self->releaseChosen && self->position == Position::TOP_LEVEL && self->depth == self->releaseDepth()) {
         safeCopy(self->tagName, sizeof(self->tagName), value, len);
         self->tagFound = true;
       }
@@ -160,6 +184,8 @@ void ReleaseJsonParser::sOnObjectEnd(void* ctx) {
   switch (self->position) {
     case Position::TOP_LEVEL:
       if (self->depth > 0) self->depth--;
+      // List mode: depth 1 is the array itself, so dropping back to it closes a release.
+      if (self->listMode && self->depth == 1) self->endRelease();
       break;
     case Position::IN_ASSET_OBJECT:
       self->assetDepth--;
@@ -179,7 +205,7 @@ void ReleaseJsonParser::sOnArrayStart(void* ctx) {
 
   switch (self->position) {
     case Position::TOP_LEVEL:
-      if (self->lastKey == LastKey::ASSETS && self->depth == 1) {
+      if (self->lastKey == LastKey::ASSETS && self->depth == self->releaseDepth()) {
         self->position = Position::IN_ASSETS_ARRAY;
       } else {
         self->depth++;

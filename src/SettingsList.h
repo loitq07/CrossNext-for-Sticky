@@ -599,6 +599,10 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                           {StrId::STR_FMT_AUTHOR_TITLE, StrId::STR_FMT_TITLE_AUTHOR, StrId::STR_FMT_TITLE},
                           "opdsFilenameFormat"),
 
+        // Also a fork row (rendered after the upstream ones): it changes where
+        // this device's firmware comes from.
+        SettingInfo::Toggle(StrId::STR_BETA_UPDATES, &CrossPointSettings::betaUpdates, "betaUpdates",
+                            StrId::STR_CAT_SYSTEM),
         // Frontlight quick-panel state: persisted and web-exposed, but hidden
         // from the on-device Settings screen because the swipe panel owns it.
         SettingInfo::Value(StrId::STR_BRIGHTNESS, &CrossPointSettings::frontlightBrightness, {0, 100, 5},

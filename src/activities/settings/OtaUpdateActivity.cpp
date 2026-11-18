@@ -7,6 +7,7 @@
 
 #include <algorithm>
 
+#include "CrossPointSettings.h"
 #include "DevMode.h"
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
@@ -33,7 +34,7 @@ void OtaUpdateActivity::onWifiSelectionComplete(const bool success) {
   }
   requestUpdateAndWait();
 
-  const auto res = updater.checkForUpdate();
+  const auto res = updater.checkForUpdate(SETTINGS.betaUpdates != 0);
   // NO_UPDATE here means the release carries no firmware asset for this board
   // (expected until per-board assets are published) — not a failure.
   if (res == OtaUpdater::NO_UPDATE) {

@@ -88,6 +88,34 @@ build:
     release's `firmware-sticky.bin`, then Settings → update. This is the path
     every user takes, and it runs the *old* firmware's updater code.
 
+## Beta first: OTA your own device before everyone else
+
+Settings → System → **Beta updates** (`betaUpdates`, off by default) makes
+Check for updates read `releases?per_page=3` instead of `releases/latest`, and
+offer the newest release **including prereleases** that carries
+`firmware-sticky.bin`. `releases/latest` never returns a prerelease, so devices
+without the toggle are not offered one. Drafts are invisible to a device
+(they need an authenticated token), so a draft can never be OTA'd.
+
+To try a build on your own device first, run steps 1–7 as usual, then:
+
+8. **Publish as a prerelease:** `python publish_release.py --prerelease`. Same
+   preflight. Turn **Beta updates** on, then Settings → Check for updates. The
+   build already has its modules on the `appstore` branch, so games and apps work.
+9. **When it is good, promote it:** `python publish_release.py --tag v<version> --promote`.
+   This only flips the flag (`gh release edit --prerelease=false --latest`): no rebuild,
+   no re-upload, same binary and ABI. The script confirms `releases/latest`
+   now names the tag; then do step 10.
+
+A bad prerelease: delete it and its tag as below (only Beta devices could have
+installed it), fix, and cut the next version as a new prerelease. Version
+numbers are not reused.
+
+Caveats: the repo is public, so a prerelease is visible on the Releases page.
+Turning Beta off never downgrades; the device stays on its build until a newer
+public one exists. Beta needs a device already running a firmware that has the
+toggle (the first release after v1.4.12 onward).
+
 ## If a release is bad
 
 Delete the release and its tag (`gh release delete v<x> --yes`,

@@ -408,6 +408,11 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   // reflashed and driven without a cable. Off is the shipped default and turns
   // all of it off again; see src/DevMode.h.
   uint8_t devMode = 0;
+  // Beta updates (0 = off, 1 = on). On, Check for updates also offers the newest
+  // GitHub PRERELEASE, not only the release marked latest -- so the owner can OTA
+  // a build before promoting it to everyone. Off is the default; see
+  // src/network/ReleaseSources.h and docs/sticky-release.md.
+  uint8_t betaUpdates = 0;
   uint8_t bluetooth = 0;
   char bluetoothDevice[18] = {0};
   char bluetoothDeviceName[32] = {0};

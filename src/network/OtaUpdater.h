@@ -34,6 +34,8 @@ class OtaUpdater {
   OtaUpdater() = default;
   bool isUpdateNewer() const;
   const std::string& getLatestVersion() const;
-  OtaUpdaterError checkForUpdate();
+  // includePrereleases: the Beta updates setting. Also offers the newest
+  // prerelease, not only the release GitHub marks as latest.
+  OtaUpdaterError checkForUpdate(bool includePrereleases = false);
   OtaUpdaterError installUpdate(ProgressCallback onProgress = nullptr, void* ctx = nullptr);
 };

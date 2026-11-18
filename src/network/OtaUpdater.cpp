@@ -19,12 +19,12 @@
 #include "FirmwareFlasher.h"
 #include "ReleaseSources.h"
 
-OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
+OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate(bool includePrereleases) {
   updateAvailable = false;
   latestVersion.clear();
   otaUrl.clear();
   otaSize = processedSize = totalSize = 0;
-  LOG_DBG("OTA", "Checking for update (current: %s)", CROSSPOINT_VERSION);
+  LOG_DBG("OTA", "Checking for update (current: %s, beta: %d)", CROSSPOINT_VERSION, includePrereleases ? 1 : 0);
 
   // Stream the ~32KB release JSON straight into the parser as it arrives.
   // Buffering the whole body in a std::string would add a growing allocation
@@ -39,7 +39,20 @@ OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
   std::string tag;
   std::string firmwareUrl;
   size_t firmwareSize = 0;
-  for (const char* source : release_sources::kUrls) {
+  // Beta asks the release LIST first (prereleases included) and keeps the
+  // stable `latest` source behind it, so a failed or empty list still finds
+  // the public release.
+  struct Source {
+    const char* url;
+    bool list;
+  };
+  Source sources[1 + release_sources::kCount];
+  int sourceCount = 0;
+  if (includePrereleases) sources[sourceCount++] = {release_sources::kBetaListUrl, true};
+  for (const char* url : release_sources::kUrls) sources[sourceCount++] = {url, false};
+
+  for (int i = 0; i < sourceCount; ++i) {
+    const char* source = sources[i].url;
     // Heap-allocated: the parser embeds a 2 KB JSON token buffer.
     auto parserPtr = makeUniqueNoThrow<ReleaseJsonParser>();
     if (!parserPtr) {
@@ -48,6 +61,7 @@ OtaUpdater::OtaUpdaterError OtaUpdater::checkForUpdate() {
     }
     ReleaseJsonParser& parser = *parserPtr;
     parser.setFirmwareAssetName(CROSSPOINT_RELEASE_ASSET);
+    parser.setListMode(sources[i].list);
     const bool ok = HttpDownloader::fetchUrl(source, [&parser](const uint8_t* data, size_t len) {
       parser.feed(reinterpret_cast<const char*>(data), len);
       return true;

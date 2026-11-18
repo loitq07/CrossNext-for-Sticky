@@ -18,6 +18,11 @@ class ReleaseJsonParser {
   // Release-asset filename to match (default "firmware.bin").
   void setFirmwareAssetName(const char* name);
 
+  // List mode parses a GitHub `/releases` array instead of one `/releases/latest`
+  // object, and keeps the FIRST release (newest; prereleases included) that
+  // carries the firmware asset. Releases without it are skipped. Survives reset().
+  void setListMode(bool enabled);
+
   bool foundTag() const;
   bool foundFirmware() const;
   const char* getTagName() const;
@@ -51,6 +56,9 @@ class ReleaseJsonParser {
   static void sOnArrayEnd(void* ctx);
 
   void commitAsset();
+  // Depth of a release object's own keys: 1 for one release, 2 inside the list.
+  uint8_t releaseDepth() const { return listMode ? 2 : 1; }
+  void endRelease();
 
   StreamingJsonParser parser;
 
@@ -64,6 +72,8 @@ class ReleaseJsonParser {
   size_t firmwareSize;
   bool tagFound;
   bool firmwareFound;
+  bool listMode = false;
+  bool releaseChosen;  // list mode: a release with the asset was found; ignore the rest
 
   char currentAssetName[48];
   char currentAssetUrl[512];
