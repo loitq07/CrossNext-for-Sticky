@@ -223,7 +223,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
-    StoreCategory::Apps, "/languages", "vi.cplang", 193383, "188.9 KB", true, true
+    StoreCategory::Apps, "/languages", "vi.cplang", 432887, "422.7 KB", true, true
   },
 };
 
