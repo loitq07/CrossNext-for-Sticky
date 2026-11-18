@@ -87,8 +87,40 @@ MODULES = {
                "apps_local/habits/HabitsActivity.h"),
     "pomodoro": ("apps", ["apps_local/pomodoro"], "POMODORO", "PomodoroActivity::create",
                  "apps_local/pomodoro/PomodoroActivity.h"),
+    "focus": ("apps", ["apps_local/focus", "apps_local/pomodoro"], "FOCUS", "FocusActivity::create",
+              "apps_local/focus/FocusActivity.h"),
     "calculator": ("apps", ["apps_local/calculator", "lib/decNumber/src"], "CALCULATOR", "CalculatorActivity::create",
                    "apps_local/calculator/CalculatorActivity.h"),
+    "instapaper": ("apps", ["apps_local/instapaper"], "INSTAPAPER", "InstapaperActivity::create",
+                   "apps_local/instapaper/InstapaperActivity.h"),
+    "voicenotes": ("apps", ["apps_local/voicenotes"], "VOICE NOTES", "voicenotes::VoiceNotesActivity::create",
+                   "apps_local/voicenotes/VoiceNotesActivity.h"),
+    "connections": ("games", ["apps_local/connections"], "CONNECTIONS", "ConnectionsActivity::create",
+                    "apps_local/connections/ConnectionsActivity.h"),
+    "xkcd": ("apps", ["apps_local/xkcd"], "XKCD", "XkcdActivity::create",
+             "apps_local/xkcd/XkcdActivity.h"),
+    "hackernews": ("apps", ["apps_local/hackernews"], "HACKER NEWS", "HackerNewsActivity::create",
+                   "apps_local/hackernews/HackerNewsActivity.h"),
+    "wikipedia": ("apps", ["apps_local/wikipedia"], "WIKIPEDIA", "WikipediaActivity::create",
+                  "apps_local/wikipedia/WikipediaActivity.h"),
+    "trivia": ("games", ["apps_local/trivia"], "TRIVIA", "TriviaActivity::create",
+               "apps_local/trivia/TriviaActivity.h"),
+    "underhand": ("games", ["apps_local/underhand"], "UNDERHAND", "UnderhandActivity::create",
+                  "apps_local/underhand/UnderhandActivity.h"),
+    "wavelength": ("games", ["apps_local/wavelength"], "WAVELENGTH", "WavelengthActivity::create",
+                   "apps_local/wavelength/WavelengthActivity.h"),
+    "forehead": ("games", ["apps_local/forehead"], "FOREHEAD", "ForeheadActivity::create",
+                 "apps_local/forehead/ForeheadActivity.h"),
+    "insider": ("games", ["apps_local/insider"], "INSIDER", "InsiderActivity::create",
+                "apps_local/insider/InsiderActivity.h"),
+    "knucklebones": ("games", ["apps_local/knucklebones", "apps_local/link"], "KNUCKLEBONES", "KnucklebonesActivity::create",
+                     "apps_local/knucklebones/KnucklebonesActivity.h"),
+    "yahtzee": ("games", ["apps_local/yahtzee", "apps_local/link"], "YAHTZEE", "YahtzeeActivity::create",
+                "apps_local/yahtzee/YahtzeeActivity.h"),
+    "seasalt": ("games", ["apps_local/seasalt", "apps_local/link"], "SEA SALT", "SeaSaltActivity::create",
+                "apps_local/seasalt/SeaSaltActivity.h"),
+    "toybattle": ("games", ["apps_local/toybattle", "apps_local/link"], "TOY BATTLE", "ToyBattleActivity::create",
+                  "apps_local/toybattle/ToyBattleActivity.h"),
 }
 
 
@@ -195,12 +227,16 @@ def objects(names):
         stub = os.path.join(mdir, "module_descriptor.cpp")
         open(stub, "w", encoding="utf-8").write(stub_source(name))
         objs = []
+        extra_inc = []
+        for d in MODULES[name][1]:
+            if d.startswith("lib/"):
+                extra_inc.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
         for src in sources(name) + [stub]:
             obj = os.path.join(mdir, os.path.basename(src) + ".o")
             print("  CC", os.path.relpath(src, ROOT))
             is_c = src.endswith(".c")
             run(GCC if is_c else GXX, CXX_ONLY.sub(" ", flags) if is_c else flags,
-                ["-DSTICKY_MODULE_ABI=0", "-mtext-section-literals", "-fPIC", "-c", src, "-o", obj],
+                ["-DSTICKY_MODULE_ABI=0", "-mtext-section-literals", "-fPIC"] + extra_inc + ["-c", src, "-o", obj],
                 name + ".cc.rsp")
             objs.append(obj)
         undefined, defined, shared = set(), set(), set()
@@ -239,8 +275,12 @@ def link(names):
         mdir = os.path.join(OBJ_DIR, name)
         stub = os.path.join(mdir, "module_descriptor.cpp")
         stub_obj = os.path.join(mdir, "module_descriptor.cpp.o")
+        extra_inc = []
+        for d in MODULES[name][1]:
+            if d.startswith("lib/"):
+                extra_inc.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
         # Recompile only the descriptor with the real ABI of this firmware.
-        run(GXX, flags, ["-DSTICKY_MODULE_ABI=" + abi, "-mtext-section-literals", "-fPIC", "-c", stub, "-o", stub_obj],
+        run(GXX, flags, ["-DSTICKY_MODULE_ABI=" + abi, "-mtext-section-literals", "-fPIC"] + extra_inc + ["-c", stub, "-o", stub_obj],
             name + ".stub.rsp")
         # crtbegin is not linked (-nostartfiles); static destructors registered
         # with __cxa_atexit still need a DSO handle to name this module.

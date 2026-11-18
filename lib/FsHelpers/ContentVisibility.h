@@ -14,7 +14,7 @@ inline bool asciiEqual(std::string_view a, std::string_view b) {
 inline bool appFolder(std::string_view name) {
   return asciiEqual(name, "flashcards") || asciiEqual(name, "sleep") || asciiEqual(name, "wallpaper") ||
          asciiEqual(name, "wallpapers") || asciiEqual(name, "fonts") || asciiEqual(name, "licenses") ||
-         asciiEqual(name, "apps") || asciiEqual(name, "dictionaries");
+         asciiEqual(name, "apps") || asciiEqual(name, "dictionaries") || asciiEqual(name, "languages");
 }
 inline constexpr const char* WALLABAG_DIRECTORY = "/books/Wallabag";
 inline bool readLaterContent(std::string_view path) {

@@ -12,3 +12,5 @@ bool isBookRead(const std::string& path);
 // If markAsRead is true: saves 100% progress and records completion in readingstats.
 // If markAsRead is false: resets progress and records reopening in readingstats.
 bool setBookReadStatus(const std::string& path, const std::string& title, const std::string& author, bool markAsRead);
+// Activity/render-owned memoization; call only after a successful progress commit.
+void publishBookProgress(const std::string& path, int percent);

@@ -41,9 +41,11 @@ class ClipSelectionActivity final : public Activity {
     uint16_t row = 0;
     uint8_t pageOffset = 0;
     int8_t characterSpacing = 0;
+    int fontId = 0;
     uint16_t pageWordIndex = 0;
     uint32_t startOffset = UINT32_MAX;
     uint32_t endOffset = UINT32_MAX;
+    const TextBlock* dropCapBlock = nullptr;
     const char* text = nullptr;
     EpdFontFamily::Style style = EpdFontFamily::REGULAR;
     bool paragraphStart = false;
@@ -55,6 +57,9 @@ class ClipSelectionActivity final : public Activity {
 
   bool extractWords();
   bool restoreInitialSelection();
+  Rect lookupRect(const WordBox& word) const;
+  Rect capRect(const WordBox& word) const;
+  void paintCapBackground(const WordBox& word, int offsetX, int offset, bool highlight) const;
   int closestInRow(uint16_t row, int centerX) const;
   int wordAt(int x, int y) const;
   int dragWordAt(int x, int y) const;
@@ -82,7 +87,7 @@ class ClipSelectionActivity final : public Activity {
   void drawWordClean(int index, int offsetX, int offset) const;
   void ditherGapBetween(const WordBox& a, const WordBox& b, int offsetX, int offset) const;
   void clearGapBetween(const WordBox& a, const WordBox& b, int offsetX, int offset) const;
-  void prewarmWord(int index) const;
+  int prewarmWord(int index) const;
 
   std::vector<std::unique_ptr<Page>> pages;
   const int marginLeft;

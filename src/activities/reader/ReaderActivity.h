@@ -10,10 +10,14 @@
 #include "EndOfBookOptions.h"
 #include "ReaderSession.h"
 #include "activities/Activity.h"
+#include "apps_local/readerbars/ReaderBars.h"
+#include "apps_local/readerbars/ReaderPace.h"
 #include "apps_local/readertext/ContentsJump.h"
 #include "apps_local/readertext/ContentsReturnUi.h"
 
 class ReaderActivity : public Activity {
+  friend class ActivityManager;
+
  protected:
   std::string bookPath;
   int pagesUntilFullRefresh = 0;
@@ -22,8 +26,17 @@ class ReaderActivity : public Activity {
   std::unique_ptr<EndOfBookOptions> endOfBookOptions;
   std::atomic<bool> endOfBookOptionsReady{false};
   ReaderSession readerSession;
+  readerbars::Pace readingPace;
+  mutable readerbars::Workspace barWorkspace;
+  uint32_t pacePosition = 0;
+  void drawConfiguredBars(const readerbars::Data& data);
   std::atomic<bool> pageRendered{false};
   bool bookRemembered = false;
+  char cachedDocument[33]{};
+  uint32_t documentResources = 0, documentMedia = 0;
+  const char* documentId();
+  bool completionStatusPending = true;
+  void ensureCompletionStatus();
   std::atomic<bool> bookFinished{false};
   std::atomic<bool> endRenderedPending{false};
   bool endCompletionAttempted = false;
@@ -72,13 +85,15 @@ class ReaderActivity : public Activity {
   virtual bool handleFormatInput() { return false; }
   virtual bool pageTurn(bool isForward) = 0;
   virtual bool skipPages(int amount) { return pageTurn(amount > 0); }
-  // Upstream 2.0 menu-tap guards. A tap opens book settings only over the bare
-  // page: never while a toolbar, sheet, popup or the end-of-book screen owns
-  // input, and never on a link.
-  virtual bool readerMenuTapAllowed(int, int) const { return true; }
-  virtual bool hasReadingOverlay() const {
-    return endOfBookMenuActive() || contentsReturnActive.load(std::memory_order_acquire);
+  virtual bool remoteShortcut(bool readerMenu) {
+    if (!readerMenu) return false;
+    openTextSettings();
+    return true;
   }
+  virtual bool canStartRemoteRadio() const { return true; }
+  virtual bool inputOverPage() const { return endOfBookMenuActive(); }
+  virtual bool readerMenuTapAllowed(int, int) const { return true; }
+  virtual bool hasReadingOverlay() const { return inputOverPage(); }
   virtual bool isAtEndOfBook() const = 0;
   // Called with the render lock held, after the completion record is durable.
   virtual bool saveFinishedPosition() = 0;
@@ -110,13 +125,15 @@ class ReaderActivity : public Activity {
   void onEnter() override;
   void onExit() override;
   void prepareForSleep() override;
+  void pauseReadingPace() override { readingPace.pause(); }
   void loop() override;
   void render(RenderLock&& lock) override;
 
   bool isReaderActivity() const final { return true; }
-  // Called every loop while a book is open (upstream 2.0): resolves the bottom
-  // swipe, the Home-key reader menu and the configured menu tap
-  // (SETTINGS.readerTextTrigger) before the activity sees the input.
+  bool acceptsRemoteInput() const final { return pageRendered.load(std::memory_order_acquire); }
+  bool acceptsReaderTextInput() const final {
+    return pageRendered.load(std::memory_order_acquire) && !hasReadingOverlay();
+  }
   bool handleReaderTextSettingsGesture() final;
   virtual void openTextSettings() = 0;
   bool handleForcedRefresh() final;

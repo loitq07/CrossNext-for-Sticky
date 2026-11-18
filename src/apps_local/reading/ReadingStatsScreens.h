@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../ui/ToyboxScreen.h"
+#include "BookDayPage.h"
 #include "ReadingStatsCore.h"
 
 namespace readingui {
@@ -30,10 +31,22 @@ enum : freeink::ui::ActionId {
   GoalChoose,
   GoalCalendar,
   GoalMonth,
-  GoalBack
+  GoalBack,
+  GoalReset,
+  ChooseStatsScope,
+  PeriodBooks,
+  PeriodBooksPage,
+  PeriodBooksBack,
+  BookDays,
+  BookDaysPage,
+  BookDaysBack
 };
+enum class StatsScope { Year, AllTime };
 struct Model {
   const readingstats::Summary* summary = nullptr;
+  const readingstats::PeriodStats* annualStats = nullptr;
+  StatsScope statsScope = StatsScope::Year;
+  bool annualKnown = true;
   const readingstats::PeriodStats* periodStats = nullptr;
   readingstats::Period period = readingstats::Period::Calendar;
   readingstats::BookFilter filter = readingstats::BookFilter::Finished;
@@ -48,7 +61,13 @@ struct Model {
   bool loading = false, failed = false, damaged = false;
   bool bookOnly = false;
   bool buttonFocus = false;
+  const readingstats::BookDayPage* bookDays = nullptr;
+  bool periodBooks = false, periodBookNext = false;
+  int periodBookFirst = 0, periodBookLast = 0, periodBookPage = 0, periodBookCount = 0;
+  int periodBookTotal = 0;
   unsigned goalMinutes = 0;
+  int goalStartDay = 0;
+  bool goalLegacyHistory = false;
   bool goalCalendarVisible = false;
   bool pickerVisible = false, periodFromPicker = false;
   int pickerYear = 2026;
@@ -72,6 +91,10 @@ enum class ImportState { Ready, Importing, Done, Error };
 struct ImportModel {
   ImportState state = ImportState::Ready;
   const char* message = nullptr;
+  const char* title = nullptr;
+  const char* headline = nullptr;
+  const char* startLabel = nullptr;
+  const char* counter = nullptr;
   uint32_t books = 0;
   bool setup = false;
   bool progress = false;

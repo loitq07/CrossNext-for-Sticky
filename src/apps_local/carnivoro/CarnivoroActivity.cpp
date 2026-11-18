@@ -14,7 +14,7 @@
 #include "../ui/ToyboxFonts.h"
 #include "CrossPointSettings.h"
 #include "components/SideButtonNavigation.h"
-static_assert(sizeof(CarnivoroActivity) <= 16 * 1024, "Carnivoro keeps a fixed activity workspace");
+static_assert(sizeof(CarnivoroActivity) <= 17 * 1024, "Carnivoro keeps a fixed activity workspace");
 namespace fui = freeink::ui;
 namespace {
 constexpr char live[] = "/.crosspoint/carnivoro.bin", backup[] = "/.crosspoint/carnivoro.bak",

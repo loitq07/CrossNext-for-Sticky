@@ -98,7 +98,13 @@ inline void duplicateDirectoryEntry(const std::string& path) {
 
 }  // namespace fake
 
-class HalFile {
+class Print {
+ public:
+  virtual ~Print() = default;
+  virtual size_t write(const uint8_t* data, size_t size) = 0;
+};
+
+class HalFile : public Print {
  public:
   std::shared_ptr<fake::Node> node;
   std::string path;
@@ -179,7 +185,7 @@ class HalFile {
     pos += size;
     return static_cast<int>(size);
   }
-  size_t write(const uint8_t* data, size_t size) {
+  size_t write(const uint8_t* data, size_t size) override {
     if (size == 0) return 0;
     fake::writesByPath[path]++;
     if (!fake::failWritePath.empty() && path == fake::failWritePath) {

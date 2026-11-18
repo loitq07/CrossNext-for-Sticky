@@ -21,7 +21,6 @@ class MappedInputManager;
 class LanguageSelectActivity final : public UiListActivity {
  public:
   explicit LanguageSelectActivity(GfxRenderer& renderer, MappedInputManager& mappedInput);
-
   void onEnter() override;
   void onExit() override;
 
@@ -32,8 +31,9 @@ class LanguageSelectActivity final : public UiListActivity {
   int listCount() const override { return static_cast<int>(rowItems.size()); }
   void buildScreen(UiScreen& screen) override;
   void activateIndex(int index) override;
-  const char* headerTitle() const override;
+  void applySelection(int index);
   bool isActive(int index) const;
+  const char* headerTitle() const override;
   void buildRows();
   void finishSelection();
 

@@ -298,6 +298,7 @@
     }
 <!--#include file="shared/Responsive.css.inc" -->
   </style>
+<!--#include file="shared/UiText.html.inc" -->
 </head>
 <body>
   <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar()"></div>
@@ -322,7 +323,7 @@
             <span class="status-indicator" title="Trực tuyến"></span>
             <span class="footer-title">Thiết bị</span>
           </div>
-          <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="Nhấn để xem tính năng mới trong v1.4.13">v1.4.13</span>
+          <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="Nhấn để xem tính năng mới trong v2.0.0">v2.0.0</span>
         </div>
         <div class="device-details">
           <div class="detail-row">
@@ -348,7 +349,7 @@
           </div>
         </div>
         <div class="topbar-actions">
-          <button class="btn btn-outline btn-sm" id="whatsNewBtn" onclick="openWhatsNewModal()" title="Xem tính năng mới trong v1.4.13">
+          <button class="btn btn-outline btn-sm" id="whatsNewBtn" onclick="openWhatsNewModal()" title="Xem tính năng mới trong v2.0.0">
             <i class="ph ph-sparkle"></i> <span>Có gì mới?</span>
           </button>
           <button class="btn btn-primary btn-sm" id="topSaveBtn" onclick="saveSettings()" disabled>
@@ -520,7 +521,7 @@
       return '<input type="' + inputType + '" id="' + id + '" value="' + escapeHtml(val) + '"' +
         ' placeholder="' + (setting.hasPassword ? '(unchanged)' : '') + '"' +
         ' oninput="this.dataset.changed=\'true\';handleSettingChanged(\'' + setting.key + '\')">' +
-        (setting.hasPassword ? ' <button class="btn-small btn-delete" type="button" onclick="clearPassword(\'' + setting.key + '\')">Clear</button>' : '');
+        (setting.hasPassword ? ' <button class="btn-small btn-delete" type="button" onclick="clearPassword(\'' + setting.key + '\')">' + uiHtml("Clear") + '</button>' : '');
     }
 
     return '';
@@ -744,7 +745,7 @@
     try {
       const response = await fetch('/api/settings');
       if (!response.ok) {
-        throw new Error('Failed to load settings: ' + response.status);
+        throw new Error(uiText("Failed to load settings: ") + response.status);
       }
       allSettings = await response.json();
 
@@ -849,7 +850,7 @@
 
       if (!response.ok) {
         const text = await response.text();
-        throw new Error(text || 'Save failed');
+        throw new Error(text || uiText("Save failed"));
       }
 
       // Update original values to new values
@@ -921,11 +922,11 @@
   async function loadWifiNetworks() {
     try {
       const resp = await fetch('/api/wifi');
-      if (!resp.ok) throw new Error('Failed to load');
+      if (!resp.ok) throw new Error(uiText("Failed to load"));
       wifiNetworks = await resp.json();
       renderWifiSection();
     } catch (e) {
-      console.error('Wi-Fi load error:', e);
+      console.error(uiText("Wi-Fi load error:"), e);
     }
   }
 
@@ -942,7 +943,7 @@
     const id = idx === -1 ? 'new' : idx;
     const ssid = document.getElementById('wifi-ssid-' + id).value.trim();
     if (!ssid) {
-      showMessage('SSID is required.', true);
+      showMessage(uiText("SSID is required."), true);
       return;
     }
 
@@ -960,7 +961,7 @@
         body: JSON.stringify(data)
       });
       if (!resp.ok) throw new Error(await resp.text());
-      showMessage('Wi-Fi network saved!', false);
+      showMessage(uiText("Wi-Fi network saved!"), false);
       await loadWifiNetworks();
     } catch (e) {
       showMessage('Error: ' + e.message, true);
@@ -968,7 +969,7 @@
   }
 
   async function deleteWifiNetwork(idx) {
-    if (!confirm('Delete this Wi-Fi network?')) return;
+    if (!confirm(uiText("Delete this Wi-Fi network?"))) return;
     try {
       const resp = await fetch('/api/wifi/delete', {
         method: 'POST',
@@ -976,7 +977,7 @@
         body: JSON.stringify({index: idx})
       });
       if (!resp.ok) throw new Error(await resp.text());
-      showMessage('Wi-Fi network deleted', false);
+      showMessage(uiText("Wi-Fi network deleted"), false);
       await loadWifiNetworks();
     } catch (e) {
       showMessage('Error: ' + e.message, true);
@@ -1037,11 +1038,11 @@
   async function loadOpdsServers() {
     try {
       const resp = await fetch('/api/opds');
-      if (!resp.ok) throw new Error('Failed to load');
+      if (!resp.ok) throw new Error(uiText("Failed to load"));
       opdsServers = await resp.json();
       renderOpdsSection();
     } catch (e) {
-      console.error('OPDS load error:', e);
+      console.error(uiText("OPDS load error:"), e);
     }
   }
 
@@ -1074,7 +1075,7 @@
         body: JSON.stringify(data)
       });
       if (!resp.ok) throw new Error(await resp.text());
-      showMessage('OPDS server saved!', false);
+      showMessage(uiText("OPDS server saved!"), false);
       await loadOpdsServers();
     } catch (e) {
       showMessage('Error: ' + e.message, true);
@@ -1082,7 +1083,7 @@
   }
 
   async function deleteOpdsServer(idx) {
-    if (!confirm('Delete this OPDS server?')) return;
+    if (!confirm(uiText("Delete this OPDS server?"))) return;
     try {
       const resp = await fetch('/api/opds/delete', {
         method: 'POST',
@@ -1090,7 +1091,7 @@
         body: JSON.stringify({index: idx})
       });
       if (!resp.ok) throw new Error(await resp.text());
-      showMessage('OPDS server deleted', false);
+      showMessage(uiText("OPDS server deleted"), false);
       await loadOpdsServers();
     } catch (e) {
       showMessage('Error: ' + e.message, true);
@@ -1106,7 +1107,7 @@
     await loadSettings();
     await loadWifiNetworks();
     await loadOpdsServers();
-    await loadPlugins('settings');
+
   })();
 
   </script>

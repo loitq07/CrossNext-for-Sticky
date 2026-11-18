@@ -11,13 +11,16 @@
 #include "../../components/UITheme.h"
 #include "../../util/InterfaceThemeStyle.h"
 #include "../Shelf.h"
+#include "../ui/CoverNoticeHelp.h"
 #include "../ui/Dashboard.h"
 #include "../ui/MenuFontScreen.h"
+#include "../ui/NavigationIcons.h"
 #include "../ui/PixelMenuTheme.h"
 #include "../ui/SettingsArt.h"
 #include "../ui/SettingsHome.h"
 #include "../ui/SettingsMenuStyle.h"
 #include "../ui/ThemePreviews.h"
+#include "fontIds.h"
 namespace fui = freeink::ui;
 namespace {
 constexpr uint8_t masks[] = {1, 2, 4, 16, 32};
@@ -30,10 +33,36 @@ constexpr StrId libraryFormatNames[] = {StrId::STR_FORMAT_EPUB, StrId::STR_FORMA
                                         StrId::STR_FORMAT_MD};
 constexpr uint8_t libraryFormatMasks[] = {1, 2, 4, 8};
 }  // namespace
+void PresentationSettingsActivity::onEnter() {
+  UiListActivity::onEnter();
+  app.on(
+      ACTION_USER,
+      [](const fui::ActionEvent&, void* context) {
+        auto& self = *static_cast<PresentationSettingsActivity*>(context);
+        if (self.kind != Kind::CoverLoading || self.showingCoverHelp) return;
+        self.app.clearTapFlash();
+        self.showingCoverHelp = true;
+        self.resetUi();
+        self.requestUpdate();
+      },
+      this);
+}
+void PresentationSettingsActivity::onBackButton() {
+  if (!showingCoverHelp) {
+    finish();
+    return;
+  }
+  showingCoverHelp = false;
+  resetUi();
+  requestUpdate();
+}
 int PresentationSettingsActivity::listCount() const {
+  if (showingCoverHelp) return 0;
   switch (kind) {
     case Kind::Theme:
-      return CrossPointSettings::HOME_LAYOUT_COUNT + 3;
+      return CrossPointSettings::HOME_LAYOUT_COUNT + 4;
+    case Kind::CoverLoading:
+      return CrossPointSettings::HOME_LAYOUT_COUNT;
     case Kind::ReadingFormats:
       return sizeof(formats) / sizeof(formats[0]);
     case Kind::LibraryFormats:
@@ -49,9 +78,12 @@ int PresentationSettingsActivity::listCount() const {
   return 0;
 }
 const char* PresentationSettingsActivity::screenTitle() const {
+  if (showingCoverHelp) return tr(STR_HOME_COVER_NOTICE_WHY);
   switch (kind) {
     case Kind::Theme:
       return tr(STR_SETTINGS_APPEARANCE);
+    case Kind::CoverLoading:
+      return tr(STR_HOME_COVER_LOADING_NOTICE);
     case Kind::ReadingFormats:
       return tr(STR_READING_FORMATS);
     case Kind::LibraryFormats:
@@ -106,8 +138,17 @@ void PresentationSettingsActivity::fontRow(void* context, uint16_t row, fui::Lis
 void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
   pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
   useCompactSettingsRows();
-  compactSettingsRows = kind == Kind::ReadingFormats || kind == Kind::LibraryFormats;
-  pixelui::begin(screen, saveFailed ? 80 : 0);
+  compactSettingsRows = kind == Kind::ReadingFormats || kind == Kind::LibraryFormats;  // FORK: Library formats
+  pixelui::begin(screen, showingCoverHelp ? 0
+                                          : (saveFailed ? 80 : 0) +
+                                                (kind == Kind::CoverLoading ? covernotice::footerReserve(screen) : 0));
+  if (showingCoverHelp) {
+    pixelui::drawHeader(renderer, screenTitle(), true);
+    backui::publish(true, pixelui::geometry(screen.device()).back);
+    covernotice::fit(screen, [this](bool smallest) { uiTarget.setFont(4, smallest ? SMALL_FONT_ID : UI_10_FONT_ID); });
+    covernotice::explain(screen);
+    return;
+  }
   if (kind == Kind::FontOverview || contentFonts() || kind == Kind::ThemeOverview) {
     pixelui::drawHeader(renderer, screenTitle(), true);
     backui::publish(true, pixelui::geometry(screen.device()).back);
@@ -131,15 +172,6 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     }
     return;
   }
-  if (kind == Kind::Theme) {
-    const auto body = screen.body();
-    fui::TextStyle label;
-    label.font = 4;
-    screen.target().text(fui::makeRect(body.x + 8, body.y + 8, body.width - 16, 32), tr(STR_HOME_THEME_LABEL), label);
-    screen.setContentMarginAbsolute(fui::Insets{static_cast<int16_t>(body.y + 52),
-                                                static_cast<int16_t>(screen.device().width - body.right()),
-                                                static_cast<int16_t>(screen.device().height - body.bottom()), body.x});
-  }
   pixelui::Header h;
   h.back = true;
   h.title = screenTitle();
@@ -150,9 +182,9 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     auto& item = items[n];
     item = {};
     item.actionValue = n;
-    const auto id = kind == Kind::Theme            ? themes[n]
-                    : kind == Kind::LibraryFormats ? libraryFormatNames[n]
-                                                   : formats[n];
+    const auto id = kind == Kind::Theme || kind == Kind::CoverLoading ? themes[n]
+                    : kind == Kind::LibraryFormats                    ? libraryFormatNames[n]  // FORK
+                                                                      : formats[n];
     pixelui::copyNatural(labels[n], sizeof(labels[n]), I18N.get(id), pixelui::LabelCase::Preserve);
     item.label = labels[n];
     if (kind == Kind::Theme) {
@@ -168,7 +200,8 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     if (kind == Kind::Theme && screen.device().width > screen.device().height) item.subtitle = nullptr;
     item.toggle = true;
     item.toggleChecked = kind == Kind::Theme            ? SETTINGS.homeLayout == n
-                         : kind == Kind::LibraryFormats ? bool(SETTINGS.libraryFileTypes & libraryFormatMasks[n])
+                         : kind == Kind::CoverLoading   ? SETTINGS.homeCoverNotice(uint8_t(n))
+                         : kind == Kind::LibraryFormats ? bool(SETTINGS.libraryFileTypes & libraryFormatMasks[n])  // FORK
                                                         : bool(SETTINGS.readingFormats & masks[n]);
   }
   fui::ListProps p;
@@ -176,6 +209,7 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
   p.count = rows;
   p.action = ACTION_ROW;
   p.selectedIndex = activeNav().selected;
+  if (kind == Kind::CoverLoading) p.toggleCheckbox = true;
   settingsui::styleRows(p);
   if (kind == Kind::Theme) settingsui::styleAppearance(p);
   if (kind != Kind::Theme) syncListViewport(screen, p);
@@ -216,10 +250,15 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
       pixelui::copyCaps(labels[CrossPointSettings::HOME_LAYOUT_COUNT + 1],
                         sizeof(labels[CrossPointSettings::HOME_LAYOUT_COUNT + 1]), tr(STR_MENU_FONT));
     const auto font = actions.font;
-    dashboard::action(screen.target(), font, labels[CrossPointSettings::HOME_LAYOUT_COUNT + 1], &icon_file_text_32,
+    dashboard::action(screen.target(), font, labels[CrossPointSettings::HOME_LAYOUT_COUNT + 1], &navicons::Text32,
                       focused(fontAction), 0);
     if (!chrome::lightHeader) screen.target().stroke(font, dashboard::ink, pixelui::kBorder);
     screen.frame().hit(font, ACTION_ROW, fontAction, fui::InputTouch);
+    const int coverAction = themeAction + 3;
+    dashboard::action(screen.target(), actions.covers, tr(STR_HOME_COVER_LOADING_NOTICE), &navicons::Library32,
+                      focused(coverAction), 0);
+    if (!chrome::lightHeader) screen.target().stroke(actions.covers, dashboard::ink, pixelui::kBorder);
+    screen.frame().hit(actions.covers, ACTION_ROW, coverAction, fui::InputTouch);
     activeNav().top = 0;
     activeNav().followPending = false;
     p.topIndex = 0;
@@ -228,12 +267,33 @@ void PresentationSettingsActivity::buildScreen(UiScreen& screen) {
     settingsui::appearanceList(screen, p);
   else
     pixelui::list(screen, p);
+  if (kind == Kind::CoverLoading) covernotice::button(screen, ACTION_USER);
 }
 void PresentationSettingsActivity::activateIndex(int n) {
   if (n < 0 || n >= listCount()) return;
   app.clearTapFlash();
   switch (kind) {
+    case Kind::CoverLoading: {
+      const auto previous = SETTINGS.homeCoverLoadingMask;
+      SETTINGS.homeCoverLoadingMask ^= uint8_t(1u << n);
+      saveFailed = !SETTINGS.saveToFile();
+      if (saveFailed) SETTINGS.homeCoverLoadingMask = previous;
+      requestUpdate();
+      return;
+    }
     case Kind::Theme:
+      if (n == CrossPointSettings::HOME_LAYOUT_COUNT + 3) {
+        auto picker = makeUniqueNoThrow<PresentationSettingsActivity>(renderer, mappedInput, Kind::CoverLoading);
+        if (!picker) {
+          LOG_ERR("SET", "OOM: Home cover notice settings");
+          return;
+        }
+        startActivityForResult(std::move(picker), [this](const ActivityResult&) {
+          resetUi();
+          requestUpdate();
+        });
+        return;
+      }
       if (n == CrossPointSettings::HOME_LAYOUT_COUNT) {
         auto picker = makeUniqueNoThrow<PresentationSettingsActivity>(renderer, mappedInput, Kind::ThemeOverview);
         if (!picker) {
@@ -337,7 +397,7 @@ void PresentationSettingsActivity::activateIndex(int n) {
       const int count = general ? int(menufont::Style::Count) : int(menufont::Override::Count);
       const auto current =
           general ? uint8_t(menufont::normalized(fontChoice(n))) : uint8_t(menufont::normalizedOverride(fontChoice(n)));
-      const int selected = current;
+      const int selected = int(current);
       const char* names[int(menufont::Override::Count)];
       if (!general) names[0] = contentFonts() && n ? tr(STR_MENU_FONT_INHERIT_MENU) : tr(STR_MENU_FONT_INHERIT);
       for (int j = general ? 0 : 1; j < count; ++j) names[j] = menufontui::choiceName(uint8_t(j + (general ? 1 : 0)));
@@ -360,6 +420,13 @@ void PresentationSettingsActivity::activateIndex(int n) {
   if (kind == Kind::Theme) UITheme::getInstance().reload();
   resetUi();
   requestUpdate();
+}
+
+void PresentationSettingsActivity::navigateButtons() {
+  if (showingCoverHelp) return;
+  const int previous = activeNav().selected;
+  UiListActivity::navigateButtons();
+  if (previous != activeNav().selected) buttonFocus = true;
 }
 
 void PresentationSettingsActivity::loop() {

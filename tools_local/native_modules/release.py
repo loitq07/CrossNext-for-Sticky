@@ -26,8 +26,8 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 WORKSPACE = os.path.abspath(os.path.join(ROOT, ".."))
 PY = sys.executable
-BUILD = os.path.join(WORKSPACE, "build-sticky.ps1")
-OUT = os.path.join(WORKSPACE, "output", "modules")
+ENV = os.environ.get("PIO_ENV", "gh_release_sticky")
+OUT = os.environ.get("MODULE_OUT", os.path.join(ROOT, ".pio", "module-release"))
 ABI_HEADER = os.path.join(ROOT, "src", "apps_local", "modules", "NativeModuleAbi.generated.h")
 
 
@@ -55,10 +55,18 @@ def main():
     if "--publish" in sys.argv:
         publish = sys.argv[sys.argv.index("--publish") + 1]
 
+    os.environ["MODULE_OUT"] = OUT
+    os.environ.setdefault("PLATFORMIO_CORE_DIR", os.path.join(WORKSPACE, ".platformio"))
+    # Generate flags for this checkout: the workspace wrapper may build a
+    # different worktree, which would produce an incompatible firmware ABI.
+    step([PY, "-m", "platformio", "run", "-e", ENV, "-t", "compiledb"], cwd=ROOT)
+    template = os.path.join(HERE, "compile_template.json")
+    if os.path.exists(template):
+        os.remove(template)
     step([PY, os.path.join(HERE, "build_module.py"), "objects"])
     step([PY, os.path.join(ROOT, "tools_local", "sticky_language_packs.py"), os.path.join(OUT, "languages")])
     update_catalog_sizes()
-    step(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", BUILD])
+    step([PY, "-m", "platformio", "run", "-e", ENV], cwd=ROOT)
     step([PY, os.path.join(HERE, "build_module.py"), "link"])
     abi = re.search(r"0x([0-9a-fA-F]+)", open(ABI_HEADER, encoding="utf-8").read()).group(1).lower()
     print("module ABI:", abi)

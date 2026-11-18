@@ -14,7 +14,7 @@ void HomeMenuSettingsActivity::onEnter() {
   UiListActivity::onEnter();
   app.on(ACTION_USER, &HomeMenuSettingsActivity::moveAction, this);
   draft = homemenu::config();
-  plugins = anyPluginInstalled();
+  plugins = SETTINGS.pluginsEnabled;
   services = plugins || OPDS_STORE.hasServers();
 }
 int HomeMenuSettingsActivity::menuRows() const {
@@ -35,7 +35,10 @@ homemenu::Id HomeMenuSettingsActivity::idAtRow(int index) const {
 int HomeMenuSettingsActivity::listCount() const {
   switch (view) {
     case View::Root:
-      return 3;
+      return 5;
+    case View::GameOrder:
+    case View::AppOrder:
+      return shelf::folders()[orderFolder()].count;
     case View::Order:
       return homemenu::visibleCount(draft, services);
     case View::Names:
@@ -58,6 +61,10 @@ const char* HomeMenuSettingsActivity::headerTitle() const {
       return tr(STR_HOME_MENU_VISIBILITY);
     case View::Order:
       return tr(STR_HOME_MENU_ORDER);
+    case View::GameOrder:
+      return tr(STR_SHELF_ORDER_GAMES);
+    case View::AppOrder:
+      return tr(STR_SHELF_ORDER_APPS);
     case View::ChooseGame:
       return tr(STR_HOME_ADD_GAME);
     case View::ChooseApp:
@@ -85,6 +92,8 @@ void HomeMenuSettingsActivity::onBackButton() {
     case View::Names:
     case View::Visibility:
     case View::Order:
+    case View::GameOrder:
+    case View::AppOrder:
       show(View::Root);
       return;
   }
@@ -98,6 +107,18 @@ bool HomeMenuSettingsActivity::save() {
 }
 void HomeMenuSettingsActivity::moveAction(const freeink::ui::ActionEvent& event, void* context) {
   auto& self = *static_cast<HomeMenuSettingsActivity*>(context);
+  if (self.ordersShelf()) {
+    const int row = self.nav.selected;
+    if ((event.value != -1 && event.value != 1) || row + event.value < 0 || row + event.value >= self.listCount())
+      return;
+    RenderLock lock(self);
+    self.app.clearTapFlash();
+    self.notice = shelf::moveOrderedItem(self.orderFolder(), row, event.value) ? StrId::STR_NONE_OPT
+                                                                               : StrId::STR_HOME_MENU_SAVE_FAILED;
+    if (self.notice == StrId::STR_NONE_OPT) self.moveSelectionTo(row + event.value);
+    self.requestUpdate();
+    return;
+  }
   if (self.view != View::Order) return;
   const auto id = self.idAtRow(self.nav.selected);
   if (!homemenu::move(self.draft, id, event.value, self.services)) return;
@@ -110,10 +131,26 @@ void HomeMenuSettingsActivity::activateIndex(int index) {
   app.clearTapFlash();
   if (index < 0 || index >= listCount()) return;
   if (view == View::Root) {
-    show(index == 0 ? View::Names : index == 1 ? View::Visibility : View::Order);
+    switch (index) {
+      case 0:
+        show(View::Names);
+        break;
+      case 1:
+        show(View::Visibility);
+        break;
+      case 2:
+        show(View::Order);
+        break;
+      case 3:
+        show(View::GameOrder);
+        break;
+      case 4:
+        show(View::AppOrder);
+        break;
+    }
     return;
   }
-  if (view == View::Order) {
+  if (view == View::Order || ordersShelf()) {
     requestUpdate();
     return;
   }
@@ -187,9 +224,32 @@ void HomeMenuSettingsActivity::provideRow(void* context, uint16_t index, freeink
   row = {};
   row.actionValue = index;
   if (self.view == View::Root) {
-    row.label = index == 0   ? tr(STR_HOME_MENU_RENAME)
-                : index == 1 ? tr(STR_HOME_MENU_VISIBILITY)
-                             : tr(STR_HOME_MENU_ORDER);
+    switch (index) {
+      case 0:
+        row.label = tr(STR_HOME_MENU_RENAME);
+        break;
+      case 1:
+        row.label = tr(STR_HOME_MENU_VISIBILITY);
+        break;
+      case 2:
+        row.label = tr(STR_HOME_MENU_ORDER);
+        break;
+      case 3:
+        row.label = tr(STR_SHELF_ORDER_GAMES);
+        break;
+      case 4:
+        row.label = tr(STR_SHELF_ORDER_APPS);
+        break;
+    }
+    return;
+  }
+  if (self.ordersShelf()) {
+    const int folder = self.orderFolder();
+    const int item = shelf::orderedItem(folder, index);
+    if (item < 0) return;
+    const auto& entry = shelf::folders()[folder].items[item];
+    row.label = shelf::label(entry.title);
+    row.icon = freeink::ui::bitmapFromIcon(*entry.icon);
     return;
   }
   if (self.view == View::ChooseGame || self.view == View::ChooseApp) {
@@ -252,7 +312,7 @@ void HomeMenuSettingsActivity::buildScreen(UiScreen& screen) {
   props.rowProviderCtx = this;
   props.count = listCount();
   props.action = ACTION_ROW;
-  if (view == View::Order) {
+  if (view == View::Order || ordersShelf()) {
     homemenuui::orderControls(screen, orderWork, nav.selected, listCount(), ACTION_USER);
     syncListViewport(screen, props);
     rowText.bind(props, screen.target(), screen.body());

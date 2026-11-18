@@ -33,38 +33,38 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Tiếng Việt trên thẻ nhớ";
-    rowSubtitles_[0] = "Tự tải qua App Store, firmware nhẹ hơn";
+    rowLabels_[0] = "1. Nâng cấp nền CrossNext 2.0";
+    rowSubtitles_[0] = "Kế thừa reader và thư viện từ bản 2.0.3";
 
-    rowLabels_[1] = "2. Cách mở cài đặt sách";
-    rowSubtitles_[1] = "Vuốt lên, chạm giữa trang hoặc chạm mép";
+    rowLabels_[1] = "2. Cài đặt riêng cho từng sách";
+    rowSubtitles_[1] = "Tùy chỉnh chữ, giãn dòng và thanh đọc";
 
-    rowLabels_[2] = "3. Nhận bản thử nghiệm (Beta)";
-    rowSubtitles_[2] = "Bật trong Cài đặt > Hệ thống";
+    rowLabels_[2] = "3. Điều khiển Bluetooth mới";
+    rowSubtitles_[2] = "Ghép remote, gán phím và lật trang";
 
-    rowLabels_[3] = "4. Menu mở nhanh hơn";
-    rowSubtitles_[3] = "Cài đặt, Trò chơi, Ứng dụng mở nhanh hơn";
+    rowLabels_[3] = "4. Ứng dụng FOCUS";
+    rowSubtitles_[3] = "Quản lý dự án, công việc và giờ tập trung";
 
-    rowLabels_[4] = "5. Web truyền tệp offline";
-    rowSubtitles_[4] = "Icon không cần Internet, kéo thả để tải lên";
+    rowLabels_[4] = "5. Thư viện và plugin";
+    rowSubtitles_[4] = "Yêu thích, bộ sưu tập và chi tiết plugin";
 
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. Vietnamese on the microSD";
-    rowSubtitles_[0] = "Fetched by the App Store; lighter firmware";
+    rowLabels_[0] = "1. CrossNext 2.0 foundation";
+    rowSubtitles_[0] = "Reader and library updates from 2.0.3";
 
-    rowLabels_[1] = "2. Open book settings your way";
-    rowSubtitles_[1] = "Swipe up, tap page center or tap an edge";
+    rowLabels_[1] = "2. Per-book reading settings";
+    rowSubtitles_[1] = "Customize text, spacing and reading bars";
 
-    rowLabels_[2] = "3. Beta updates";
-    rowSubtitles_[2] = "Opt in under Settings > System";
+    rowLabels_[2] = "3. New Bluetooth controls";
+    rowSubtitles_[2] = "Pair remotes, map keys and turn pages";
 
-    rowLabels_[3] = "4. Faster menus";
-    rowSubtitles_[3] = "Settings, Games and Apps open faster";
+    rowLabels_[3] = "4. FOCUS app";
+    rowSubtitles_[3] = "Projects, tasks and focus sessions";
 
-    rowLabels_[4] = "5. Offline web file portal";
-    rowSubtitles_[4] = "Icons without Internet, drag & drop uploads";
+    rowLabels_[4] = "5. Library and plugins";
+    rowSubtitles_[4] = "Favorites, collections and plugin details";
 
     rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";

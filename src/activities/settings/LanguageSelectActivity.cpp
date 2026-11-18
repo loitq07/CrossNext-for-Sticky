@@ -8,7 +8,6 @@
 #include <cstring>
 
 #include "CrossPointSettings.h"
-#include "I18nKeys.h"
 #include "MappedInputManager.h"
 #include "SilentRestart.h"
 #include "activities/util/ConfirmationActivity.h"
@@ -18,6 +17,9 @@
 #include "components/UITheme.h"
 
 namespace fui = freeink::ui;
+namespace {
+constexpr Language BUILTIN_LANGUAGES[] = {Language::EN, Language::ES};
+}
 
 LanguageSelectActivity::LanguageSelectActivity(GfxRenderer& renderer, MappedInputManager& mappedInput)
     : UiListActivity("LanguageSelect", renderer, mappedInput, false, true) {}
@@ -97,7 +99,18 @@ void LanguageSelectActivity::activateIndex(const int index) {
     finish();
     return;
   }
+  auto confirmation =
+      makeUniqueNoThrow<ConfirmationActivity>(renderer, mappedInput, tr(STR_LANGUAGE), tr(STR_LANGUAGE_RESTART_PROMPT));
+  if (!confirmation) {
+    LOG_ERR("I18N", "OOM: language confirmation");
+    return;
+  }
+  startActivityForResult(std::move(confirmation), [this, index](const ActivityResult& result) {
+    if (!result.isCancelled) applySelection(index);
+  });
+}
 
+void LanguageSelectActivity::applySelection(const int index) {
   uilanguage::Result result;
   {
     RenderLock lock(*this);
@@ -151,14 +164,13 @@ void LanguageSelectActivity::buildScreen(UiScreen& screen) {
   pixelui::FontScope fonts(uiTarget, renderer, true);
   useCompactSettingsRows();
   const auto& metrics = UITheme::getInstance().getMetrics();
-  // Content: the safe area minus the header band GUI.drawHeader paints.
   pixelui::begin(screen, mappedInput.hasTouch() ? 0 : metrics.buttonHintsHeight);
 
   fui::ListProps props;
   props.items = rowItems.data();
   props.count = static_cast<uint16_t>(rowItems.size());
   props.action = ACTION_ROW;
-  props.inputMask = fui::InputTouch;  // physical buttons stay in loop()
+  props.inputMask = fui::InputTouch;
   syncListViewport(screen, props);
   pixelui::list(screen, props);
 }

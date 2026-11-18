@@ -31,6 +31,16 @@ inline void paint(fui::DrawTarget& target, fui::Rect box, bool light = chrome::l
   target.line({int16_t(x), int16_t(y)}, {int16_t(x + 28), int16_t(y)}, 4, ink);
 }
 
+// Upstream 2.0 screens (PET, Reading Quest) pass an explicit colour and use
+// upstream's vertically centred geometry.
+inline void paint(fui::DrawTarget& target, fui::Rect box, fui::Color color) {
+  const int x = box.x + 6, y = box.y + box.height / 2;
+  const auto ink = fui::Paint::solid(color);
+  target.line({int16_t(x + 18), int16_t(y - 16)}, {int16_t(x), int16_t(y)}, 4, ink);
+  target.line({int16_t(x), int16_t(y)}, {int16_t(x + 18), int16_t(y + 16)}, 4, ink);
+  target.line({int16_t(x), int16_t(y)}, {int16_t(x + 30), int16_t(y)}, 4, ink);
+}
+
 // The input manager folds this published region into logical Button::Back.
 inline void publish(bool enabled, fui::Rect box) {
   if (enabled) {

@@ -1,3 +1,4 @@
+#include "StatusBattery.h"
 #pragma once
 #include "../cards/CardArt.h"
 #include "../cards/CardsLabels.h"

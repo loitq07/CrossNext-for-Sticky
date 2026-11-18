@@ -10,7 +10,9 @@
 #include "../../components/icons/listIcons.h"
 #include "BackButton.h"
 #include "FreeInkUIIcon.h"
+#include "FitText.h"
 #include "LightUi.h"
+#include "StatusBattery.h"
 #include "ToyboxScreen.h"
 #include "ToyboxTokens.h"
 #include "UnifiedDesignTokens.h"
@@ -72,19 +74,18 @@ void fitLabel(const fui::DrawTarget& target, char* label, const int width, fui::
 }
 
 void text(fui::DrawTarget& target, fui::Rect box, const char* label, fui::FontId font, fui::Color color,
-          fui::TextAlign align, bool emphasis) {
+          fui::TextAlign align, bool emphasis, LabelCase casing) {
   char copy[192];
+  // FORK: menu labels stay in capitals with every menu font (Sticky look).
   copyCaps(copy, sizeof(copy), label);
+  const char* value = copy;
+  (void)casing;
   fui::TextStyle style;
   style.color = color;
   style.align = align;
   style.font = font;
   style.bold = emphasis || (!chrome::lightHeader && font == kTitle);
-  static constexpr fui::FontId smaller[] = {3, kSmall, kBody};
-  while (style.font < 3 && target.measureText(style.font, copy, style).width > box.width)
-    style.font = smaller[style.font];
-  fitLabel(target, copy, box.width, style);
-  target.text(toybox::inkCentred(target, box, style), copy, style);
+  fittext::draw(target, box, value, style, 2);
 }
 
 static fui::Rect paintHeader(fui::DrawTarget&, const fui::DeviceContext&, const Header&, fui::Rect* = nullptr);
@@ -188,7 +189,16 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
     target.bitmap(icon, model.mark, fui::BitmapMode::Contain, fgPaint);
     right = icon.x - 20;
   }
-  if (model.secondaryMark) {
+  if (model.secondaryLabel) {
+    fui::TextStyle style;
+    style.font = kSmall;
+    const int width = std::clamp(int(target.measureText(style.font, model.secondaryLabel, style).width) + 24, 44, 160);
+    const auto button = fui::makeRect(right - width, top + 14, width, 44);
+    if (secondary) *secondary = button;
+    target.stroke(button, white, 1, chrome::lightHeader ? lightui::kControlRadius : 0);
+    text(target, button.inset({2, 8, 2, 8}), model.secondaryLabel, kSmall, fui::Color::White, fui::TextAlign::Center);
+    right = button.x - 12;
+  } else if (model.secondaryMark) {
     const auto icon = fui::makeRect(right - 32, top + 20, 32, 32);
     if (secondary) *secondary = fui::makeRect(icon.x - 10, top, 52, 72);
     target.bitmap(icon, model.secondaryMark, fui::BitmapMode::Contain, fgPaint);
@@ -210,7 +220,7 @@ static fui::Rect paintHeader(fui::DrawTarget& target, const fui::DeviceContext& 
   right -= model.titleReserve;
   fui::TextStyle titleStyle;
   titleStyle.font = kBody;
-  titleStyle.bold = !chrome::lightHeader;
+  titleStyle.bold = !chrome::lightHeader && !model.regularTitle;
   char title[192];
   copyCaps(title, sizeof(title), model.title);
   if (target.measureText(titleStyle.font, title, titleStyle).width > std::max(0, right - left)) {
@@ -351,11 +361,11 @@ void RowSource::provide(void* ctx, uint16_t index, fui::ListItem& item) {
   else
     item = self.items[index];
   // Font choices belong to bind(), after the caller finalizes its viewport.
-  if (item.value) {
+  if (item.value && std::strlen(item.value) < sizeof(self.value) / 2) {
     copyMenuLabel(self.value, sizeof(self.value), item.value);
     item.value = self.value;
   }
-  if (item.label) {
+  if (item.label && std::strlen(item.label) < sizeof(self.label) / 2) {
     copyMenuLabel(self.label, sizeof(self.label), item.label);
     item.label = self.label;
   }

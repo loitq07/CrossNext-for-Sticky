@@ -4,10 +4,20 @@
 #include "../ui/PixelMenu.h"
 class PresentationSettingsActivity final : public UiListActivity {
  public:
-  enum class Kind { Theme, ReadingFormats, LibraryFormats, FontOverview, GameFonts, AppFonts, ThemeOverview };
+  enum class Kind {
+    Theme,
+    ReadingFormats,
+    LibraryFormats,  // FORK: Settings > Library > Show files
+    FontOverview,
+    GameFonts,
+    AppFonts,
+    ThemeOverview,
+    CoverLoading
+  };
   PresentationSettingsActivity(GfxRenderer& r, MappedInputManager& i, Kind k)
       : UiListActivity("PresentationSettings", r, i), kind(k) {}
 
+  void onEnter() override;
   void loop() override;
   void render(RenderLock&&) override;
 
@@ -15,6 +25,9 @@ class PresentationSettingsActivity final : public UiListActivity {
   Kind kind;
   OptionPopup optionPopup;
   bool saveFailed = false;
+  bool buttonFocus = false;
+  bool showingCoverHelp = false;
+  void navigateButtons() override;
   freeink::ui::ListItem items[menufont::kSectionCount]{};
   char labels[menufont::kSectionCount][64]{};
   bool contentFonts() const { return kind == Kind::GameFonts || kind == Kind::AppFonts; }
@@ -31,5 +44,5 @@ class PresentationSettingsActivity final : public UiListActivity {
   const char* screenTitle() const;
   void buildScreen(UiScreen&) override;
   void activateIndex(int) override;
-  void onBackButton() override { finish(); }
+  void onBackButton() override;
 };

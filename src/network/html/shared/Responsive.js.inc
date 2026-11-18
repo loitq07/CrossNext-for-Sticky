@@ -80,7 +80,7 @@
         <div class="modal" style="max-width: 580px; width: 92%;">
           <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.75rem;">
             <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem;">
-              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> ${cnText("What's new in v1.4.13", 'Có gì mới trong v1.4.13')}
+              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> ${cnText("What's new in v2.0.0", 'Có gì mới trong v2.0.0')}
             </h3>
             <button class="btn-icon" onclick="closeWhatsNewModal()" aria-label="${cnText('Close', 'Đóng')}" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: hsl(var(--muted-foreground));">
               <i class="ph ph-x"></i>
@@ -88,14 +88,15 @@
           </div>
           <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 65vh; overflow-y: auto; padding-right: 0.5rem;">
             <div style="margin-bottom: 1rem; padding: 0.75rem; background: hsl(var(--secondary) / 0.5); border-radius: 8px; border-left: 3px solid #10b981;">
-              <strong>${cnText('v1.4.13 update for Seeed reTerminal Sticky:', 'Bản cập nhật v1.4.13 cho Seeed reTerminal Sticky:')}</strong><br>
-              ${cnText('Vietnamese moves to a microSD language pack, more ways to open book settings, Beta updates and a portal that works offline.', 'Tiếng Việt chuyển thành gói ngôn ngữ trên thẻ nhớ, thêm cách mở cài đặt sách, kênh cập nhật Beta và trang web chạy offline.')}
+              <strong>${cnText('v2.0.0 (beta) for Seeed reTerminal Sticky:', 'Bản v2.0.0 (beta) cho Seeed reTerminal Sticky:')}</strong><br>
+              ${cnText('The Sticky port moves onto CrossNext 2.0.3: new reader engine and library, Bluetooth remotes, Focus and more, with every Sticky feature kept.', 'Bản Sticky chuyển lên nền CrossNext 2.0.3: engine đọc và thư viện mới, remote Bluetooth, Focus và nhiều hơn nữa, vẫn giữ mọi tính năng riêng của Sticky.')}
             </div>
             <ul style="padding-left: 1.25rem; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
-              <li><strong>${cnText('🇻🇳 Vietnamese language pack:', '🇻🇳 Gói tiếng Việt:')}</strong> ${cnText('Vietnamese now lives on the microSD (/languages/vi.cplang). After updating, accept the app update offered on Home: it downloads the pack and switches the interface back to Vietnamese. The firmware is lighter.', 'Tiếng Việt nay nằm trên thẻ nhớ (/languages/vi.cplang). Sau khi cập nhật, hãy đồng ý cập nhật ứng dụng ở trang chủ: máy sẽ tải gói và tự chuyển lại sang tiếng Việt. Firmware nhẹ hơn.')}</li>
-              <li><strong>${cnText('📖 Open book settings:', '📖 Mở cài đặt sách:')}</strong> ${cnText('Choose a swipe up, a tap on the page centre, or a tap on the bottom or top edge (Settings → Controls).', 'Chọn vuốt từ dưới lên, chạm giữa trang, hoặc chạm mép dưới / mép trên (Cài đặt → Điều khiển).')}</li>
-              <li><strong>${cnText('🧪 Beta updates & speed:', '🧪 Bản Beta & tốc độ:')}</strong> ${cnText('Opt in to prerelease builds in Settings → System. Settings, Games and Apps open faster.', 'Bật nhận bản thử nghiệm trong Cài đặt → Hệ thống. Cài đặt, Trò chơi và Ứng dụng mở nhanh hơn.')}</li>
-              <li><strong>${cnText('🌐 Offline web portal:', '🌐 Trang web chạy offline:')}</strong> ${cnText('Icons work without Internet on the Sticky hotspot, and you can drop files or whole folders anywhere on the page to upload them.', 'Icon hiển thị cả khi không có Internet (hotspot của Sticky), và có thể kéo thả tệp hoặc cả thư mục vào trang để tải lên.')}</li>
+              <li><strong>${cnText('📖 Reader & library:', '📖 Đọc sách & thư viện:')}</strong> ${cnText('New EPUB engine (Classic 1.4 still available), per-book text settings, favourites and collections.', 'Engine EPUB mới (vẫn chọn được Classic 1.4), cài đặt chữ riêng cho từng sách, yêu thích và bộ sưu tập.')}</li>
+              <li><strong>${cnText('🎮 Bluetooth remotes:', '🎮 Remote Bluetooth:')}</strong> ${cnText('Pair a BLE page turner, map short presses and holds, and add Bluetooth to Quick settings.', 'Ghép remote lật trang BLE, gán bấm ngắn/giữ riêng, thêm Bluetooth vào Quick settings.')}</li>
+              <li><strong>${cnText('⏱️ Focus & statistics:', '⏱️ Focus & thống kê:')}</strong> ${cnText('Focus sessions from the App Store and reading statistics by day, month and year.', 'Phiên tập trung Focus từ App Store và thống kê đọc theo ngày, tháng, năm.')}</li>
+              <li><strong>${cnText('🧩 Plugins:', '🧩 Plugin:')}</strong> ${cnText('Plugin details, compatibility checks and hold-to-uninstall; cloud folders keep working.', 'Trang chi tiết plugin, kiểm tra tương thích, giữ để gỡ; duyệt thư mục cloud vẫn hoạt động.')}</li>
+              <li><strong>${cnText('⚠️ Beta:', '⚠️ Beta:')}</strong> ${cnText('Install the CrossNext 2.0 Resources before updating. PET and Reading Quest saves start over.', 'Cài gói Resources của CrossNext 2.0 trước khi cập nhật. Dữ liệu PET và Reading Quest sẽ bắt đầu lại.')}</li>
             </ul>
           </div>
           <div class="modal-actions" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">

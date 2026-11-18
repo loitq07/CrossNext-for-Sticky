@@ -2,6 +2,7 @@
 
 #include <EpdFont.h>
 #include <EpdFontFamily.h>
+#include <I18n.h>
 #include <Logging.h>
 
 #include "../../CrossPointSettings.h"
@@ -10,6 +11,7 @@
 #include "../../util/MenuFontStyle.h"
 #include "ToyboxFontFamilies.h"
 #include "ToyboxTokens.h"
+#include "PixelText.h"
 namespace toybox {
 using namespace fontdetail;
 namespace {
@@ -142,17 +144,22 @@ menufont::Style interfaceFontStyle() {
 }
 
 void syncInterfaceFonts(GfxRenderer& renderer) {
+  pixelui::turkicCase = I18N.getLanguage() == Language::TR || I18N.getLanguage() == Language::AZ;
+  pixelui::preserveTranslatedCase = I18N.getLanguage() != Language::EN && I18N.getLanguage() != Language::ES;
   if (!registered) {
     ensureFonts(renderer);
     return;
   }
   const auto style = interfaceFontStyle();
+  pixelui::uppercaseLabels = style == menufont::Style::Pixel;
   if (registeredStyle != style && bindMenuFonts(renderer, style)) registeredStyle = style;
 }
 
 constexpr int kSystemFallbackFontId = 0x70B0'0099;
 
 void ensureFonts(GfxRenderer& renderer) {
+  pixelui::turkicCase = I18N.getLanguage() == Language::TR || I18N.getLanguage() == Language::AZ;
+  pixelui::preserveTranslatedCase = I18N.getLanguage() != Language::EN && I18N.getLanguage() != Language::ES;
   // Font settings can clear this registry while built-in faces remain loaded.
   // Shared map entries are reused; no image or per-label allocation.
   renderer.insertFont(kSystemFallbackFontId, ui12FontFamily);
@@ -168,6 +175,7 @@ void ensureFonts(GfxRenderer& renderer) {
   renderer.setFallbackFont(UI_10_FONT_ID, kSystemFallbackFontId);
   renderer.setFallbackFont(SMALL_FONT_ID, kSystemFallbackFontId);
   const auto style = interfaceFontStyle();
+  pixelui::uppercaseLabels = style == menufont::Style::Pixel;
   if (registered) {
     syncInterfaceFonts(renderer);
     return;

@@ -956,6 +956,7 @@
 
 <!--#include file="shared/Responsive.css.inc" -->
   </style>
+<!--#include file="shared/UiText.html.inc" -->
 </head>
 <body class="files-page">
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
@@ -1029,7 +1030,7 @@
           <span class="status-indicator" title="Online" data-vi-title="Trực tuyến"></span>
           <span class="footer-title" data-vi="Thiết bị">Device</span>
         </div>
-        <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="See what's new in v1.4.13" data-vi-title="Nhấn để xem tính năng mới trong v1.4.13">v1.4.13</span>
+        <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="See what's new in v2.0.0" data-vi-title="Nhấn để xem tính năng mới trong v2.0.0">v2.0.0</span>
       </div>
       <div class="device-details">
         <div class="detail-row">
@@ -1067,7 +1068,7 @@
           <i class="ph ph-folder-plus"></i>
           <span data-vi="Thư mục mới">New folder</span>
         </button>
-        <button class="btn btn-outline" onclick="openWhatsNewModal()" title="See what's new in v1.4.13" data-vi-title="Xem tính năng mới trong v1.4.13">
+        <button class="btn btn-outline" onclick="openWhatsNewModal()" title="See what's new in v2.0.0" data-vi-title="Xem tính năng mới trong v2.0.0">
           <i class="ph ph-sparkle"></i>
           <span data-vi="Có gì mới?">What's new?</span>
         </button>
@@ -2136,7 +2137,7 @@ function isImageFile(name) {
     if (isExpanding) {
       const files = selectedUploadEntries.map(e => e.file);
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.epub')) {
-        showImagePicker(files[0]).catch(err => console.error('Image picker error:', err));
+        showImagePicker(files[0]).catch(err => console.error(uiText("Image picker error:"), err));
       }
     } else {
       // When collapsing, hide the picker and startConversionBtn
@@ -2209,7 +2210,7 @@ function isImageFile(name) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.onload = () => resolve(img);
-      img.onerror = () => reject(new Error('Preview image load failed'));
+      img.onerror = () => reject(new Error(uiText("Preview image load failed")));
       img.src = dataUrl;
     });
   }
@@ -2409,7 +2410,7 @@ function isImageFile(name) {
         }
       }
     } catch (e) {
-      console.warn('Failed to parse reading order, using default:', e);
+      console.warn(uiText("Failed to parse reading order, using default:"), e);
     }
 
     // Fallback to alphabetical if parsing failed
@@ -2438,7 +2439,7 @@ function isImageFile(name) {
         try {
           isSeparator = await isSeparatorImage(dataUrl, dims.width, dims.height, filename);
         } catch (e) {
-          console.warn('Separator check failed for', filename, e);
+          console.warn(uiText("Separator check failed for"), filename, e);
         }
       }
 
@@ -2450,7 +2451,7 @@ function isImageFile(name) {
         try {
           autoCropPreview = await createAutoCropPreview(dataUrl, path, dims.width, dims.height);
         } catch (e) {
-          console.warn('Auto-crop preview failed for', path, e);
+          console.warn(uiText("Auto-crop preview failed for"), path, e);
         }
       }
 
@@ -2528,7 +2529,7 @@ function isImageFile(name) {
       const isSymmetric = await checkHorizontalSymmetry(dataUrl, width, height, SYMMETRY_THRESHOLD);
       return isSymmetric;
     } catch (e) {
-      console.warn('Symmetry check failed:', e);
+      console.warn(uiText("Symmetry check failed:"), e);
       return false;
     }
   }
@@ -2593,7 +2594,7 @@ function isImageFile(name) {
     // Check if JSZip is available
     if (typeof JSZip === 'undefined') {
       console.error('JSZip not loaded');
-      alert('JSZip library not available. Conversion will proceed without image picker.');
+      alert(uiText("JSZip library not available. Conversion will proceed without image picker."));
       startConversionWithImageStates();
       return;
     }
@@ -2650,8 +2651,8 @@ function isImageFile(name) {
       document.getElementById('pickerColumns').classList.add('picker-active');
 
     } catch (error) {
-      console.error('Failed to extract images:', error);
-      alert('Failed to preview images: ' + error.message + '\n\nConversion will proceed normally.');
+      console.error(uiText("Failed to extract images:"), error);
+      alert(uiText("Failed to preview images: ") + error.message + '\n\nConversion will proceed normally.');
       // Fallback: start conversion directly
       startConversionWithImageStates();
     }
@@ -2953,7 +2954,7 @@ function isImageFile(name) {
   function openDeleteSelectedModal() {
     const items = getSelectedItems();
     if (items.length === 0) {
-      alert('Please select at least one item to delete.');
+      alert(uiText("Please select at least one item to delete."));
       return;
     }
     openDeleteModalForItems(items);
@@ -3006,11 +3007,11 @@ function isImageFile(name) {
         window.location.reload();
       } else {
         const text = await res.text();
-        alert('Failed to delete: ' + text);
+        alert(uiText("Failed to delete: ") + text);
         closeDeleteModal();
       }
     }).catch(() => {
-      alert('Failed to delete - network error');
+      alert(uiText("Failed to delete - network error"));
       closeDeleteModal();
     });
   }
@@ -3290,7 +3291,7 @@ function isImageFile(name) {
       const advancedContent = document.getElementById('advancedSettingsContent');
       const convertEnabled = document.getElementById('convertBeforeUpload').checked;
       if (advancedContent.classList.contains('visible') && files.length === 1 && convertEnabled && files[0].name.toLowerCase().endsWith('.epub')) {
-        showImagePicker(files[0]).catch(err => console.error('Image picker error:', err));
+        showImagePicker(files[0]).catch(err => console.error(uiText("Image picker error:"), err));
       } else {
         // New selection no longer matches single-EPUB-with-advanced-expanded —
         // tear down any picker from a previous file so the grid and picker-mode
@@ -3421,7 +3422,7 @@ function restoreUploadSettingsFromStorage() {
     const saved = JSON.parse(stored || 'null');
     applyUploadSettings(saved?.rememberSettings ? saved : undefined);
   } catch (e) {
-    console.warn('Could not read remembered upload settings:', e);
+    console.warn(uiText("Could not read remembered upload settings:"), e);
     applyUploadSettings();
   }
 }
@@ -3438,7 +3439,7 @@ function updateUploadSettingsPersistence() {
     localStorage.setItem(UPLOAD_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
     localStorage.removeItem(LEGACY_UPLOAD_SETTINGS_STORAGE_KEY);
   } catch (e) {
-    console.warn('Could not save upload settings:', e);
+    console.warn(uiText("Could not save upload settings:"), e);
   }
 }
 
@@ -3483,7 +3484,7 @@ async function fetchVersion() {
       }
     }
   } catch (e) {
-    console.error('Failed to fetch version:', e);
+    console.error(uiText("Failed to fetch version:"), e);
   }
 }
 
@@ -3651,7 +3652,7 @@ function logSummary(originalSize, newSize, timeElapsed) {
       <table class="log-summary-table">
         <tr><td>Images found</td><td class="highlight">${totalImages}</td></tr>
         <tr><td>Images processed</td><td>${totalOutput}${conversionStats.splitParts > conversionStats.splits ? ` (+${conversionStats.splitParts - conversionStats.splits} from splits)` : ''}</td></tr>
-        <tr><td>EPUB repairs</td><td>${conversionStats.fixes > 0 ? conversionStats.fixes + ' fixes applied' : 'None needed'}</td></tr>
+        <tr><td>EPUB repairs</td><td>${conversionStats.fixes > 0 ? conversionStats.fixes + uiText(" fixes applied") : uiText("None needed")}</td></tr>
         ${conversionStats.errors > 0 ? `<tr><td>Errors</td><td style="color:#e74c3c">${conversionStats.errors}</td></tr>` : ''}
         <tr><td>Original size</td><td>${formatBytes(originalSize)}</td></tr>
         <tr><td>Optimized size</td><td>${formatBytes(newSize)}</td></tr>
@@ -3994,7 +3995,7 @@ async function maybeRenameEbookFile(file) {
       lastModified: file.lastModified
     });
   } catch (e) {
-    console.warn('Could not rename EPUB from metadata:', e);
+    console.warn(uiText("Could not rename EPUB from metadata:"), e);
     return file;
   }
 }
@@ -4377,7 +4378,7 @@ function fixSvgCover(content) {
       return { c: `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
-<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>Cover</title></head>
+<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>${uiHtml("Cover")}</title></head>
 <body><section epub:type="cover"><img style="max-width:100%;height:auto" alt="Cover" src="${m[1]}"/></section></body>
 </html>`, fixed: true, count: 1 };
     }
@@ -4419,7 +4420,7 @@ function fixSvgCover(content) {
       c: `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
-<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>Cover</title></head>
+<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>${uiHtml("Cover")}</title></head>
 <body><section epub:type="cover"><img style="max-width:100%;height:auto" alt="Cover" src="${imgHref}"/></section></body>
 </html>`,
       fixed: true,
@@ -4432,7 +4433,7 @@ function fixSvgCover(content) {
     return { c: `<?xml version="1.0" encoding="utf-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en" xml:lang="en">
-<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>Cover</title></head>
+<head><meta content="text/html; charset=UTF-8" http-equiv="default-style"/><title>${uiHtml("Cover")}</title></head>
 <body><section epub:type="cover"><img style="max-width:100%;height:auto" alt="Cover" src="${m[1]}"/></section></body>
 </html>`, fixed: true, count: 1 };
   }
@@ -4496,7 +4497,7 @@ function ensureCoverMeta(opfString) {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(opfString, 'application/xml');
-    if (doc.querySelector('parsererror')) throw new Error('Parse failed');
+    if (doc.querySelector('parsererror')) throw new Error(uiText("Parse failed"));
 
     // Find cover image id: properties="cover-image", or id/href containing "cover"
     let coverId = null;
@@ -4745,7 +4746,7 @@ async function processImage(data, imageState = 0, imagePath = '') {
     // Set up timeout to handle cases where image never loads
     const timeoutId = setTimeout(() => {
       URL.revokeObjectURL(url);
-      reject(new Error('Image load timeout'));
+      reject(new Error(uiText("Image load timeout")));
     }, IMAGE_LOAD_TIMEOUT_MS);
 
     img.onload = async () => {
@@ -5089,7 +5090,7 @@ async function processImage(data, imageState = 0, imagePath = '') {
     img.onerror = () => {
       clearTimeout(timeoutId);
       URL.revokeObjectURL(url);
-      reject(new Error('Image load failed'));
+      reject(new Error(uiText("Image load failed")));
     };
     img.src = url;
   });
@@ -5130,7 +5131,7 @@ async function convertEpubFile(file, progressCallback) {
 
   // First pass: process images
   for (let i = 0; i < entries.length; i++) {
-    if (operationCancelled) throw new Error('Cancelled by user');
+    if (operationCancelled) throw new Error(uiText("Cancelled by user"));
     const [path, fileObj] = entries[i];
     if (fileObj.dir || path === 'mimetype') continue;
     const low = path.toLowerCase();
@@ -5231,7 +5232,7 @@ async function convertEpubFile(file, progressCallback) {
 
   // Second pass: update XHTML using DOMParser
   for (const [xhtmlPath, content] of Object.entries(xhtmlFiles)) {
-    if (operationCancelled) throw new Error('Cancelled by user');
+    if (operationCancelled) throw new Error(uiText("Cancelled by user"));
     let t = content;
 
     const stripped = stripComments(t);
@@ -5384,7 +5385,7 @@ async function convertEpubFile(file, progressCallback) {
         }
       }
     } catch (e) {
-      console.warn('DOMParser error for', xhtmlPath, e.message);
+      console.warn(uiText("DOMParser error for"), xhtmlPath, e.message);
     }
 
     // Strip @font-face rules from inline <style> blocks — embedded font files
@@ -5419,13 +5420,13 @@ async function convertEpubFile(file, progressCallback) {
     }
     const opfDir = opfPath.includes('/') ? opfPath.substring(0, opfPath.lastIndexOf('/')) : '';
     t = fixOPF(t, opfContent, opfDir, splitImages, fontPaths);
-    if (t !== opfContent) logFix('OPF', 'manifest updated');
+    if (t !== opfContent) logFix('OPF', uiText("manifest updated"));
     out.file(opfPath, t, { compression: 'DEFLATE', compressionOptions: { level: 8 }, createFolders: false });
   }
 
   // Copy remaining files
   for (const [path, fileObj] of entries) {
-    if (operationCancelled) throw new Error('Cancelled by user');
+    if (operationCancelled) throw new Error(uiText("Cancelled by user"));
     if (fileObj.dir || path === 'mimetype') continue;
     const low = path.toLowerCase();
     if (low.match(/\.(png|gif|webp|bmp|jpg|jpeg)$/) || low.match(/\.(xhtml|html|htm)$/) || low.endsWith('.opf')) continue;
@@ -5457,14 +5458,14 @@ async function convertEpubFile(file, progressCallback) {
       const enc = stripFontEncryptionEntries(t, fontPaths);
       if (enc.dropFile) {
         removedFontBytes += data.byteLength;
-        logFix('encryption.xml', 'removed (contained only font obfuscation entries)');
+        logFix('encryption.xml', uiText("removed (contained only font obfuscation entries)"));
         continue;
       }
       if (enc.modified) {
         const encoded = new TextEncoder().encode(enc.xml);
         removedFontBytes += Math.max(0, data.byteLength - encoded.length);
         data = encoded;
-        logFix('encryption.xml', 'font obfuscation entries removed');
+        logFix('encryption.xml', uiText("font obfuscation entries removed"));
       }
     } else if (low.endsWith('.ncx')) {
       let t = await safeReadText(fileObj);
@@ -5473,7 +5474,7 @@ async function convertEpubFile(file, progressCallback) {
       }
       const oldT = t;
       t = syncNCXIdentifier(t, mainIdentifier);
-      if (t !== oldT) logFix('NCX identifier', 'Synced with OPF');
+      if (t !== oldT) logFix('NCX identifier', uiText("Synced with OPF"));
       data = new TextEncoder().encode(t);
     }
     out.file(path, data, { compression: 'DEFLATE', compressionOptions: { level: 8 }, createFolders: false });
@@ -5491,7 +5492,7 @@ async function convertEpubFile(file, progressCallback) {
   const timeElapsed = (Date.now() - startTime) / 1000;
 
   // Log completion
-  log('Conversion complete!', 'success', 'DONE');
+  log(uiText("Conversion complete!"), 'success', 'DONE');
   logSummary(originalSize, newSize, timeElapsed);
 
   // Auto-export only if NOT in batch mode (batch mode exports at the end)
@@ -5554,7 +5555,7 @@ function uploadFileWebSocket(file, onProgress, onComplete, onError, targetPath =
             }
 
             if (ws.readyState !== WebSocket.OPEN) {
-              throw new Error('WebSocket closed during upload');
+              throw new Error(uiText("WebSocket closed during upload"));
             }
 
             ws.send(buffer);
@@ -5599,12 +5600,12 @@ function uploadFileWebSocket(file, onProgress, onComplete, onError, targetPath =
       console.error('[WS] Error:', event);
       currentUploadWs = null;
       if (!uploadStarted) {
-        reject(new Error('WebSocket connection failed'));
+        reject(new Error(uiText("WebSocket connection failed")));
       } else if (!sendingChunks) {
-        reject(new Error('WebSocket error during upload'));
+        reject(new Error(uiText("WebSocket error during upload")));
       } else {
         // Error during chunk sending - reject with appropriate message
-        reject(new Error('WebSocket error during file transfer'));
+        reject(new Error(uiText("WebSocket error during file transfer")));
       }
     };
 
@@ -5613,7 +5614,7 @@ function uploadFileWebSocket(file, onProgress, onComplete, onError, targetPath =
       // Reject for any close before upload was confirmed complete (covers both
       // mid-chunk-send closes and the "all chunks sent, waiting for DONE" window)
       if (!uploadComplete) {
-        reject(new Error('WebSocket closed during upload'));
+        reject(new Error(uiText("WebSocket closed during upload")));
       }
     };
   });
@@ -5641,7 +5642,7 @@ function uploadFileHTTP(file, onProgress, onComplete, onError, targetPath = curr
         if (onComplete) onComplete();
         resolve();
       } else {
-        const error = xhr.responseText || 'Upload failed';
+        const error = xhr.responseText || uiText("Upload failed");
         if (onError) onError(error);
         reject(new Error(error));
       }
@@ -5649,14 +5650,14 @@ function uploadFileHTTP(file, onProgress, onComplete, onError, targetPath = curr
 
     xhr.onerror = function() {
       currentUploadXhr = null;
-      const error = 'Network error';
+      const error = uiText("Network error");
       if (onError) onError(error);
       reject(new Error(error));
     };
 
     xhr.onabort = function() {
       currentUploadXhr = null;
-      reject(new Error('Upload aborted'));
+      reject(new Error(uiText("Upload aborted")));
     };
 
     xhr.send(formData);
@@ -5914,7 +5915,7 @@ async function uploadFile() {
       failedFiles.push({ name: shownName(), error: error, file: originalFile, relDir });
 
       // If network error, mark all remaining files as failed and show retry banner
-      if (error.includes('connection failed') || error.includes('Network error') ||
+      if (error.includes(uiText("connection failed")) || error.includes(uiText("Network error")) ||
           error.includes('timeout') || error.includes('disconnected')) {
         console.log(`[Network] Network error detected: ${error}`);
 
@@ -5972,10 +5973,10 @@ async function uploadFile() {
           convNewSize = convertedBlob.size;
         } catch (convError) {
           if (operationCancelled) { if (uploadGeneration === myGeneration) restoreAfterCancel(); return; }
-          console.error('Conversion error:', convError);
+          console.error(uiText("Conversion error:"), convError);
           // Log the error
           logError(`Conversion failed: ${convError.message}`);
-          log('Uploading original file instead...', 'warning', 'INFO');
+          log(uiText("Uploading original file instead..."), 'warning', 'INFO');
           conversionFailed = true;
 
           // In single file mode, export error log
@@ -6004,15 +6005,15 @@ async function uploadFile() {
       onComplete();
     } catch (error) {
       if (operationCancelled) { if (uploadGeneration === myGeneration) restoreAfterCancel(); return; }
-      console.error('Upload error:', error);
+      console.error(uiText("Upload error:"), error);
       // Log upload error if conversion succeeded but upload failed
       if (conversionSucceeded) {
         logError(`Upload failed: ${error.message}`);
       }
 
-      if (useWebSocket && error.message === 'WebSocket connection failed') {
+      if (useWebSocket && error.message === uiText("WebSocket connection failed")) {
         // Fall back to HTTP for all subsequent uploads
-        console.log('WebSocket failed, falling back to HTTP');
+        console.log(uiText("WebSocket failed, falling back to HTTP"));
         useWebSocket = false;
         // Retry this file with HTTP
         try {
@@ -6096,7 +6097,7 @@ function retryAllFailedUploads() {
     const folderName = document.getElementById('folderName').value.trim();
 
     if (!folderName) {
-      alert('Please enter a folder name!');
+      alert(uiText("Please enter a folder name!"));
       return;
     }
 
@@ -6118,12 +6119,12 @@ function retryAllFailedUploads() {
       if (xhr.status === 200) {
         window.location.reload();
       } else {
-        alert('Failed to create folder: ' + xhr.responseText);
+        alert(uiText("Failed to create folder: ") + xhr.responseText);
       }
     };
 
     xhr.onerror = function() {
-      alert('Failed to create folder - network error');
+      alert(uiText("Failed to create folder - network error"));
     };
 
     xhr.send(formData);
@@ -6151,11 +6152,11 @@ function retryAllFailedUploads() {
     const newName = document.getElementById('renameNewName').value.trim();
 
     if (!newName) {
-      alert('Please enter a new name.');
+      alert(uiText("Please enter a new name."));
       return;
     }
     if (newName.includes('/') || newName.includes('\\')) {
-      alert('File name cannot include slashes.');
+      alert(uiText("File name cannot include slashes."));
       return;
     }
 
@@ -6170,13 +6171,13 @@ function retryAllFailedUploads() {
       if (xhr.status === 200) {
         window.location.reload();
       } else {
-        alert('Failed to rename: ' + xhr.responseText);
+        alert(uiText("Failed to rename: ") + xhr.responseText);
       }
       closeRenameModal();
     };
 
     xhr.onerror = function() {
-      alert('Failed to rename - network error');
+      alert(uiText("Failed to rename - network error"));
       closeRenameModal();
     };
 
@@ -6265,7 +6266,7 @@ function retryAllFailedUploads() {
     const destPath = normalizePath(document.getElementById('moveDestPath').value);
 
     if (!destPath) {
-      alert('Please enter a destination folder.');
+      alert(uiText("Please enter a destination folder."));
       return;
     }
 
@@ -6280,13 +6281,13 @@ function retryAllFailedUploads() {
       if (xhr.status === 200) {
         window.location.reload();
       } else {
-        alert('Failed to move: ' + xhr.responseText);
+        alert(uiText("Failed to move: ") + xhr.responseText);
       }
       closeMoveModal();
     };
 
     xhr.onerror = function() {
-      alert('Failed to move - network error');
+      alert(uiText("Failed to move - network error"));
       closeMoveModal();
     };
 
@@ -6296,6 +6297,8 @@ function retryAllFailedUploads() {
   hydrate();
 
 </script>
+
+<!--#include file="shared/FileManager.html.inc" -->
 </body>
 </html>
 

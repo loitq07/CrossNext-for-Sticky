@@ -144,3 +144,24 @@ GEMINI.md
 src/apps_local/modules/NativeModuleAbi.generated.h
 src/apps_local/modules/NativeModuleExports.generated.cpp
 tools_local/native_modules/compile_template.json
+
+# Derived Reading Adventure sprite previews.
+/assets_local/quest/redesign/native/
+
+# Generated content and operator data are distributed separately from source.
+/qa-artifacts/
+/*.pbm
+/REDISEÑOS/
+/FIRMWARE_ACTUAL.md
+/SIMULADOR_ACTUAL.md
+/Start-Simulator.cmd
+/assets_local/simulator/
+/assets_local/sd-resources/
+/assets_local/wordle-languages/*.cpwb
+/tools_local/wordle_sources/
+/tools_local/wasm/sdcard/
+/site/showcase/files/
+/site/showcase/wordle/
+/site/showcase/languages/
+/site/showcase/catalog.json
+/docs/images/spiflash/
