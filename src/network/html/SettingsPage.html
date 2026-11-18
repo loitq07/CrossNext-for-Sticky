@@ -4,8 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Cài đặt - CrossNext</title>
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='4' fill='%23111'/%3E%3Cpath fill='%23fff' d='M3 3h6v2h-6zM15 3h6v2h-6zM1 5h2v10h-2zM9 5h2v2h-2zM13 5h2v2h-2zM21 5h2v10h-2zM11 7h2v10h-2zM15 7h2v1h-2zM15 8h3v1h-3zM16 9h3v1h-3zM17 10h3v1h-3zM16 11h3v1h-3zM15 12h3v1h-3zM15 13h2v1h-2zM1 15h8v2h-8zM15 15h8v2h-8zM9 17h2v2h-2zM13 17h2v2h-2zM11 19h2v2h-2z'/%3E%3C/svg%3E">
   <style>
+<!--#include file="shared/PhosphorIcons.css.inc" -->
     :root {
       --background: 0 0% 100%;
       --foreground: 240 10% 3.9%;
@@ -68,6 +69,7 @@
     }
     .sidebar-backdrop.show { display: block; }
     .brand-box { display: flex; align-items: center; gap: 0.75rem; padding: 0.25rem 0.5rem; }
+    .brand-logo { width: 24px; height: 24px; display: block; shape-rendering: crispEdges; }
     .brand-icon {
       width: 36px; height: 36px; border-radius: calc(var(--radius) - 2px); background: hsl(var(--primary));
       color: hsl(var(--primary-foreground)); display: flex; align-items: center; justify-content: center; font-size: 1.25rem;
@@ -302,7 +304,7 @@
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
       <div class="brand-box">
-        <div class="brand-icon"><i class="ph ph-book-open"></i></div>
+        <div class="brand-icon"><svg class="brand-logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 3h6v2h-6zM15 3h6v2h-6zM1 5h2v10h-2zM9 5h2v2h-2zM13 5h2v2h-2zM21 5h2v10h-2zM11 7h2v10h-2zM15 7h2v1h-2zM15 8h3v1h-3zM16 9h3v1h-3zM17 10h3v1h-3zM16 11h3v1h-3zM15 12h3v1h-3zM15 13h2v1h-2zM1 15h8v2h-8zM15 15h8v2h-8zM9 17h2v2h-2zM13 17h2v2h-2zM11 19h2v2h-2z"/></svg></div>
         <div>
           <div class="brand-title">CrossNext</div>
           <div class="brand-sub"><span class="status-dot"></span> Sticky e-Paper</div>

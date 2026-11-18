@@ -1,4 +1,9 @@
 
+  // Pages with a language switch define cnLang(); the others are Vietnamese-only.
+  function cnText(en, vi) {
+    return typeof cnLang === 'function' && cnLang() !== 'vi' ? en : vi;
+  }
+
   function toggleMobileSidebar(force) {
     const sidebar = document.getElementById('sidebar');
     const open = typeof force === 'boolean' ? force : !sidebar.classList.contains('mobile-open');
@@ -39,7 +44,7 @@
         }, 1500);
       }
       if (typeof showNotification === 'function') {
-        showNotification('Đã sao chép IP: ' + ip, 'success');
+        showNotification(cnText('IP copied: ', 'Đã sao chép IP: ') + ip, 'success');
       }
     };
     if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -75,27 +80,27 @@
         <div class="modal" style="max-width: 580px; width: 92%;">
           <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; border-bottom: 1px solid hsl(var(--border)); padding-bottom: 0.75rem;">
             <h3 style="margin: 0; display: flex; align-items: center; gap: 0.5rem; font-size: 1.15rem;">
-              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> Có gì mới trong v1.4.12
+              <i class="ph ph-sparkle text-primary" style="color: #10b981;"></i> ${cnText("What's new in v1.4.12", 'Có gì mới trong v1.4.12')}
             </h3>
-            <button class="btn-icon" onclick="closeWhatsNewModal()" aria-label="Đóng" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: hsl(var(--muted-foreground));">
+            <button class="btn-icon" onclick="closeWhatsNewModal()" aria-label="${cnText('Close', 'Đóng')}" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; color: hsl(var(--muted-foreground));">
               <i class="ph ph-x"></i>
             </button>
           </div>
           <div class="modal-body" style="font-size: 0.9rem; line-height: 1.6; max-height: 65vh; overflow-y: auto; padding-right: 0.5rem;">
             <div style="margin-bottom: 1rem; padding: 0.75rem; background: hsl(var(--secondary) / 0.5); border-radius: 8px; border-left: 3px solid #10b981;">
-              <strong>Bản cập nhật v1.4.12 cho Seeed reTerminal Sticky:</strong><br>
-              Nâng cấp kho ứng dụng native, ghi âm giọng nói, đọc báo Instapaper và giao diện web hiện đại.
+              <strong>${cnText('v1.4.12 update for Seeed reTerminal Sticky:', 'Bản cập nhật v1.4.12 cho Seeed reTerminal Sticky:')}</strong><br>
+              ${cnText('A bigger native app store, voice notes, Instapaper reading and a modern web interface.', 'Nâng cấp kho ứng dụng native, ghi âm giọng nói, đọc báo Instapaper và giao diện web hiện đại.')}
             </div>
             <ul style="padding-left: 1.25rem; margin: 0; display: flex; flex-direction: column; gap: 0.75rem;">
-              <li><strong>🛒 Cửa hàng ứng dụng (App Store):</strong> Hỗ trợ các native module cho phép cài đặt game và ứng dụng trực tiếp trên Sticky.</li>
-              <li><strong>🎙️ Voice Notes (Ghi âm giọng nói):</strong> Ứng dụng ghi âm micro PDM tích hợp với bộ chuẩn hóa âm thanh và hỗ trợ phiên âm AI.</li>
-              <li><strong>📰 Instapaper & Máy tính:</strong> Đọc báo offline từ Instapaper và máy tính tiện dụng với giao diện pixel đồng bộ.</li>
-              <li><strong>🌐 Giao diện Web truyền file mới:</strong> Quản lý cài đặt theo Tabs, xem trước ảnh thumbnail trực tiếp, hỗ trợ tải file inline.</li>
-              <li><strong>⚡ Tối ưu & Sửa lỗi:</strong> Tự động nhận diện panel màn hình mới, khắc phục lỗi đơ SPI khi tải tệp, phản hồi chạm tức thì.</li>
+              <li><strong>${cnText('🛒 App Store:', '🛒 Cửa hàng ứng dụng (App Store):')}</strong> ${cnText('Native modules let you install games and apps directly on Sticky.', 'Hỗ trợ các native module cho phép cài đặt game và ứng dụng trực tiếp trên Sticky.')}</li>
+              <li><strong>${cnText('🎙️ Voice Notes:', '🎙️ Voice Notes (Ghi âm giọng nói):')}</strong> ${cnText('A PDM microphone recorder with built-in audio normalization and AI transcription support.', 'Ứng dụng ghi âm micro PDM tích hợp với bộ chuẩn hóa âm thanh và hỗ trợ phiên âm AI.')}</li>
+              <li><strong>${cnText('📰 Instapaper & Calculator:', '📰 Instapaper & Máy tính:')}</strong> ${cnText('Read Instapaper articles offline, plus a handy calculator, both in the matching pixel style.', 'Đọc báo offline từ Instapaper và máy tính tiện dụng với giao diện pixel đồng bộ.')}</li>
+              <li><strong>${cnText('🌐 New file transfer web UI:', '🌐 Giao diện Web truyền file mới:')}</strong> ${cnText('Tabbed settings, live image thumbnails and inline file downloads.', 'Quản lý cài đặt theo Tabs, xem trước ảnh thumbnail trực tiếp, hỗ trợ tải file inline.')}</li>
+              <li><strong>${cnText('⚡ Performance & fixes:', '⚡ Tối ưu & Sửa lỗi:')}</strong> ${cnText('Automatic detection of the new display panel, a fix for SPI stalls during transfers, and instant touch response.', 'Tự động nhận diện panel màn hình mới, khắc phục lỗi đơ SPI khi tải tệp, phản hồi chạm tức thì.')}</li>
             </ul>
           </div>
           <div class="modal-actions" style="margin-top: 1.25rem; display: flex; justify-content: flex-end;">
-            <button class="btn btn-primary" onclick="closeWhatsNewModal()" style="min-width: 100px;">Đã hiểu</button>
+            <button class="btn btn-primary" onclick="closeWhatsNewModal()" style="min-width: 100px;">${cnText('Got it', 'Đã hiểu')}</button>
           </div>
         </div>
       `;

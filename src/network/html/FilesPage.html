@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="vi" class="dark">
+<html lang="en" class="dark">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Truyền tập tin - CrossNext</title>
+  <title>File Transfer - CrossNext</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='4' fill='%23111'/%3E%3Cpath fill='%23fff' d='M3 3h6v2h-6zM15 3h6v2h-6zM1 5h2v10h-2zM9 5h2v2h-2zM13 5h2v2h-2zM21 5h2v10h-2zM11 7h2v10h-2zM15 7h2v1h-2zM15 8h3v1h-3zM16 9h3v1h-3zM17 10h3v1h-3zM16 11h3v1h-3zM15 12h3v1h-3zM15 13h2v1h-2zM1 15h8v2h-8zM15 15h8v2h-8zM9 17h2v2h-2zM13 17h2v2h-2zM11 19h2v2h-2z'/%3E%3C/svg%3E">
   <script src="/js/jszip.min.js"></script>
-  <script src="https://unpkg.com/@phosphor-icons/web"></script>
   <style>
+<!--#include file="shared/PhosphorIcons.css.inc" -->
 
     :root {
       --background: 0 0% 100%;
@@ -99,6 +100,7 @@
       justify-content: center;
       font-size: 1.25rem;
     }
+    .brand-logo { width: 24px; height: 24px; display: block; shape-rendering: crispEdges; }
 
     .brand-title {
       font-weight: 700;
@@ -808,15 +810,24 @@
       transition: all 0.15s;
     }
     .drop-zone:hover, .drop-zone.dragover { border-color: hsl(var(--ring)); background: hsl(var(--accent)); }
-    .drop-zone input[type="file"] {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      cursor: pointer;
-      width: 100%;
-      height: 100%;
-    }
+    .drop-zone input[type="file"] { display: none; }
+    .drop-zone-icon { font-size: 2rem; color: hsl(var(--muted-foreground)); display: block; margin-bottom: 0.35rem; pointer-events: none; }
     .drop-zone-hint { font-size: 0.875rem; color: hsl(var(--muted-foreground)); pointer-events: none; }
+    .drop-zone-buttons { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.85rem; }
+    .drop-zone.disabled { opacity: 0.6; cursor: not-allowed; }
+    .drop-selection { display: none; margin-top: 0.9rem; text-align: left; font-size: 0.8rem; border-top: 1px solid hsl(var(--border)); padding-top: 0.6rem; cursor: default; }
+    .drop-selection.show { display: block; }
+    .drop-selection-head { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-weight: 600; margin-bottom: 0.35rem; }
+    .drop-selection-list { max-height: 132px; overflow-y: auto; color: hsl(var(--muted-foreground)); }
+    .drop-selection-list div { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding: 1px 0; }
+    .drop-selection-clear { background: none; border: none; color: hsl(var(--muted-foreground)); cursor: pointer; font-size: 0.8rem; text-decoration: underline; }
+    .page-drop-overlay { position: fixed; inset: 0; z-index: 2000; display: none; align-items: center; justify-content: center; background: hsl(var(--background) / 0.82); backdrop-filter: blur(3px); pointer-events: none; }
+    .page-drop-overlay.show { display: flex; }
+    .page-drop-box { border: 3px dashed hsl(var(--ring)); border-radius: calc(var(--radius) * 2); padding: 2.5rem 3rem; text-align: center; background: hsl(var(--card)); max-width: 90vw; }
+    .page-drop-box i { font-size: 3rem; display: block; margin-bottom: 0.5rem; }
+    .page-drop-box .page-drop-title { font-size: 1.15rem; font-weight: 700; }
+    .page-drop-box .page-drop-sub { font-size: 0.85rem; color: hsl(var(--muted-foreground)); margin-top: 0.25rem; word-break: break-all; }
+    .lang-toggle { width: auto; padding: 0 0.6rem; gap: 0.3rem; font-size: 0.75rem; font-weight: 700; display: inline-flex; align-items: center; }
 
     /* Convert Options */
     .convert-options {
@@ -948,13 +959,20 @@
 </head>
 <body class="files-page">
 <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="toggleMobileSidebar(false)"></div>
+<div class="page-drop-overlay" id="pageDropOverlay" aria-hidden="true">
+  <div class="page-drop-box">
+    <i class="ph ph-cloud-arrow-up"></i>
+    <div class="page-drop-title" data-vi="Thả để tải lên">Drop to upload</div>
+    <div class="page-drop-sub"><span data-vi="Tập tin và thư mục sẽ được tải lên:">Files and folders will be uploaded to:</span> <strong id="pageDropPath">/</strong></div>
+  </div>
+</div>
 
 <div class="app-shell">
   <!-- Left Sidebar -->
   <aside class="sidebar" id="sidebar">
     <div class="brand-box">
       <div class="brand-icon">
-        <i class="ph ph-book-open"></i>
+        <svg class="brand-logo" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 3h6v2h-6zM15 3h6v2h-6zM1 5h2v10h-2zM9 5h2v2h-2zM13 5h2v2h-2zM21 5h2v10h-2zM11 7h2v10h-2zM15 7h2v1h-2zM15 8h3v1h-3zM16 9h3v1h-3zM17 10h3v1h-3zM16 11h3v1h-3zM15 12h3v1h-3zM15 13h2v1h-2zM1 15h8v2h-8zM15 15h8v2h-8zM9 17h2v2h-2zM13 17h2v2h-2zM11 19h2v2h-2z"/></svg>
       </div>
       <div>
         <div class="brand-title">CrossNext</div>
@@ -968,39 +986,39 @@
       <div class="nav-label">Menu</div>
       <a class="nav-item active" href="/files">
         <i class="ph ph-folder"></i>
-        <span>Truyền tập tin</span>
+        <span data-vi="Truyền tập tin">File Transfer</span>
         <span class="nav-badge" id="sidebarTotalFiles">0</span>
       </a>
       <a href="/settings" class="nav-item">
         <i class="ph ph-gear-six"></i>
-        <span>Cài đặt</span>
+        <span data-vi="Cài đặt">Settings</span>
       </a>
       <a href="/fonts" class="nav-item">
         <i class="ph ph-text-t"></i>
-        <span>Phông chữ</span>
+        <span data-vi="Phông chữ">Fonts</span>
       </a>
     </nav>
 
     <nav class="nav-section">
-      <div class="nav-label">Phân loại</div>
+      <div class="nav-label" data-vi="Phân loại">Categories</div>
       <div class="nav-item active" id="filterCatAll" onclick="setCategoryFilter('all')">
         <i class="ph ph-files"></i>
-        <span>Tất cả tập tin</span>
+        <span data-vi="Tất cả tập tin">All files</span>
         <span class="nav-badge" id="badgeCatAll">0</span>
       </div>
       <div class="nav-item" id="filterCatEpub" onclick="setCategoryFilter('epub')">
         <i class="ph ph-book"></i>
-        <span>Sách & EPUB</span>
+        <span data-vi="Sách & EPUB">Books & EPUB</span>
         <span class="nav-badge" id="badgeCatEpub">0</span>
       </div>
       <div class="nav-item" id="filterCatImage" onclick="setCategoryFilter('image')">
         <i class="ph ph-image"></i>
-        <span>Hình ảnh</span>
+        <span data-vi="Hình ảnh">Images</span>
         <span class="nav-badge" id="badgeCatImage">0</span>
       </div>
       <div class="nav-item" id="filterCatDoc" onclick="setCategoryFilter('doc')">
         <i class="ph ph-file-text"></i>
-        <span>Tài liệu</span>
+        <span data-vi="Tài liệu">Documents</span>
         <span class="nav-badge" id="badgeCatDoc">0</span>
       </div>
     </nav>
@@ -1008,17 +1026,17 @@
     <div class="sidebar-footer">
       <div class="footer-header">
         <div class="footer-status-pill">
-          <span class="status-indicator" title="Trực tuyến"></span>
-          <span class="footer-title">Thiết bị</span>
+          <span class="status-indicator" title="Online" data-vi-title="Trực tuyến"></span>
+          <span class="footer-title" data-vi="Thiết bị">Device</span>
         </div>
-        <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="Nhấn để xem tính năng mới trong v1.4.12">v1.4.12</span>
+        <span class="badge-ver" id="sbVersion" onclick="openWhatsNewModal()" title="See what's new in v1.4.12" data-vi-title="Nhấn để xem tính năng mới trong v1.4.12">v1.4.12</span>
       </div>
       <div class="device-details">
         <div class="detail-row">
-          <span class="detail-label"><i class="ph ph-cpu"></i> Phần cứng</span>
+          <span class="detail-label"><i class="ph ph-cpu"></i> <span data-vi="Phần cứng">Hardware</span></span>
           <span class="detail-val device-name" id="sbDevice">Sticky</span>
         </div>
-        <div class="detail-row ip-row" onclick="copyDeviceIp()" title="Nhấn để sao chép địa chỉ IP">
+        <div class="detail-row ip-row" onclick="copyDeviceIp()" title="Click to copy the IP address" data-vi-title="Nhấn để sao chép địa chỉ IP">
           <span class="detail-label"><i class="ph ph-wifi-high"></i> IP</span>
           <span class="detail-val ip-val"><span id="sbIp">192.168.0.174</span> <i class="ph ph-copy copy-icon"></i></span>
         </div>
@@ -1030,7 +1048,7 @@
   <div class="main-wrapper">
     <!-- Topbar -->
     <header class="topbar">
-<button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileSidebar()"><i class="ph ph-list"></i></button>
+<button class="mobile-menu-btn" id="mobileMenuBtn" aria-label="Open menu" data-vi-aria-label="Mở menu" aria-controls="sidebar" aria-expanded="false" onclick="toggleMobileSidebar()"><i class="ph ph-list"></i></button>
       <div class="breadcrumbs" id="directory-breadcrumbs">
         <a href="/files"><i class="ph ph-house"></i> Home</a>
       </div>
@@ -1038,32 +1056,35 @@
       <div class="topbar-actions">
         <div class="search-box">
           <span class="search-icon"><i class="ph ph-magnifying-glass"></i></span>
-          <input type="text" class="search-input" id="fileSearchInput" placeholder="Tìm kiếm tập tin..." oninput="onSearchInput(this.value)" />
+          <input type="text" class="search-input" id="fileSearchInput" placeholder="Search files..." data-vi-placeholder="Tìm kiếm tập tin..." oninput="onSearchInput(this.value)" />
         </div>
 
         <button class="btn btn-primary" onclick="openUploadModal()">
           <i class="ph ph-upload-simple"></i>
-          <span>Tải lên</span>
+          <span data-vi="Tải lên">Upload</span>
         </button>
         <button class="btn btn-outline" onclick="openFolderModal()">
           <i class="ph ph-folder-plus"></i>
-          <span>Thư mục mới</span>
+          <span data-vi="Thư mục mới">New folder</span>
         </button>
-        <button class="btn btn-outline" onclick="openWhatsNewModal()" title="Xem tính năng mới trong v1.4.12">
+        <button class="btn btn-outline" onclick="openWhatsNewModal()" title="See what's new in v1.4.12" data-vi-title="Xem tính năng mới trong v1.4.12">
           <i class="ph ph-sparkle"></i>
-          <span>Có gì mới?</span>
+          <span data-vi="Có gì mới?">What's new?</span>
         </button>
         <button class="btn btn-destructive" style="display:none;" id="btnDeleteSelected" onclick="openDeleteSelectedModal()">
           <i class="ph ph-trash"></i>
-          <span id="btnDeleteSelectedText">Xóa đã chọn</span>
+          <span id="btnDeleteSelectedText">Delete selected</span>
         </button>
 
         <div class="segmented-control">
-          <button class="segmented-btn active" id="btnViewTable" onclick="setViewMode('table')" title="Dạng bảng"><i class="ph ph-list"></i></button>
-          <button class="segmented-btn" id="btnViewGrid" onclick="setViewMode('grid')" title="Dạng lưới"><i class="ph ph-squares-four"></i></button>
+          <button class="segmented-btn active" id="btnViewTable" onclick="setViewMode('table')" title="Table view" data-vi-title="Dạng bảng"><i class="ph ph-list"></i></button>
+          <button class="segmented-btn" id="btnViewGrid" onclick="setViewMode('grid')" title="Grid view" data-vi-title="Dạng lưới"><i class="ph ph-squares-four"></i></button>
         </div>
 
-        <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Đổi giao diện Sáng/Tối">
+        <button class="btn-icon lang-toggle" id="langToggleBtn" onclick="toggleLanguage()" title="Language: English (click for Tiếng Việt)" data-vi-title="Ngôn ngữ: Tiếng Việt (nhấn để chuyển sang English)">
+          <i class="ph ph-globe"></i><span id="langToggleLabel">EN</span>
+        </button>
+        <button class="btn-icon" id="themeToggleBtn" onclick="toggleTheme()" title="Toggle light/dark theme" data-vi-title="Đổi giao diện Sáng/Tối">
           <i class="ph ph-sun" id="themeIcon"></i>
         </button>
       </div>
@@ -1076,18 +1097,18 @@
         <div class="failed-uploads-banner" id="failedUploadsBanner">
           <div class="failed-uploads-header">
             <h4 style="font-size:0.95rem; font-weight:600; display:flex; align-items:center; gap:0.5rem; color:#ef4444;">
-              <i class="ph ph-warning"></i> Một số tập tin tải lên thất bại
+              <i class="ph ph-warning"></i> <span data-vi="Một số tập tin tải lên thất bại">Some uploads failed</span>
             </h4>
             <button class="modal-close" style="position:static;" onclick="dismissFailedUploads()">&times;</button>
           </div>
           <div id="failedFilesList" style="margin: 0.5rem 0; font-size: 0.85rem;"></div>
-          <button class="btn btn-outline btn-sm" onclick="retryAllFailedUploads()">Thử lại tất cả</button>
+          <button class="btn btn-outline btn-sm" onclick="retryAllFailedUploads()" data-vi="Thử lại tất cả">Retry all</button>
         </div>
 
         <!-- Recently Modified Strip -->
         <div id="recentSection">
           <div class="section-title">
-            <span>Truy cập gần đây</span>
+            <span data-vi="Truy cập gần đây">Recent</span>
             <span class="section-subtitle" id="recentSubtitle"></span>
           </div>
           <div class="recent-strip" id="recentStrip"></div>
@@ -1097,14 +1118,14 @@
         <div class="files-card">
           <div class="files-header">
             <div class="section-title" style="margin-bottom:0">
-              <span id="filesSectionTitle">Tất cả tập tin</span>
+              <span id="filesSectionTitle" data-vi="Tất cả tập tin">All files</span>
             </div>
-            <span class="files-summary" id="folder-summary">Đang tải...</span>
+            <span class="files-summary" id="folder-summary" data-vi="Đang tải...">Loading...</span>
           </div>
 
           <div id="file-table">
-            <div style="padding: 2rem; text-align: center; color: hsl(var(--muted-foreground));">
-              Đang tải danh sách tập tin...
+            <div style="padding: 2rem; text-align: center; color: hsl(var(--muted-foreground));" data-vi="Đang tải danh sách tập tin...">
+              Loading file list...
             </div>
           </div>
         </div>
@@ -1115,7 +1136,7 @@
       <!-- Right Storage & Device Panel -->
       <aside class="storage-panel">
         <div>
-          <div class="storage-title">Dung lượng tập tin trong thư mục</div>
+          <div class="storage-title" data-vi="Dung lượng tập tin trong thư mục">Storage used in this folder</div>
           <div class="radial-container">
             <svg class="radial-svg" viewBox="0 0 140 140">
               <circle class="radial-bg" cx="70" cy="70" r="54"></circle>
@@ -1123,7 +1144,7 @@
             </svg>
             <div class="radial-text">
               <span class="radial-percent" id="storagePercentText">0%</span>
-              <span class="radial-caption">Tổng tập tin</span>
+              <span class="radial-caption" data-vi="Tổng tập tin">Total files</span>
             </div>
           </div>
         </div>
@@ -1131,28 +1152,28 @@
         <div class="storage-categories">
           <div class="cat-item">
             <div class="cat-top">
-              <span class="cat-name"><i class="ph ph-book" style="color:#10b981"></i> Sách & EPUB</span>
+              <span class="cat-name"><i class="ph ph-book" style="color:#10b981"></i> <span data-vi="Sách & EPUB">Books & EPUB</span></span>
               <span class="cat-size" id="panelSizeEpub">0 B</span>
             </div>
             <div class="cat-bar"><div class="cat-bar-fill cat-bar-epub" id="panelBarEpub" style="width:0%"></div></div>
           </div>
           <div class="cat-item">
             <div class="cat-top">
-              <span class="cat-name"><i class="ph ph-image" style="color:#3b82f6"></i> Hình ảnh</span>
+              <span class="cat-name"><i class="ph ph-image" style="color:#3b82f6"></i> <span data-vi="Hình ảnh">Images</span></span>
               <span class="cat-size" id="panelSizeImage">0 B</span>
             </div>
             <div class="cat-bar"><div class="cat-bar-fill cat-bar-image" id="panelBarImage" style="width:0%"></div></div>
           </div>
           <div class="cat-item">
             <div class="cat-top">
-              <span class="cat-name"><i class="ph ph-file-text" style="color:#8b5cf6"></i> Tài liệu</span>
+              <span class="cat-name"><i class="ph ph-file-text" style="color:#8b5cf6"></i> <span data-vi="Tài liệu">Documents</span></span>
               <span class="cat-size" id="panelSizeDoc">0 B</span>
             </div>
             <div class="cat-bar"><div class="cat-bar-fill cat-bar-doc" id="panelBarDoc" style="width:0%"></div></div>
           </div>
           <div class="cat-item">
             <div class="cat-top">
-              <span class="cat-name"><i class="ph ph-files" style="color:#64748b"></i> Khác</span>
+              <span class="cat-name"><i class="ph ph-files" style="color:#64748b"></i> <span data-vi="Khác">Other</span></span>
               <span class="cat-size" id="panelSizeOther">0 B</span>
             </div>
             <div class="cat-bar"><div class="cat-bar-fill cat-bar-other" id="panelBarOther" style="width:0%"></div></div>
@@ -1161,18 +1182,18 @@
 
         <div class="specs-card">
           <div class="specs-header">
-            <i class="ph ph-cpu"></i> Trạng thái thiết bị
+            <i class="ph ph-cpu"></i> <span data-vi="Trạng thái thiết bị">Device status</span>
           </div>
           <div class="device-row">
-            <span>RAM rảnh (Heap)</span>
+            <span data-vi="RAM rảnh (Heap)">Free RAM (heap)</span>
             <span class="device-val" id="specFreeHeap">-</span>
           </div>
           <div class="device-row">
-            <span>Tín hiệu Wi-Fi</span>
+            <span data-vi="Tín hiệu Wi-Fi">Wi-Fi signal</span>
             <span class="device-val" id="specRssi">-</span>
           </div>
           <div class="device-row">
-            <span>Thời gian chạy</span>
+            <span data-vi="Thời gian chạy">Uptime</span>
             <span class="device-val" id="specUptime">-</span>
           </div>
         </div>
@@ -1185,12 +1206,19 @@
 <div class="modal-overlay" id="uploadModal">
   <div class="modal">
     <button class="modal-close" id="uploadModalClose" onclick="closeUploadModal()">&times;</button>
-    <h3><i class="ph ph-upload-simple"></i> Tải lên tập tin</h3>
+    <h3><i class="ph ph-upload-simple"></i> <span data-vi="Tải lên tập tin">Upload files</span></h3>
     <div class="upload-form">
-      <p class="file-info">Tải lên thư mục: <strong id="uploadPathDisplay">/</strong></p>
-      <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" onchange="validateFile()" multiple>
-        <p class="drop-zone-hint">Kéo thả tập tin vào đây hoặc nhấp để chọn</p>
+      <p class="file-info"><span data-vi="Tải lên thư mục:">Upload to:</span> <strong id="uploadPathDisplay">/</strong></p>
+      <div class="drop-zone" id="dropZone" role="button" tabindex="0">
+        <input type="file" id="fileInput" multiple>
+        <input type="file" id="folderInput" webkitdirectory directory multiple>
+        <i class="ph ph-cloud-arrow-up drop-zone-icon"></i>
+        <p class="drop-zone-hint" data-vi="Kéo thả tập tin hoặc cả thư mục vào đây, hoặc nhấp để chọn">Drag &amp; drop files or whole folders here, or click to browse</p>
+        <div class="drop-zone-buttons">
+          <button type="button" class="btn btn-outline btn-sm" id="pickFilesBtn"><i class="ph ph-file-plus"></i> <span data-vi="Chọn tập tin">Choose files</span></button>
+          <button type="button" class="btn btn-outline btn-sm" id="pickFolderBtn"><i class="ph ph-folder-simple-plus"></i> <span data-vi="Chọn thư mục">Choose folder</span></button>
+        </div>
+        <div class="drop-selection" id="dropSelection"></div>
       </div>
 
       <div class="picker-columns" id="pickerColumns">
@@ -1198,11 +1226,11 @@
           <div class="convert-row">
             <label class="convert-checkbox">
               <input type="checkbox" id="convertBeforeUpload" onchange="toggleConvertOptions()">
-              <span>Tối ưu hóa EPUB</span>
+              <span data-vi="Tối ưu hóa EPUB">Optimize EPUB</span>
             </label>
             <span class="advanced-options-toggle" id="advancedOptionsToggle" onclick="toggleAdvancedOptions()">
               <span id="advancedOptionsArrow">▶</span>
-              <span id="advancedOptionsText">Nâng cao</span>
+              <span id="advancedOptionsText" data-vi="Nâng cao">Advanced</span>
             </span>
           </div>
 
@@ -1210,7 +1238,7 @@
 
           <div class="advanced-settings-content" id="advancedSettingsContent">
             <div class="advanced-setting-row">
-              <div class="setting-title">Đổi tên theo Metadata</div>
+              <div class="setting-title" data-vi="Đổi tên theo Metadata">Rename from metadata</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="renameFromMetadataToggle" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
@@ -1218,7 +1246,7 @@
             </div>
 
             <div class="advanced-setting-row">
-              <div class="setting-title">Chất lượng ảnh JPEG</div>
+              <div class="setting-title" data-vi="Chất lượng ảnh JPEG">JPEG image quality</div>
               <div class="quality-presets">
                 <button class="quality-preset" data-value="45" onclick="setQualityPreset(45)">45%</button>
                 <button class="quality-preset" data-value="60" onclick="setQualityPreset(60)">60%</button>
@@ -1230,7 +1258,7 @@
             </div>
 
             <div class="advanced-setting-row">
-              <div class="setting-title">Tự cắt lề (Auto-crop)</div>
+              <div class="setting-title" data-vi="Tự cắt lề (Auto-crop)">Auto-crop margins</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="autoCropToggle" onchange="updateQualitySettings()">
                 <span class="toggle-slider"></span>
@@ -1238,7 +1266,7 @@
             </div>
 
             <div class="advanced-setting-row" id="deviceSettingRow">
-              <div class="setting-title">Thiết bị đích</div>
+              <div class="setting-title" data-vi="Thiết bị đích">Target device</div>
               <div class="rotation-buttons">
                 <button class="device-btn active" data-value="auto" onclick="setDeviceTarget('auto')"><span id="deviceAutoLabel">Auto</span></button>
                 <button class="device-btn" data-value="X4" onclick="setDeviceTarget('X4')">X4</button>
@@ -1247,7 +1275,7 @@
             </div>
 
             <div class="advanced-setting-row" id="rotationSettingRow">
-              <div class="setting-title">Hướng xoay ảnh</div>
+              <div class="setting-title" data-vi="Hướng xoay ảnh">Image rotation</div>
               <div class="rotation-buttons">
                 <button class="rotation-btn" id="rotationCCW" onclick="setHandedness('left')">CCW ↺</button>
                 <button class="rotation-btn active" id="rotationCW" onclick="setHandedness('right')">CW ↻</button>
@@ -1255,7 +1283,7 @@
             </div>
 
             <div class="advanced-setting-row" id="overlapSettingRow">
-              <div class="setting-title">Độ gối mép</div>
+              <div class="setting-title" data-vi="Độ gối mép">Split overlap</div>
               <div class="overlap-selector">
                 <button class="overlap-btn active" data-value="5" onclick="setOverlap(5)">5%</button>
                 <button class="overlap-btn" data-value="10" onclick="setOverlap(10)">10%</button>
@@ -1263,7 +1291,7 @@
             </div>
 
             <div class="advanced-setting-row">
-              <div class="setting-title">Tải log xử lý</div>
+              <div class="setting-title" data-vi="Tải log xử lý">Download processing log</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="export-log-checkbox" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
@@ -1271,7 +1299,7 @@
             </div>
 
             <div class="advanced-setting-row">
-              <div class="setting-title">Ghi nhớ cài đặt</div>
+              <div class="setting-title" data-vi="Ghi nhớ cài đặt">Remember settings</div>
               <label class="toggle-switch">
                 <input type="checkbox" id="rememberUploadSettings" onchange="updateUploadSettingsPersistence()">
                 <span class="toggle-slider"></span>
@@ -1285,19 +1313,19 @@
         </div>
 
         <div class="image-picker-section" id="imagePickerSection" style="display:none;">
-          <div style="font-weight:600; margin-bottom:0.5rem;">Tùy chọn tách / xoay ảnh (<span id="imagePickerCount">0</span>)</div>
+          <div style="font-weight:600; margin-bottom:0.5rem;"><span data-vi="Tùy chọn tách / xoay ảnh">Split / rotate images</span> (<span id="imagePickerCount">0</span>)</div>
           <div class="image-grid" id="imageGrid"></div>
         </div>
       </div>
 
       <div class="convert-warning" id="convertWarning" style="display:none; color:#f59e0b; font-size:0.8rem; margin:0.5rem 0;">
-        ⚠️ Tối ưu hóa sẽ thay đổi tập tin EPUB. Hãy sao lưu nếu cần.
+        ⚠️ <span data-vi="Tối ưu hóa sẽ thay đổi tập tin EPUB. Hãy sao lưu nếu cần.">Optimizing rewrites the EPUB file. Keep a backup if you need the original.</span>
       </div>
 
       <div class="modal-actions">
-        <button class="btn btn-outline" onclick="handleCancelUploadModal()">Hủy</button>
-        <button id="startConversionBtn" class="btn btn-primary" style="display:none;" onclick="startConversionWithImageStates()">Tối ưu & Tải lên</button>
-        <button id="uploadBtn" class="btn btn-primary" onclick="uploadFile()" disabled>Tải lên</button>
+        <button class="btn btn-outline" onclick="handleCancelUploadModal()" data-vi="Hủy">Cancel</button>
+        <button id="startConversionBtn" class="btn btn-primary" style="display:none;" onclick="startConversionWithImageStates()" data-vi="Tối ưu & Tải lên">Optimize & Upload</button>
+        <button id="uploadBtn" class="btn btn-primary" onclick="uploadFile()" disabled>Upload</button>
       </div>
 
       <div id="progress-container">
@@ -1316,12 +1344,12 @@
 <div class="modal-overlay" id="folderModal">
   <div class="modal">
     <button class="modal-close" onclick="closeFolderModal()">&times;</button>
-    <h3><i class="ph ph-folder-plus"></i> Tạo thư mục mới</h3>
-    <p class="file-info">Tạo thư mục trong: <strong id="folderPathDisplay">/</strong></p>
-    <input type="text" id="folderName" class="folder-input" placeholder="Tên thư mục..." oninput="document.getElementById('createFolderBtn').disabled = !this.value.trim();">
+    <h3><i class="ph ph-folder-plus"></i> <span data-vi="Tạo thư mục mới">New folder</span></h3>
+    <p class="file-info"><span data-vi="Tạo thư mục trong:">Create in:</span> <strong id="folderPathDisplay">/</strong></p>
+    <input type="text" id="folderName" class="folder-input" placeholder="Folder name..." data-vi-placeholder="Tên thư mục..." oninput="document.getElementById('createFolderBtn').disabled = !this.value.trim();">
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeFolderModal()">Hủy</button>
-      <button class="btn btn-primary" id="createFolderBtn" onclick="createFolder()" disabled>Tạo thư mục</button>
+      <button class="btn btn-outline" onclick="closeFolderModal()" data-vi="Hủy">Cancel</button>
+      <button class="btn btn-primary" id="createFolderBtn" onclick="createFolder()" disabled data-vi="Tạo thư mục">Create folder</button>
     </div>
   </div>
 </div>
@@ -1330,12 +1358,12 @@
 <div class="modal-overlay" id="deleteModal">
   <div class="modal">
     <button class="modal-close" onclick="closeDeleteModal()">&times;</button>
-    <h3 style="color:#ef4444;"><i class="ph ph-trash"></i> Xác nhận xóa</h3>
-    <p class="file-info">Bạn có chắc chắn muốn xóa các mục sau? Hành động này không thể hoàn tác!</p>
+    <h3 style="color:#ef4444;"><i class="ph ph-trash"></i> <span data-vi="Xác nhận xóa">Confirm delete</span></h3>
+    <p class="file-info" data-vi="Bạn có chắc chắn muốn xóa các mục sau? Hành động này không thể hoàn tác!">Delete the following items? This cannot be undone!</p>
     <div id="deleteItemList" style="max-height:180px; overflow-y:auto; margin-bottom:1rem; font-size:0.85rem; border:1px solid hsl(var(--border)); border-radius:var(--radius); padding:0.75rem;"></div>
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeDeleteModal()">Hủy</button>
-      <button class="btn btn-destructive" onclick="confirmDelete()">Xác nhận xóa</button>
+      <button class="btn btn-outline" onclick="closeDeleteModal()" data-vi="Hủy">Cancel</button>
+      <button class="btn btn-destructive" onclick="confirmDelete()" data-vi="Xác nhận xóa">Delete</button>
     </div>
   </div>
 </div>
@@ -1344,13 +1372,13 @@
 <div class="modal-overlay" id="renameModal">
   <div class="modal">
     <button class="modal-close" onclick="closeRenameModal()">&times;</button>
-    <h3><i class="ph ph-pencil-simple"></i> Đổi tên tập tin</h3>
-    <p class="file-info">Đổi tên: <strong id="renameItemName"></strong></p>
-    <input type="text" id="renameNewName" class="folder-input" placeholder="Tên mới...">
+    <h3><i class="ph ph-pencil-simple"></i> <span data-vi="Đổi tên tập tin">Rename</span></h3>
+    <p class="file-info"><span data-vi="Đổi tên:">Rename:</span> <strong id="renameItemName"></strong></p>
+    <input type="text" id="renameNewName" class="folder-input" placeholder="New name..." data-vi-placeholder="Tên mới...">
     <input type="hidden" id="renameItemPath">
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeRenameModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="confirmRename()">Lưu thay đổi</button>
+      <button class="btn btn-outline" onclick="closeRenameModal()" data-vi="Hủy">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmRename()" data-vi="Lưu thay đổi">Save</button>
     </div>
   </div>
 </div>
@@ -1359,14 +1387,14 @@
 <div class="modal-overlay" id="moveModal">
   <div class="modal">
     <button class="modal-close" onclick="closeMoveModal()">&times;</button>
-    <h3><i class="ph ph-arrows-out-cardinal"></i> Di chuyển tập tin</h3>
-    <p class="file-info">Di chuyển: <strong id="moveItemName"></strong></p>
-    <input type="text" id="moveDestPath" class="folder-input" list="moveFolderOptions" placeholder="/Thư_mục_đích">
+    <h3><i class="ph ph-arrows-out-cardinal"></i> <span data-vi="Di chuyển tập tin">Move</span></h3>
+    <p class="file-info"><span data-vi="Di chuyển:">Move:</span> <strong id="moveItemName"></strong></p>
+    <input type="text" id="moveDestPath" class="folder-input" list="moveFolderOptions" placeholder="/Destination_folder" data-vi-placeholder="/Thư_mục_đích">
     <datalist id="moveFolderOptions"></datalist>
     <input type="hidden" id="moveItemPath">
     <div class="modal-actions">
-      <button class="btn btn-outline" onclick="closeMoveModal()">Hủy</button>
-      <button class="btn btn-primary" onclick="confirmMove()">Di chuyển</button>
+      <button class="btn btn-outline" onclick="closeMoveModal()" data-vi="Hủy">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmMove()" data-vi="Di chuyển">Move</button>
     </div>
   </div>
 </div>
@@ -1375,22 +1403,54 @@
 <div class="modal-overlay" id="imagePreviewModal">
   <div class="modal image-preview-mode">
     <button class="modal-close" onclick="closeImagePreview()">&times;</button>
-    <h3><i class="ph ph-image"></i> Xem trước hình ảnh</h3>
+    <h3><i class="ph ph-image"></i> <span data-vi="Xem trước hình ảnh">Image preview</span></h3>
     <p class="file-info"><strong id="imagePreviewName"></strong></p>
     <div class="image-preview-stage">
-      <img id="imagePreviewImg" alt="Xem trước">
+      <img id="imagePreviewImg" alt="Preview" data-vi-alt="Xem trước">
     </div>
     <div class="modal-actions">
       <a id="imagePreviewDownload" class="btn btn-primary" rel="noopener noreferrer" target="_blank" href="#">
-        <i class="ph ph-download-simple"></i> Tải về
+        <i class="ph ph-download-simple"></i> <span data-vi="Tải về">Download</span>
       </a>
-      <button class="btn btn-outline" onclick="closeImagePreview()">Đóng</button>
+      <button class="btn btn-outline" onclick="closeImagePreview()" data-vi="Đóng">Close</button>
     </div>
   </div>
 </div>
 
 
 <script>
+  // ── UI language ────────────────────────────────────────────────────
+  // English is the default. Vietnamese is opt-in via the topbar toggle and is
+  // remembered per browser. Static markup is written in English and carries its
+  // Vietnamese text in data-vi / data-vi-{title,placeholder,aria-label,alt};
+  // dynamic strings go through L(en, vi).
+  let uiLang = 'en';
+  try { if (localStorage.getItem('cn_lang') === 'vi') uiLang = 'vi'; } catch (e) {}
+  function cnLang() { return uiLang; }
+  function L(en, vi) { return uiLang === 'vi' && vi ? vi : en; }
+
+  function applyLanguage() {
+    document.documentElement.lang = uiLang;
+    if (uiLang === 'vi') {
+      document.querySelectorAll('[data-vi]').forEach(el => { el.textContent = el.dataset.vi; });
+      ['title', 'placeholder', 'aria-label', 'alt'].forEach(attr => {
+        document.querySelectorAll(`[data-vi-${attr}]`).forEach(el => {
+          el.setAttribute(attr, el.getAttribute(`data-vi-${attr}`));
+        });
+      });
+    }
+    const label = document.getElementById('langToggleLabel');
+    if (label) label.textContent = uiLang === 'vi' ? 'VI' : 'EN';
+  }
+
+  function toggleLanguage() {
+    if (typeof isUploadInProgress !== 'undefined' && isUploadInProgress) return;
+    try { localStorage.setItem('cn_lang', uiLang === 'vi' ? 'en' : 'vi'); } catch (e) {}
+    window.location.reload();
+  }
+
+  applyLanguage();
+
 <!--#include file="shared/Responsive.js.inc" -->
 
   // Path state
@@ -1398,7 +1458,7 @@
 
   if (currentPath !== '/') {
     const leaf = currentPath.split('/').filter(Boolean).pop();
-    if (leaf) document.title = leaf + ' - Files - CrossNext';
+    if (leaf) document.title = leaf + ' - ' + L('Files', 'Tập tin') + ' - CrossNext';
   }
 
   // App state
@@ -1491,7 +1551,7 @@
   function updateFolderSummary(folderCount, fileCount, totalSize) {
     const summaryEl = document.getElementById('folder-summary');
     if (summaryEl) {
-      summaryEl.textContent = `${folderCount} thư mục, ${fileCount} tập tin • ${formatFileSize(totalSize)}`;
+      summaryEl.textContent = L(`${folderCount} folder${folderCount === 1 ? '' : 's'}, ${fileCount} file${fileCount === 1 ? '' : 's'}`, `${folderCount} thư mục, ${fileCount} tập tin`) + ` • ${formatFileSize(totalSize)}`;
     }
   }
 
@@ -1566,12 +1626,12 @@
       return;
     }
     document.getElementById('recentSection').style.display = 'block';
-    subtitle.textContent = candidates.length + ' mục';
+    subtitle.textContent = candidates.length + L(' items', ' mục');
 
     strip.innerHTML = candidates.map(file => {
       let iconClass = 'ph ph-file-text';
       let iconType = 'doc';
-      let typeLabel = 'Tài liệu';
+      let typeLabel = L('Document', 'Tài liệu');
 
       const lower = file.name.toLowerCase();
       if (file.isEpub || lower.endsWith('.epub')) {
@@ -1581,7 +1641,7 @@
       } else if (/\.(png|jpe?g|bmp|gif|webp)$/i.test(lower)) {
         iconClass = 'ph ph-image';
         iconType = 'image';
-        typeLabel = 'Hình ảnh';
+        typeLabel = L('Image', 'Hình ảnh');
       }
 
       let filePath = currentPath;
@@ -1627,8 +1687,8 @@
       container.innerHTML = `
         <div style="padding: 3rem 1rem; text-align: center; color: hsl(var(--muted-foreground));">
           <i class="ph ph-folder-open" style="font-size: 2.5rem; margin-bottom: 0.5rem; display: block; opacity: 0.5;"></i>
-          <p style="font-size: 0.95rem; font-weight: 500;">Không có tập tin nào phù hợp</p>
-          <p style="font-size: 0.8rem; margin-top: 0.25rem;">Thư mục trống hoặc từ khóa tìm kiếm không khớp</p>
+          <p style="font-size: 0.95rem; font-weight: 500;">${L('No matching files', 'Không có tập tin nào phù hợp')}</p>
+          <p style="font-size: 0.8rem; margin-top: 0.25rem;">${L('This folder is empty or nothing matches your search', 'Thư mục trống hoặc từ khóa tìm kiếm không khớp')}</p>
         </div>
       `;
       return;
@@ -1649,10 +1709,10 @@
           <thead>
             <tr>
               <th style="width: 40px"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
-              <th>Tên tập tin</th>
-              <th>Định dạng</th>
-              <th>Kích thước</th>
-              <th style="text-align: right">Thao tác</th>
+              <th>${L('Name', 'Tên tập tin')}</th>
+              <th>${L('Type', 'Định dạng')}</th>
+              <th>${L('Size', 'Kích thước')}</th>
+              <th style="text-align: right">${L('Actions', 'Thao tác')}</th>
             </tr>
           </thead>
           <tbody>
@@ -1679,7 +1739,7 @@
               <td>—</td>
               <td>
                 <div class="action-group">
-                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Xóa thư mục">
+                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="${L('Delete folder', 'Xóa thư mục')}">
                     <i class="ph ph-trash"></i>
                   </button>
                 </div>
@@ -1712,7 +1772,7 @@
               <td>
                 <div class="cell-name">
                   ${fileIsImage ? `
-                    <img src="${downloadUrl(filePath, true)}" alt="" class="table-thumb" loading="lazy" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước ảnh" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
+                    <img src="${downloadUrl(filePath, true)}" alt="" class="table-thumb" loading="lazy" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="${L('Preview image', 'Xem trước ảnh')}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
                     <i class="${iconClass}" style="font-size: 1.25rem; display: none;"></i>
                     <a href="${downloadUrl(filePath, true)}" class="file-link image-preview-link" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}">${escapeHtml(file.name)}</a>
                   ` : `
@@ -1725,11 +1785,11 @@
               <td>${formatFileSize(file.size)}</td>
               <td>
                 <div class="action-group">
-                  ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
-                  <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
-                  <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-arrows-out-cardinal"></i></button>
-                  <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
-                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
+                  ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="${L('Preview', 'Xem trước')}"><i class="ph ph-eye"></i></button>` : ''}
+                  <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="${L('Download', 'Tải về')}"><i class="ph ph-download-simple"></i></a>
+                  <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="${L('Move', 'Di chuyển')}"><i class="ph ph-arrows-out-cardinal"></i></button>
+                  <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="${L('Rename', 'Đổi tên')}"><i class="ph ph-pencil-simple"></i></button>
+                  <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="${L('Delete', 'Xóa')}"><i class="ph ph-trash"></i></button>
                 </div>
               </td>
             </tr>
@@ -1756,7 +1816,7 @@
               </a>
               <a href="/files?path=${encodeURIComponent(folderPath)}" class="grid-name folder-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</a>
               <div class="grid-actions">
-                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="Xóa thư mục">
+                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(folderPath)}" data-folder="true" title="${L('Delete folder', 'Xóa thư mục')}">
                   <i class="ph ph-trash"></i>
                 </button>
               </div>
@@ -1784,7 +1844,7 @@
             <div class="grid-card">
               <input type="checkbox" class="grid-checkbox select-item" data-path="${encodeURIComponent(filePath)}" data-name="${escapeHtml(file.name)}" data-type="file" onchange="onRowCheckboxChange()">
               ${fileIsImage ? `
-                <div class="grid-thumb-box" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước ảnh">
+                <div class="grid-thumb-box" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="${L('Preview image', 'Xem trước ảnh')}">
                   <img src="${downloadUrl(filePath, true)}" alt="${escapeHtml(file.name)}" class="grid-thumb" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-flex';">
                   <i class="ph ph-image grid-icon" style="color: #3b82f6; display: none;"></i>
                 </div>
@@ -1794,11 +1854,11 @@
               <div class="grid-name" title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</div>
               <div class="grid-sub">${formatFileSize(file.size)} • ${escapeHtml(ext)}</div>
               <div class="grid-actions">
-                ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="Xem trước"><i class="ph ph-eye"></i></button>` : ''}
-                <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="Tải về"><i class="ph ph-download-simple"></i></a>
-                <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Di chuyển"><i class="ph ph-arrows-out-cardinal"></i></button>
-                <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="Đổi tên"><i class="ph ph-pencil-simple"></i></button>
-                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="Xóa"><i class="ph ph-trash"></i></button>
+                ${fileIsImage ? `<button class="row-btn" data-action="preview" data-name="${escapeHtml(file.name)}" data-path="${downloadUrl(filePath, true)}" title="${L('Preview', 'Xem trước')}"><i class="ph ph-eye"></i></button>` : ''}
+                <a class="row-btn" href="${downloadUrl(filePath)}" download="${escapeHtml(file.name)}" title="${L('Download', 'Tải về')}"><i class="ph ph-download-simple"></i></a>
+                <button class="row-btn" data-action="move" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="${L('Move', 'Di chuyển')}"><i class="ph ph-arrows-out-cardinal"></i></button>
+                <button class="row-btn" data-action="rename" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" title="${L('Rename', 'Đổi tên')}"><i class="ph ph-pencil-simple"></i></button>
+                <button class="row-btn btn-del" data-action="delete" data-name="${escapeHtml(file.name)}" data-path="${escapeHtml(filePath)}" data-folder="false" title="${L('Delete', 'Xóa')}"><i class="ph ph-trash"></i></button>
               </div>
             </div>
           `;
@@ -1816,7 +1876,7 @@
     if (btn) {
       if (selected.length > 0) {
         btn.style.display = 'inline-flex';
-        btnText.textContent = `Xóa (${selected.length}) mục`;
+        btnText.textContent = L(`Delete (${selected.length})`, `Xóa (${selected.length}) mục`);
       } else {
         btn.style.display = 'none';
       }
@@ -1880,7 +1940,7 @@
       allFilesData = await response.json();
     } catch (e) {
       console.error(e);
-      document.getElementById('file-table').innerHTML = '<div style="padding:2rem; text-align:center; color:#ef4444;">Không thể tải danh sách tập tin</div>';
+      document.getElementById('file-table').innerHTML = '<div style="padding:2rem; text-align:center; color:#ef4444;">' + L('Could not load the file list', 'Không thể tải danh sách tập tin') + '</div>';
       return;
     }
 
@@ -1962,12 +2022,13 @@ function isImageFile(name) {
     isUploadInProgress = false;
     document.getElementById('uploadModalClose').classList.remove('disabled');
     document.getElementById('fileInput').disabled = false;
+    document.getElementById('dropZone').classList.remove('disabled');
     const progressFill = document.getElementById('progress-fill');
     const progressText = document.getElementById('progress-text');
     progressFill.style.width = '0%';
     progressFill.style.backgroundColor = '#e74c3c';
     progressText.style.color = '#e74c3c';
-    progressText.textContent = 'Upload cancelled by User!';
+    progressText.textContent = L('Upload cancelled.', 'Đã hủy tải lên.');
     // Re-enable the action button (uploadBtn is always visible at this point;
     // its text is already "Upload" or "Optimize & Upload" depending on checkbox state)
     document.getElementById('uploadBtn').disabled = false;
@@ -1981,12 +2042,13 @@ function isImageFile(name) {
     document.getElementById('uploadModal').classList.remove('open');
     const fileInput = document.getElementById('fileInput');
     fileInput.value = '';
-    fileInput.classList.remove('has-files');
     fileInput.disabled = false;
+    document.getElementById('dropZone').classList.remove('disabled');
+    clearUploadSelection();
     const uploadBtn = document.getElementById('uploadBtn');
     uploadBtn.disabled = true;
     uploadBtn.style.display = 'block';
-    uploadBtn.textContent = 'Upload';
+    uploadBtn.textContent = L('Upload', 'Tải lên');
     uploadBtn.classList.remove('optimize');
     document.getElementById('startConversionBtn').style.display = 'none';
     document.getElementById('progress-container').style.display = 'none';
@@ -2033,10 +2095,10 @@ function isImageFile(name) {
     document.getElementById('convertInfo').style.display = checked ? 'block' : 'none';
     // Update button text and style
     if (checked) {
-      uploadBtn.textContent = 'Optimize & Upload';
+      uploadBtn.textContent = L('Optimize & Upload', 'Tối ưu & Tải lên');
       uploadBtn.classList.add('optimize');
     } else {
-      uploadBtn.textContent = 'Upload';
+      uploadBtn.textContent = L('Upload', 'Tải lên');
       uploadBtn.classList.remove('optimize');
       // Clear image picker when unchecking
       clearImagePicker();
@@ -2072,8 +2134,7 @@ function isImageFile(name) {
 
     // When expanding, show image picker if an EPUB is selected
     if (isExpanding) {
-      const fileInput = document.getElementById('fileInput');
-      const files = fileInput.files;
+      const files = selectedUploadEntries.map(e => e.file);
       if (files.length === 1 && files[0].name.toLowerCase().endsWith('.epub')) {
         showImagePicker(files[0]).catch(err => console.error('Image picker error:', err));
       }
@@ -2973,90 +3034,242 @@ function isImageFile(name) {
     if (uploadBtn) uploadBtn.style.display = 'block';
   }
 
-  // Set up file input click listener once
-  (function setupFileInputListener() {
-    const fileInput = document.getElementById('fileInput');
-    if (!fileInput) return;
+  // ── Upload selection ───────────────────────────────────────────────
+  // The selection lives here rather than in fileInput.files so that dropped
+  // folders, the folder picker and retries can all carry a relative directory
+  // per file. Each entry is { file, relDir } where relDir is relative to
+  // currentPath ('' for the current folder, 'Books/Sci-fi' for nested ones).
+  // selectedUploadDirs also lists empty folders so they are recreated too.
+  let selectedUploadEntries = [];
+  let selectedUploadDirs = [];
 
-    fileInput.addEventListener('click', function() {
-      // Small delay to allow browser to process click before checking files
-      setTimeout(() => {
-        if (fileInput.files.length === 0) {
-          clearImagePicker();
-          document.getElementById('uploadBtn').disabled = true;
+  // OS clutter that should never be copied onto the card. Dot-names are also
+  // refused by the device (protected items), so skip them up front.
+  function isJunkUploadName(name) {
+    return !name || name.startsWith('.') || /^(thumbs\.db|desktop\.ini|__macosx)$/i.test(name);
+  }
+
+  function entryDisplayPath(entry) {
+    return entry.relDir ? entry.relDir + '/' + entry.file.name : entry.file.name;
+  }
+
+  function setUploadSelection(entries, dirs) {
+    selectedUploadEntries = entries.filter(e => e && e.file && !isJunkUploadName(e.file.name) &&
+      !(e.relDir || '').split('/').some(seg => seg && isJunkUploadName(seg)));
+    const dirSet = new Set();
+    (dirs || []).forEach(d => { if (d && !d.split('/').some(isJunkUploadName)) dirSet.add(d); });
+    selectedUploadEntries.forEach(e => { if (e.relDir) dirSet.add(e.relDir); });
+    selectedUploadDirs = Array.from(dirSet);
+    renderUploadSelection();
+    validateFile();
+  }
+
+  function clearUploadSelection() {
+    selectedUploadEntries = [];
+    selectedUploadDirs = [];
+    renderUploadSelection();
+  }
+
+  function renderUploadSelection() {
+    const box = document.getElementById('dropSelection');
+    if (!box) return;
+    const entries = selectedUploadEntries;
+    if (entries.length === 0 && selectedUploadDirs.length === 0) {
+      box.classList.remove('show');
+      box.innerHTML = '';
+      return;
+    }
+    const totalSize = entries.reduce((sum, e) => sum + (e.file.size || 0), 0);
+    const topFolders = new Set(selectedUploadDirs.map(d => d.split('/')[0]));
+    const parts = [L(`${entries.length} file${entries.length === 1 ? '' : 's'}`, `${entries.length} tập tin`)];
+    if (topFolders.size > 0) {
+      parts.push(L(`${topFolders.size} folder${topFolders.size === 1 ? '' : 's'}`, `${topFolders.size} thư mục`));
+    }
+    const MAX_ROWS = 50;
+    const rows = entries.slice(0, MAX_ROWS).map(e =>
+      `<div title="${escapeHtml(entryDisplayPath(e))}">${e.relDir ? '📁' : '📄'} ${escapeHtml(entryDisplayPath(e))} <span style="opacity:.7">(${formatFileSize(e.file.size)})</span></div>`
+    ).join('');
+    const more = entries.length > MAX_ROWS
+      ? `<div>${L(`… and ${entries.length - MAX_ROWS} more`, `… và ${entries.length - MAX_ROWS} tập tin khác`)}</div>` : '';
+    box.innerHTML = `
+      <div class="drop-selection-head">
+        <span><i class="ph ph-check-circle" style="color:#10b981"></i> ${escapeHtml(parts.join(', '))} • ${formatFileSize(totalSize)}</span>
+        <button type="button" class="drop-selection-clear" id="dropSelectionClear">${L('Clear', 'Bỏ chọn')}</button>
+      </div>
+      <div class="drop-selection-list">${rows}${more}</div>`;
+    box.classList.add('show');
+    document.getElementById('dropSelectionClear').addEventListener('click', e => {
+      e.stopPropagation();
+      if (uploadBusy()) return;
+      clearUploadSelection();
+      validateFile();
+    });
+  }
+
+  // Walks a dropped DataTransfer. Folders are only reachable through
+  // webkitGetAsEntry() (dataTransfer.files lists a folder as a 0-byte file),
+  // and the item list is only valid during the drop event itself, so the
+  // entries are captured synchronously before any await.
+  async function collectDroppedItems(dataTransfer) {
+    const items = dataTransfer && dataTransfer.items ? Array.from(dataTransfer.items) : [];
+    const roots = [];
+    items.forEach(item => {
+      if (item.kind !== 'file') return;
+      const entry = item.webkitGetAsEntry ? item.webkitGetAsEntry() : null;
+      if (entry) roots.push({ entry });
+      else {
+        const file = item.getAsFile();
+        if (file) roots.push({ file });
+      }
+    });
+    if (roots.length === 0) {
+      // No DataTransferItem support: plain files only.
+      return { entries: Array.from((dataTransfer && dataTransfer.files) || []).map(file => ({ file, relDir: '' })), dirs: [] };
+    }
+
+    const entries = [];
+    const dirs = [];
+    const readFile = entry => new Promise((resolve, reject) => entry.file(resolve, reject));
+    const readBatch = reader => new Promise((resolve, reject) => reader.readEntries(resolve, reject));
+
+    async function walk(entry, parentDir) {
+      if (isJunkUploadName(entry.name)) return;
+      if (entry.isFile) {
+        try {
+          entries.push({ file: await readFile(entry), relDir: parentDir });
+        } catch (err) {
+          console.warn('Could not read dropped file', entry.fullPath, err);
         }
-      }, 10);
+      } else if (entry.isDirectory) {
+        const dir = parentDir ? parentDir + '/' + entry.name : entry.name;
+        dirs.push(dir);
+        const reader = entry.createReader();
+        // readEntries returns at most ~100 entries per call; read until empty.
+        for (;;) {
+          const batch = await readBatch(reader);
+          if (!batch.length) break;
+          for (const child of batch) await walk(child, dir);
+        }
+      }
+    }
+
+    for (const root of roots) {
+      if (root.file) entries.push({ file: root.file, relDir: '' });
+      else await walk(root.entry, '');
+    }
+    return { entries, dirs };
+  }
+
+  // An in-flight transfer can't be interrupted, so selection changes are
+  // ignored while uploading or converting.
+  function uploadBusy() {
+    return typeof isUploadInProgress !== 'undefined' && isUploadInProgress;
+  }
+
+  function anotherModalOpen() {
+    return Array.from(document.querySelectorAll('.modal-overlay.open')).some(m => m.id !== 'uploadModal');
+  }
+
+  async function handleDroppedData(dataTransfer) {
+    if (uploadBusy() || anotherModalOpen()) return;
+    const collecting = collectDroppedItems(dataTransfer);
+    if (!document.getElementById('uploadModal').classList.contains('open')) openUploadModal();
+    try {
+      const { entries, dirs } = await collecting;
+      if (entries.length === 0 && dirs.length === 0) return;
+      setUploadSelection(entries, dirs);
+    } catch (err) {
+      console.error('Drop failed:', err);
+      showNotification(L('Could not read the dropped items', 'Không đọc được các mục vừa thả'), 'error');
+    }
+  }
+
+  (function setupUploadInputs() {
+    const fileInput = document.getElementById('fileInput');
+    const folderInput = document.getElementById('folderInput');
+    const dropZone = document.getElementById('dropZone');
+    if (!fileInput || !dropZone) return;
+
+    fileInput.addEventListener('change', () => {
+      const files = Array.from(fileInput.files);
+      fileInput.value = ''; // allow picking the same file again later
+      if (files.length) setUploadSelection(files.map(file => ({ file, relDir: '' })), []);
     });
 
-    // Drag-and-drop: route dropped files through the existing file input so the
-    // normal validateFile() pipeline (EPUB optimize options, batch mode, upload)
-    // runs unchanged. Assigning input.files via DataTransfer is supported in all
-    // current Chromium/Firefox/Safari, which is what the device serves the page to.
-    const dropZone = document.getElementById('dropZone');
-    if (dropZone) {
-      // dragenter/dragleave fire for child elements too; a counter avoids the
-      // highlight flickering as the cursor moves over the hint text or input.
-      let dragDepth = 0;
-
-      // An in-flight transfer can't be interrupted, so the zone is inert while
-      // uploading: no picker, no hover highlight — matching the disabled upload
-      // button and the drop handler's guard below.
-      const uploadBusy = () =>
-        typeof isUploadInProgress !== 'undefined' && isUploadInProgress;
-
-      // "click to browse" should work anywhere in the zone, not just on the
-      // native button. The hint has pointer-events:none so its clicks retarget
-      // to the zone; clicks on the native button retarget to fileInput (shadow
-      // DOM) and are skipped here so the picker isn't opened twice.
-      dropZone.addEventListener('click', function(e) {
-        if (uploadBusy()) return;
-        if (e.target !== fileInput) fileInput.click();
-      });
-
-      dropZone.addEventListener('dragenter', function(e) {
-        e.preventDefault();
-        dragDepth++;
-        if (!uploadBusy()) dropZone.classList.add('dragover');
-      });
-
-      dropZone.addEventListener('dragover', function(e) {
-        // Required so the browser doesn't navigate to / open the dropped file.
-        e.preventDefault();
-      });
-
-      dropZone.addEventListener('dragleave', function(e) {
-        e.preventDefault();
-        dragDepth = Math.max(0, dragDepth - 1);
-        if (dragDepth === 0) dropZone.classList.remove('dragover');
-      });
-
-      dropZone.addEventListener('drop', function(e) {
-        e.preventDefault();
-        dragDepth = 0;
-        dropZone.classList.remove('dragover');
-
-        // Don't let a drop disrupt an in-flight transfer.
-        if (uploadBusy()) return;
-
-        const dropped = e.dataTransfer && e.dataTransfer.files;
-        if (!dropped || dropped.length === 0) return;
-
-        // Replace the current selection, matching native file-picker semantics.
-        const dt = new DataTransfer();
-        for (const file of dropped) dt.items.add(file);
-        fileInput.files = dt.files;
-
-        validateFile();
+    if (folderInput) {
+      folderInput.addEventListener('change', () => {
+        const files = Array.from(folderInput.files);
+        folderInput.value = '';
+        if (!files.length) return;
+        // webkitRelativePath is "Picked/Sub/name.ext"; keep the picked folder's
+        // own name so it is recreated on the device, not flattened.
+        setUploadSelection(files.map(file => {
+          const rel = file.webkitRelativePath || file.name;
+          const slash = rel.lastIndexOf('/');
+          return { file, relDir: slash > 0 ? rel.substring(0, slash) : '' };
+        }), []);
       });
     }
+
+    const openPicker = input => { if (!uploadBusy() && input) input.click(); };
+    document.getElementById('pickFilesBtn').addEventListener('click', e => { e.stopPropagation(); openPicker(fileInput); });
+    document.getElementById('pickFolderBtn').addEventListener('click', e => { e.stopPropagation(); openPicker(folderInput); });
+    // "Click to browse" anywhere in the zone, except on the selection list.
+    dropZone.addEventListener('click', e => {
+      if (e.target.closest('#dropSelection')) return;
+      openPicker(fileInput);
+    });
+    dropZone.addEventListener('keydown', e => {
+      if (e.target === dropZone && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openPicker(fileInput); }
+    });
+
+    // Drag-and-drop works on the whole page: dropping anywhere opens the
+    // upload dialog for the current folder. Without these handlers the
+    // browser would navigate away and open the dropped file itself.
+    const overlay = document.getElementById('pageDropOverlay');
+    const isFileDrag = e => e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+    let dragDepth = 0; // dragenter/dragleave also fire for every child element
+
+    const resetDragUi = () => {
+      dragDepth = 0;
+      overlay && overlay.classList.remove('show');
+      dropZone.classList.remove('dragover');
+    };
+
+    document.addEventListener('dragenter', e => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      dragDepth++;
+      if (uploadBusy() || anotherModalOpen()) return;
+      const modalOpen = document.getElementById('uploadModal').classList.contains('open');
+      if (modalOpen) dropZone.classList.add('dragover');
+      else if (overlay) {
+        document.getElementById('pageDropPath').textContent = currentPath;
+        overlay.classList.add('show');
+      }
+    });
+    document.addEventListener('dragover', e => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = (uploadBusy() || anotherModalOpen()) ? 'none' : 'copy';
+    });
+    document.addEventListener('dragleave', e => {
+      if (!isFileDrag(e)) return;
+      dragDepth = Math.max(0, dragDepth - 1);
+      if (dragDepth === 0) resetDragUi();
+    });
+    document.addEventListener('drop', e => {
+      if (!isFileDrag(e)) return;
+      e.preventDefault();
+      resetDragUi();
+      handleDroppedData(e.dataTransfer);
+    });
   })();
 
   function validateFile() {
-    const fileInput = document.getElementById('fileInput');
     const uploadBtn = document.getElementById('uploadBtn');
-    const files = fileInput.files;
+    const files = selectedUploadEntries.map(e => e.file);
     const convertOptions = document.getElementById('convertOptions');
-    fileInput.classList.toggle('has-files', files.length > 0);
 
     // Show convert options only when at least one selected file is an EPUB.
     const hasEpub = Array.from(files).some(f => f.name.toLowerCase().endsWith('.epub'));
@@ -3065,7 +3278,7 @@ function isImageFile(name) {
       toggleConvertOptions();
     } else {
       convertOptions.style.display = 'none';
-      uploadBtn.textContent = 'Upload';
+      uploadBtn.textContent = L('Upload', 'Tải lên');
       uploadBtn.classList.remove('optimize');
       document.getElementById('convertInfo').style.display = 'none';
       document.getElementById('convertWarning').style.display = 'none';
@@ -3263,7 +3476,7 @@ async function fetchVersion() {
       document.getElementById('sbIp').textContent = data.ip || location.hostname;
       document.getElementById('specFreeHeap').textContent = formatFileSize(data.freeHeap);
       document.getElementById('specRssi').textContent = Number.isFinite(data.rssi) ? data.rssi + ' dBm' : '—';
-      document.getElementById('specUptime').textContent = Number.isFinite(data.uptime) ? Math.floor(data.uptime / 60) + ' phút' : '—';
+      document.getElementById('specUptime').textContent = Number.isFinite(data.uptime) ? Math.floor(data.uptime / 60) + L(' min', ' phút') : '—';
       if (data.device === 'X3' || data.device === 'X4') {
         DETECTED_DEVICE = data.device;
         applyDeviceTarget();
@@ -3809,8 +4022,8 @@ function reserveAvailableUploadFilename(fileName, usedFileNames) {
   return candidateName;
 }
 
-async function fetchExistingUploadNames() {
-  const response = await fetch('/api/files?path=' + encodeURIComponent(currentPath) + '&_=' + Date.now());
+async function fetchExistingUploadNames(path = currentPath) {
+  const response = await fetch('/api/files?path=' + encodeURIComponent(path) + '&_=' + Date.now());
   if (!response.ok) {
     throw new Error(response.status + ' ' + response.statusText);
   }
@@ -5298,7 +5511,7 @@ function getWsUrl() {
 }
 
 // Upload file via WebSocket (faster, binary protocol)
-function uploadFileWebSocket(file, onProgress, onComplete, onError) {
+function uploadFileWebSocket(file, onProgress, onComplete, onError, targetPath = currentPath) {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(getWsUrl());
     currentUploadWs = ws;
@@ -5311,7 +5524,7 @@ function uploadFileWebSocket(file, onProgress, onComplete, onError) {
     ws.onopen = function() {
       console.log('[WS] Connected, starting upload:', file.name);
       // Send start message: START:<filename>:<size>:<path>
-      ws.send(`START:${file.name}:${file.size}:${currentPath}`);
+      ws.send(`START:${file.name}:${file.size}:${targetPath}`);
     };
 
     ws.onmessage = async function(event) {
@@ -5407,14 +5620,14 @@ function uploadFileWebSocket(file, onProgress, onComplete, onError) {
 }
 
 // Upload file via HTTP (fallback method)
-function uploadFileHTTP(file, onProgress, onComplete, onError) {
+function uploadFileHTTP(file, onProgress, onComplete, onError, targetPath = currentPath) {
   return new Promise((resolve, reject) => {
     const formData = new FormData();
     formData.append('file', file);
 
     const xhr = new XMLHttpRequest();
     currentUploadXhr = xhr;
-    xhr.open('POST', '/upload?path=' + encodeURIComponent(currentPath), true);
+    xhr.open('POST', '/upload?path=' + encodeURIComponent(targetPath), true);
 
     xhr.upload.onprogress = function(e) {
       if (e.lengthComputable && onProgress) {
@@ -5450,25 +5663,56 @@ function uploadFileHTTP(file, onProgress, onComplete, onError) {
   });
 }
 
+function joinWebPath(base, rel) {
+  if (!rel) return base;
+  return (base.endsWith('/') ? base : base + '/') + rel;
+}
+
+// POST /mkdir for one folder. An existing folder is fine (uploads merge into
+// it); anything else is reported as an error string.
+function createRemoteFolder(parentPath, name) {
+  return new Promise(resolve => {
+    const formData = new FormData();
+    formData.append('name', name);
+    formData.append('path', parentPath);
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', '/mkdir', true);
+    xhr.onload = () => {
+      if (xhr.status === 200 || /already exists/i.test(xhr.responseText || '')) resolve(null);
+      else resolve(xhr.responseText || ('HTTP ' + xhr.status));
+    };
+    xhr.onerror = () => resolve('Network error');
+    xhr.send(formData);
+  });
+}
+
 async function uploadFile() {
   if (isUploadInProgress) return;
 
   const fileInput = document.getElementById('fileInput');
-  const files = Array.from(fileInput.files);
+  const entries = selectedUploadEntries.slice();
+  const dirsToCreate = selectedUploadDirs.slice();
+  const files = entries.map(e => e.file);
   const convertEnabled = document.getElementById('convertBeforeUpload').checked;
 
-  if (files.length === 0) {
-    alert('Please select at least one file!');
+  if (files.length === 0 && dirsToCreate.length === 0) {
+    alert(L('Please select at least one file or folder!', 'Hãy chọn ít nhất một tập tin hoặc thư mục!'));
     return;
   }
 
   isUploadInProgress = true;
-  let usedFileNames;
+  // Existing names per destination folder, fetched lazily so collisions in
+  // merged sub-folders get the same "name (2).ext" treatment as the root.
+  const usedNamesByDir = new Map();
+  async function usedNamesFor(dirPath) {
+    if (!usedNamesByDir.has(dirPath)) usedNamesByDir.set(dirPath, await fetchExistingUploadNames(dirPath));
+    return usedNamesByDir.get(dirPath);
+  }
   try {
-    usedFileNames = await fetchExistingUploadNames();
+    await usedNamesFor(currentPath);
   } catch (error) {
     isUploadInProgress = false;
-    alert('Failed to check existing files: ' + error.message);
+    alert(L('Failed to check existing files: ', 'Không kiểm tra được các tập tin hiện có: ') + error.message);
     return;
   }
 
@@ -5476,6 +5720,7 @@ async function uploadFile() {
   uploadGeneration++;
   const myGeneration = uploadGeneration;
   document.getElementById('uploadModalClose').classList.add('disabled');
+  document.getElementById('dropZone').classList.add('disabled');
   fileInput.disabled = true;
 
   const progressContainer = document.getElementById('progress-container');
@@ -5485,6 +5730,35 @@ async function uploadFile() {
 
   progressContainer.style.display = 'block';
   uploadBtn.disabled = true;
+
+  // Recreate the folder tree first, parents before children. A folder that
+  // can't be created fails every file beneath it instead of the whole batch.
+  const failedDirs = new Map(); // relDir -> error
+  const sortedDirs = Array.from(new Set(dirsToCreate))
+    .sort((a, b) => a.split('/').length - b.split('/').length || a.localeCompare(b));
+  for (let i = 0; i < sortedDirs.length; i++) {
+    const rel = sortedDirs[i];
+    const slash = rel.lastIndexOf('/');
+    const parentRel = slash > 0 ? rel.substring(0, slash) : '';
+    const name = slash > 0 ? rel.substring(slash + 1) : rel;
+    progressText.style.color = '';
+    progressText.textContent = L(`Creating folder ${rel} (${i + 1}/${sortedDirs.length})...`,
+                                 `Đang tạo thư mục ${rel} (${i + 1}/${sortedDirs.length})...`);
+    progressFill.style.width = Math.round(((i + 1) / sortedDirs.length) * 100) + '%';
+    const parentError = parentRel && failedDirs.get(parentRel);
+    const error = parentError || await createRemoteFolder(joinWebPath(currentPath, parentRel), name);
+    if (operationCancelled) { if (uploadGeneration === myGeneration) restoreAfterCancel(); return; }
+    if (error) failedDirs.set(rel, error);
+  }
+  const dirFailure = relDir => {
+    if (!relDir) return null;
+    const parts = relDir.split('/');
+    for (let n = parts.length; n > 0; n--) {
+      const err = failedDirs.get(parts.slice(0, n).join('/'));
+      if (err) return err;
+    }
+    return null;
+  };
 
   let currentIndex = 0;
   const failedFiles = [];
@@ -5505,7 +5779,7 @@ async function uploadFile() {
       // All files processed - show summary
       if (failedFiles.length === 0) {
         progressFill.style.backgroundColor = '#4caf50';
-        progressText.textContent = 'All uploads complete!';
+        progressText.textContent = L('All uploads complete!', 'Đã tải lên tất cả!');
 
         // Finalize batch log if in batch mode
         if (useBatchLog) {
@@ -5521,7 +5795,8 @@ async function uploadFile() {
       } else {
         progressFill.style.backgroundColor = '#e74c3c';
         const failedList = failedFiles.map(f => f.name).join(', ');
-        progressText.textContent = `${files.length - failedFiles.length}/${files.length} uploaded. Failed: ${failedList}`;
+        progressText.textContent = L(`${files.length - failedFiles.length}/${files.length} uploaded. Failed: ${failedList}`,
+                                     `Đã tải lên ${files.length - failedFiles.length}/${files.length}. Lỗi: ${failedList}`);
 
         // Add upload errors to batch log
         if (useBatchLog) {
@@ -5548,6 +5823,18 @@ async function uploadFile() {
 
     let file = files[currentIndex];
     const originalFile = file;
+    const relDir = entries[currentIndex].relDir || '';
+    const targetPath = joinWebPath(currentPath, relDir);
+    const shownName = () => (relDir ? relDir + '/' : '') + file.name;
+
+    const folderError = dirFailure(relDir);
+    if (folderError) {
+      failedFiles.push({ name: shownName(), error: L('Folder could not be created: ', 'Không tạo được thư mục: ') + folderError,
+                         file: originalFile, relDir });
+      currentIndex++;
+      uploadNextFile();
+      return;
+    }
     // Reset progress bar instantly without transition when starting a new file
     progressFill.classList.add('no-transition');
     progressFill.style.width = '0%';
@@ -5573,6 +5860,13 @@ async function uploadFile() {
       }
     }
 
+    let usedFileNames;
+    try {
+      usedFileNames = await usedNamesFor(targetPath);
+    } catch (e) {
+      usedFileNames = new Set(); // let the device report a real collision
+      usedNamesByDir.set(targetPath, usedFileNames);
+    }
     const availableName = reserveAvailableUploadFilename(file.name, usedFileNames);
     if (availableName !== file.name) {
       console.log(`[Upload] Renamed to avoid collision: ${file.name} -> ${availableName}`);
@@ -5583,17 +5877,17 @@ async function uploadFile() {
     }
 
     const methodText = useWebSocket ? ' [WS]' : ' [HTTP]';
-    const stageText = needsConversion ? 'Converting & uploading' : 'Uploading';
+    const stageText = needsConversion ? L('Converting & uploading', 'Đang tối ưu & tải lên') : L('Uploading', 'Đang tải lên');
     progressText.style.color = '';
-    progressText.textContent = `${stageText} ${file.name} (${currentIndex + 1}/${files.length})${methodText}`;
+    progressText.textContent = `${stageText} ${shownName()} (${currentIndex + 1}/${files.length})${methodText}`;
 
     const onProgress = (loaded, total) => {
       const uploadPercent = Math.round((loaded / total) * 100);
       // If conversion succeeded, display goes from 50-100%, otherwise 0-100%
       const displayPercent = conversionSucceeded ? 50 + Math.round(uploadPercent / 2) : uploadPercent;
       progressFill.style.width = displayPercent + '%';
-      const prefix = conversionSucceeded ? 'Converting & uploading' : 'Uploading';
-      progressText.textContent = `${prefix} ${file.name} (${currentIndex + 1}/${files.length})${methodText} — ${uploadPercent}%`;
+      const prefix = conversionSucceeded ? L('Converting & uploading', 'Đang tối ưu & tải lên') : L('Uploading', 'Đang tải lên');
+      progressText.textContent = `${prefix} ${shownName()} (${currentIndex + 1}/${files.length})${methodText} — ${uploadPercent}%`;
     };
 
     const onComplete = () => {
@@ -5617,7 +5911,7 @@ async function uploadFile() {
         saveToFileBatchLog(file.name, false, convOriginalSize, convNewSize);
       }
 
-      failedFiles.push({ name: file.name, error: error, file: originalFile });
+      failedFiles.push({ name: shownName(), error: error, file: originalFile, relDir });
 
       // If network error, mark all remaining files as failed and show retry banner
       if (error.includes('connection failed') || error.includes('Network error') ||
@@ -5625,12 +5919,13 @@ async function uploadFile() {
         console.log(`[Network] Network error detected: ${error}`);
 
         // Add all remaining files to failed list
-        const remainingFiles = files.slice(currentIndex + 1);
-        remainingFiles.forEach(remainingFile => {
+        const remainingEntries = entries.slice(currentIndex + 1);
+        remainingEntries.forEach(remaining => {
           failedFiles.push({
-            name: remainingFile.name,
+            name: entryDisplayPath(remaining),
             error: 'Network error - upload interrupted',
-            file: remainingFile
+            file: remaining.file,
+            relDir: remaining.relDir || ''
           });
         });
 
@@ -5699,13 +5994,13 @@ async function uploadFile() {
       }
 
       if (useWebSocket) {
-        await uploadFileWebSocket(file, onProgress, null, null);
+        await uploadFileWebSocket(file, onProgress, null, null, targetPath);
       } else {
-        await uploadFileHTTP(file, onProgress, null, null);
+        await uploadFileHTTP(file, onProgress, null, null, targetPath);
       }
       // Ensure progress bar shows 100% before moving to next file
       progressFill.style.width = '100%';
-      progressText.textContent = `Upload complete: ${file.name}`;
+      progressText.textContent = L('Upload complete: ', 'Đã tải lên: ') + shownName();
       onComplete();
     } catch (error) {
       if (operationCancelled) { if (uploadGeneration === myGeneration) restoreAfterCancel(); return; }
@@ -5721,7 +6016,7 @@ async function uploadFile() {
         useWebSocket = false;
         // Retry this file with HTTP
         try {
-          await uploadFileHTTP(file, onProgress, null, null);
+          await uploadFileHTTP(file, onProgress, null, null, targetPath);
           onComplete();
         } catch (httpError) {
           onError(httpError.message);
@@ -5747,9 +6042,9 @@ function showFailedUploadsBanner() {
     item.innerHTML = `
       <div class="failed-file-info">
         <div class="failed-file-name">📄 ${escapeHtml(failedFile.name)}</div>
-        <div class="failed-file-error">Error: ${escapeHtml(failedFile.error)}</div>
+        <div class="failed-file-error">${L('Error', 'Lỗi')}: ${escapeHtml(failedFile.error)}</div>
       </div>
-      <button class="retry-btn" onclick="retrySingleUpload(${index})">Retry</button>
+      <button class="retry-btn" onclick="retrySingleUpload(${index})">${L('Retry', 'Thử lại')}</button>
     `;
     filesList.appendChild(item);
   });
@@ -5771,13 +6066,6 @@ function retrySingleUpload(index) {
   const failedFile = failedUploadsGlobal[index];
   if (!failedFile) return;
 
-  // Create a DataTransfer to set the file input
-  const dt = new DataTransfer();
-  dt.items.add(failedFile.file);
-
-  const fileInput = document.getElementById('fileInput');
-  fileInput.files = dt.files;
-
   // Remove this file from failed list
   failedUploadsGlobal.splice(index, 1);
 
@@ -5788,20 +6076,12 @@ function retrySingleUpload(index) {
 
   // Open modal and trigger upload
   openUploadModal();
-  validateFile();
+  setUploadSelection([{ file: failedFile.file, relDir: failedFile.relDir || '' }], []);
 }
 
 function retryAllFailedUploads() {
   if (failedUploadsGlobal.length === 0) return;
-
-  // Create a DataTransfer with all failed files
-  const dt = new DataTransfer();
-  failedUploadsGlobal.forEach(failedFile => {
-    dt.items.add(failedFile.file);
-  });
-
-  const fileInput = document.getElementById('fileInput');
-  fileInput.files = dt.files;
+  const retryEntries = failedUploadsGlobal.map(f => ({ file: f.file, relDir: f.relDir || '' }));
 
   // Clear failed files list
   failedUploadsGlobal = [];
@@ -5809,7 +6089,7 @@ function retryAllFailedUploads() {
 
   // Open modal and trigger upload
   openUploadModal();
-  validateFile();
+  setUploadSelection(retryEntries, []);
 }
 
   function createFolder() {
