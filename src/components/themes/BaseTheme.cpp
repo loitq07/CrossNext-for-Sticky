@@ -357,6 +357,9 @@ void BaseTheme::applyHeaderStatus(const GfxRenderer& renderer, freeink::ui::Head
   }
   status.battery.glyphWidth = static_cast<int16_t>(cds::kBatteryWidth);
   status.battery.glyphHeight = static_cast<int16_t>(cds::kBatteryHeight);
+  // FORK: upstream 2.0 reserves the battery's terminal separately; the fork's
+  // glyph has a cap of its own, so the reserve includes it.
+  status.battery.terminalWidth = static_cast<int16_t>(cds::kBatteryCapWidth);
   status.battery.gap = static_cast<int16_t>(cds::kBatteryPercentGap);
   status.batteryLeft = metrics.headerBatterySide == 1;
   status.edgeInset = static_cast<int16_t>(headerStatusInset());

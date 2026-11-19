@@ -20,6 +20,9 @@ void forEachBaseSetting(SettingVisitor visit, void* context) {
         (info.nameId == StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION || info.nameId == StrId::STR_SUNLIGHT_FADING_FIX ||
          info.nameId == StrId::STR_BACK_SHORT_TO_FILE_BROWSER))
       return;
+    if (!Frontlight.present() &&
+        (info.nameId == StrId::STR_LEFT_EDGE_LIGHT || info.nameId == StrId::STR_RIGHT_EDGE_LIGHT))
+      return;
     visit(context, info);
   };
   static constexpr StrId dateFormatValues[] = {StrId::STR_DATE_FORMAT_DMY, StrId::STR_DATE_FORMAT_MDY,

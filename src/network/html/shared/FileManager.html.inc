@@ -1,5 +1,5 @@
 <style>
-  body { max-width: 1100px; padding: 0 28px 120px; font-size: 16px; line-height: 1.45; }
+  body:not(.files-page) { max-width: 1100px; padding: 0 28px 120px; font-size: 16px; line-height: 1.45; }
   body > h1 { font-size: 20px; border: 0; margin: 0; padding: 23px 0 14px; letter-spacing: -.4px; }
   .nav-links { display: flex; gap: 6px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; }
   .nav-links a { border-radius: 8px; padding: 10px 14px; color: var(--label-color); text-decoration: none; }
@@ -59,7 +59,7 @@
   .modal button { min-height: 44px; }
   #notification { overflow-wrap: anywhere; }
   @media (max-width: 640px) {
-    body { padding: 0 0 calc(100px + env(safe-area-inset-bottom)); }
+    body:not(.files-page) { padding: 0 0 calc(100px + env(safe-area-inset-bottom)); }
     body > h1 { margin-inline: 0; font-size: 18px; text-align: center; padding: 18px 16px; border-bottom: 1px solid var(--border-color); }
     body > .nav-links, .web-footer { display: none; }
     .page-header { margin: 20px 16px 14px; }

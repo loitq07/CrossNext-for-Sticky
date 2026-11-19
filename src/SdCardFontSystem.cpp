@@ -355,21 +355,29 @@ void SdCardFontSystem::ensureLoaded(GfxRenderer& renderer) {
 }
 
 int SdCardFontSystem::ensureHighlightLoaded(GfxRenderer& renderer) {
-  if (SETTINGS.sleepHighlightFontFamily[0] == '\0') {
+  // Noto Serif is no longer compiled in: its IDs exist only once
+  // loadReaderDefaults() has registered them (from the card, or as an alias of
+  // the resident UI font). Without that the highlight body measures 0 px and
+  // draws nothing, leaving a sleep screen with only its header and title.
+  const auto serif = [&]() {
+    loadReaderDefaults(renderer, 14);
     return NOTOSERIF_14_FONT_ID;
+  };
+  if (SETTINGS.sleepHighlightFontFamily[0] == '\0') {
+    return serif();
   }
 
   const char* wantedFamily = SETTINGS.sleepHighlightFontFamily;
   const auto* family = registry_.findFamily(wantedFamily);
   if (!family) {
     LOG_DBG("SDFS", "Highlight SD font family not found: %s", wantedFamily);
-    return NOTOSERIF_14_FONT_ID;
+    return serif();
   }
 
 #if CROSSPOINT_VECTOR_FONTS
   if (family->vector) {
     loadTtfFamily(*family, renderer, false);
-    return ttfFontId_ != 0 ? ttfFontId_ : NOTOSERIF_14_FONT_ID;
+    return ttfFontId_ != 0 ? ttfFontId_ : serif();
   }
 #endif
 
@@ -378,7 +386,7 @@ int SdCardFontSystem::ensureHighlightLoaded(GfxRenderer& renderer) {
   }
 
   LOG_ERR("SDFS", "Failed to load highlight SD font family: %s", wantedFamily);
-  return NOTOSERIF_14_FONT_ID;
+  return serif();
 }
 
 void SdCardFontSystem::setupUiFallbacks(GfxRenderer& renderer) {

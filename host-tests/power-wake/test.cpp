@@ -3,7 +3,6 @@
 
 #include "apps_local/power/PowerButtonPolicy.h"
 #include "apps_local/power/PowerWakePolicy.h"
-#include "util/EdgeLightGesture.h"
 
 namespace {
 int checks = 0;
@@ -26,22 +25,6 @@ int main() {
         "invalid short action stays recoverable");
   check(configuredAction(ButtonAction::LongPress, 255, 255) == PressAction::Menu,
         "invalid hold action opens power menu");
-  for (const auto width : {480, 800}) {
-    const int height = width == 480 ? 800 : 480;
-    const auto leftUp = edgelight::classify(6, 300, 12, 100, width, height, 1, 2);
-    const auto rightDown = edgelight::classify(width - 6, 100, width - 12, 300, width, height, 1, 2);
-    check(leftUp.action == edgelight::Action::Brightness && leftUp.step == 10, "left upward gesture raises brightness");
-    check(rightDown.action == edgelight::Action::Warmth && rightDown.step == -10,
-          "right downward gesture lowers warmth");
-    check(edgelight::classify(width / 2, 300, width / 2, 100, width, height, 1, 2).action == edgelight::Action::None,
-          "middle swipe remains owned by the activity");
-    check(edgelight::classify(6, 100, width / 2, 105, width, height, 1, 2).action == edgelight::Action::None,
-          "horizontal edge-back swipe remains available");
-    check(edgelight::classify(6, 300, 12, 100, width, height, 0, 0).action == edgelight::Action::None,
-          "edge shortcuts default to disabled");
-    check(edgelight::classify(6, 300, 12, 280, width, height, 1, 2).action == edgelight::Action::None,
-          "tap slop does not adjust the light");
-  }
   check(acceptsWake(WakeMode::ShortPress, false), "released short wake is accepted");
   check(acceptsWake(WakeMode::ShortPress, true), "holding Power also wakes in short mode");
   check(!acceptsWake(WakeMode::LongPress, false), "released short wake is rejected in hold mode");

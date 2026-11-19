@@ -7,8 +7,8 @@
 
 1. **Sao lưu thẻ nhớ**, kể cả thư mục ẩn `/.crosspoint/` (tiến độ đọc, cài đặt, dữ liệu app).
    **Back up the microSD**, including the hidden `/.crosspoint/` folder (progress, settings, app saves).
-2. **Cài gói Resources của CrossNext 2.0** *trước* khi cập nhật firmware: tải `CrossNext-Resources-NEW.zip` từ [CrossNext 2.0.3](https://github.com/manuelx900/CrossNext/releases/tag/2.0.3), xoá các thư mục tài nguyên cũ (`apps`, `fonts`, `languages`, `images`, `dictionaries`) rồi giải nén vào gốc thẻ nhớ. Giữ lại sách và `/.crosspoint/`. Font đọc sách (Noto Serif/Noto Sans…) và hình PET/Reading Quest giờ nằm trên thẻ nhớ; Ubuntu vẫn là font dự phòng tích hợp.
-   **Install the CrossNext 2.0 Resources** *before* the firmware: download `CrossNext-Resources-NEW.zip` from [CrossNext 2.0.3](https://github.com/manuelx900/CrossNext/releases/tag/2.0.3), remove the old bundled folders (`apps`, `fonts`, `languages`, `images`, `dictionaries`) and extract it at the card root. Keep your books and `/.crosspoint/`. Reading fonts and the PET/Reading Quest artwork now live on the card; Ubuntu remains the built-in fallback font.
+2. **Chép tài nguyên thẻ nhớ** *trước* khi cập nhật firmware: tải `CrossNext-Sticky-Resources.zip` trong release này, giải nén rồi chép thư mục `apps` và `fonts` vào gốc thẻ nhớ (thay thế, không trộn với thư mục cũ). Gói có hình cho PET, Reading Quest, The Intercept và các font đọc sách (Noto Serif…); từ bản 2.0 chúng nằm trên thẻ nhớ thay vì trong firmware. **Không** chép thư mục `languages` từ gói CrossNext gốc: gói đó ghi đè gói tiếng Việt của Sticky bằng bản không khớp firmware. Giữ lại sách và `/.crosspoint/`.
+   **Copy the microSD resources** *before* the firmware: download `CrossNext-Sticky-Resources.zip` from this release, extract it and copy its `apps` and `fonts` folders to the card root (replace, do not merge, old ones). It holds the PET, Reading Quest and The Intercept artwork and the reader fonts (Noto Serif…), which since 2.0 live on the card instead of in the firmware. Do **not** copy `languages` from the upstream CrossNext package: it replaces the Sticky Vietnamese pack with one that does not match this firmware. Keep your books and `/.crosspoint/`.
 3. **Sau khi cập nhật**, vào Home và chọn **Cập nhật ngay** (cần Wi-Fi): máy tải lại game/app native cho firmware mới **và gói Tiếng Việt của Sticky** (ghi đè bản tiếng Việt trong gói Resources).
    **After updating**, accept the app update on Home (needs Wi-Fi): it fetches the native games/apps for the new firmware **and the Sticky Vietnamese pack** (replacing the one in the Resources pack).
 
@@ -31,6 +31,13 @@ Bản Sticky chuyển lên nền **CrossNext 2.0.3** (dựa trên CrossPoint 2.0
 - **App Store** có thêm Connections, Trivia, Wikipedia, Hacker News, xkcd, Knucklebones, Yahtzee và các game khác dưới dạng native module.
 - Voice Notes vẫn tạm ẩn trong lúc sửa lỗi.
 
+**Sửa riêng cho Sticky trong bản beta này**
+- Màn hình bản phần cứng mới (IC SSD2677) không còn bị lật gương trái–phải.
+- Dịch lại toàn bộ giao diện tiếng Việt bằng tay (hơn 3.100 chuỗi), bỏ các câu dịch máy sai nghĩa.
+- Trang Truyền tệp trên web không còn bị dồn sang trái; mục **Quản lý phông chữ** (tải font qua Wi-Fi) trở lại trong Cài đặt → Đọc.
+- Bluetooth bật được khi đang dùng Wi-Fi; sửa nhãn pin, trang Cài đặt → Hệ thống bị tràn, vuốt nhầm về Home và vị trí nút Back.
+- Bỏ các tuỳ chọn phần cứng Sticky không có (vuốt cạnh chỉnh đèn, đèn nền, nút mặt trước…); sửa header bị vẽ đôi trong Plugin Hub; highlight trên màn hình ngủ không còn mất chữ khi thẻ nhớ chưa có Noto Serif.
+
 ## English
 
 The Sticky port moves onto **CrossNext 2.0.3** (based on CrossPoint 2.0.0) and keeps every Sticky feature: the auto-detected new display driver, Baemin Daniel and full Vietnamese typography, the App Store with native modules, the microSD Vietnamese pack, Read Later, highlights on the sleep screen, key sounds, Plugin Hub and cloud plugins.
@@ -44,12 +51,20 @@ The Sticky port moves onto **CrossNext 2.0.3** (based on CrossPoint 2.0.0) and k
 - The **App Store** adds Connections, Trivia, Wikipedia, Hacker News, xkcd, Knucklebones, Yahtzee and more as native modules.
 - Voice Notes stays hidden while it is being fixed.
 
+**Sticky-specific fixes in this beta**
+- The new hardware revision's display (SSD2677) is no longer mirrored left-to-right.
+- The whole Vietnamese interface was re-translated by hand (3,100+ strings), replacing machine translations that read wrong.
+- The web File Transfer page no longer collapses to the left; **Manage fonts** (download fonts over Wi-Fi) is back under Settings → Reading.
+- Bluetooth turns on while Wi-Fi is in use; fixed the battery label, the overflowing Settings → System page, accidental swipes to Home and the Back button position.
+- Removed options for hardware the Sticky lacks (edge-swipe light, frontlight, front buttons…); fixed the doubled Plugin Hub header; sleep-screen highlights no longer lose their text when the card has no Noto Serif.
+
 ## Files
 
 - `firmware-sticky.bin`: OTA update asset for the built-in updater.
 - `CrossNext-Sticky-v2.0.0-app.bin`: the same application image.
 - `CrossNext-Sticky-v2.0.0-factory.bin`: full factory image for USB installation.
 - `CrossNext-Sticky-v2.0.0.zip`: firmware bundle, checksums, manifest and license notices.
+- `CrossNext-Sticky-Resources.zip`: microSD resources — PET, Reading Quest and The Intercept artwork plus reader fonts. Copy `apps/` and `fonts/` to the card root.
 - `vi.cplang`: Vietnamese interface language pack for this firmware (the App Store installs it over Wi-Fi; offline, copy it to `/languages/`).
 - `SHA256SUMS.txt`: SHA-256 checksums for the release assets.
 

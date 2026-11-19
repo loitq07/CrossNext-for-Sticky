@@ -320,24 +320,13 @@ void saveEdgeLight(bool force = false) {
     edgeLightChangedAt = millis();
   }
 }
-void applyEdgeLight(edgelight::Event event) {
-  if (event.action == edgelight::Action::None || !Frontlight.present()) return;
-  const bool brightness = event.action == edgelight::Action::Brightness;
-  if (!brightness && !Frontlight.hasColorTemperature()) return;
-  const int previous = brightness ? (Frontlight.isOn() ? Frontlight.brightness() : 0) : Frontlight.warmth();
-  const int next = std::clamp(previous + event.step, 0, 100);
+void adjustRemoteBrightness(int step) {
+  if (!Frontlight.present()) return;
+  const int previous = Frontlight.isOn() ? Frontlight.brightness() : 0;
+  const int next = std::clamp(previous + step, 0, 100);
   if (previous == next) return;
-  if (brightness) {
-    if (next) Frontlight.setBrightness(next);
-    Frontlight.setOn(next > 0);
-  } else {
-    Frontlight.setWarmth(next);
-    if (next) {
-      SETTINGS.frontlightWarmthMemory = next;
-      if (!Frontlight.brightness()) Frontlight.setBrightness(5);
-      Frontlight.setOn(true);
-    }
-  }
+  if (next) Frontlight.setBrightness(next);
+  Frontlight.setOn(next > 0);
   SETTINGS.frontlightBrightness = Frontlight.brightness();
   SETTINGS.frontlightWarmth = Frontlight.warmth();
   SETTINGS.frontlightOn = Frontlight.isOn();
@@ -432,8 +421,7 @@ bool dispatchShortcut(const uint8_t action, const char* title = "") {
       case Extra::BrightnessDown:
         if (!Frontlight.present()) return false;
         if (!mappedInputManager.claimRemoteCommand()) return false;
-        applyEdgeLight({edgelight::Action::Brightness,
-                        static_cast<int8_t>(static_cast<Extra>(action) == Extra::BrightnessUp ? 5 : -5)});
+        adjustRemoteBrightness(static_cast<Extra>(action) == Extra::BrightnessUp ? 5 : -5);
         return true;
     }
     return false;
@@ -1227,6 +1215,19 @@ void loop() {
   scene.pageShown = activityManager.isRemoteControlShown();
   scene.storageBusy = activityManager.requiresExclusiveStorageLoop();
   scene.localKey = gpio.wasAnyPressed() || gpio.wasAnyReleased() || gpio.wasTouchActivity();
+  // FORK CHANGE (Sticky): the Sticky leaves Wi-Fi connected after a download
+  // (App Store, Read Later), and an idle connection reserves the radio, so a
+  // saved Bluetooth opt-in never started. On the screens where a remote is
+  // used (reader, Home, Bluetooth settings) an idle Wi-Fi gives way; network
+  // screens, transfers and Developer Mode keep it.
+  if (SETTINGS.ble.enabled && WiFi.getMode() != WIFI_MODE_NULL && !devmode::holdsRadio() &&
+      !devmode::inhibitsSleep() && !scene.storageBusy &&
+      (scene.where == bleturner::Where::Reader || scene.where == bleturner::Where::Home ||
+       std::strcmp(activityManager.currentActivityName(), "BleSettings") == 0)) {
+    LOG_INF("BLE", "Releasing idle Wi-Fi for Bluetooth");
+    WiFi.disconnect(true);
+    WiFi.mode(WIFI_OFF);
+  }
   scene.wifiOn = WiFi.getMode() != WIFI_MODE_NULL;
   if (scene.localKey) activityManager.cancelPendingRemoteTurns();
   const bool remoteActed = bleturner::tick(scene);
@@ -1329,7 +1330,6 @@ void loop() {
 
   // Check for any user activity (button press or release) or active background work
   static unsigned long lastActivityTime = millis();
-  applyEdgeLight(mappedInputManager.edgeLightEvent());
   saveEdgeLight();
   // devmode::holdsRadio() counts as activity. Deep sleep on this chip is a full
   // reset, so a sleeping device does not merely idle -- it leaves the network

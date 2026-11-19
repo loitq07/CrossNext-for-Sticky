@@ -76,16 +76,22 @@ void fitLabel(const fui::DrawTarget& target, char* label, const int width, fui::
 void text(fui::DrawTarget& target, fui::Rect box, const char* label, fui::FontId font, fui::Color color,
           fui::TextAlign align, bool emphasis, LabelCase casing) {
   char copy[192];
-  // FORK: menu labels stay in capitals with every menu font (Sticky look).
+  // FORK: menu labels stay in capitals with every menu font, on ONE line: the
+  // font steps down until the label fits, then fitLabel trims it. Upstream's
+  // two-line fittext wrapped "100%" beside the battery and pushed long
+  // Vietnamese settings rows off the page.
   copyCaps(copy, sizeof(copy), label);
-  const char* value = copy;
   (void)casing;
   fui::TextStyle style;
   style.color = color;
   style.align = align;
   style.font = font;
   style.bold = emphasis || (!chrome::lightHeader && font == kTitle);
-  fittext::draw(target, box, value, style, 2);
+  static constexpr fui::FontId smaller[] = {3, kSmall, kBody};
+  while (style.font < 3 && target.measureText(style.font, copy, style).width > box.width)
+    style.font = smaller[style.font];
+  fitLabel(target, copy, box.width, style);
+  target.text(toybox::inkCentred(target, box, style), copy, style);
 }
 
 static fui::Rect paintHeader(fui::DrawTarget&, const fui::DeviceContext&, const Header&, fui::Rect* = nullptr);

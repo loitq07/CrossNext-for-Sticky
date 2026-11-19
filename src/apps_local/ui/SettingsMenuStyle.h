@@ -33,11 +33,16 @@ inline void styleRows(freeink::ui::ListProps& p, bool boxed = false) {
     p.selectionMarker = freeink::ui::SelectionMarker::None;
     p.separatorPaint = freeink::ui::Paint::solid(freeink::ui::Color::Transparent);
   } else if (chrome::lightHeader) {
+    // FORK: the Sticky's light settings rows keep their v1.4 density -- two
+    // lines of label and subtitle, a one-line value and 42 px icons -- so a
+    // long Vietnamese row never grows a page off the bottom of the screen.
+    p.iconSize = 42;
     p.labelText.font = 0;
-    p.labelText.maxLines = 3;
+    p.labelText.maxLines = 2;
     p.subtitleText.font = 4;
-    p.subtitleText.maxLines = 3;
+    p.subtitleText.maxLines = 2;
     p.valueText.font = 0;
+    p.valueText.maxLines = 1;
     p.rowHeight = 70;
     p.rowPaddingY = 10;
     p.headerText.bold = true;

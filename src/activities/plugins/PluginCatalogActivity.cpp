@@ -2189,17 +2189,6 @@ void PluginCatalogActivity::buildAuthScreen(UiScreen& screen) {
   screen.target().text(screen.takeTop(lh), tr(STR_PLUGIN_AUTH_WAITING), centered);
 }
 
-const char* PluginCatalogActivity::headerTitle() const {
-  if (state == State::PLUGIN_PICKER || catalogTitle.empty()) {
-    return tr(STR_PLUGINS);
-  }
-  const bool listState = state == State::BROWSING || state == State::LIST_PICKER;
-  if (listState) {
-    cachedHeaderTitle = browsingHeaderLabel();
-    return cachedHeaderTitle.c_str();
-  }
-  return catalogTitle.c_str();
-}
 
 std::string PluginCatalogActivity::browsingHeaderLabel() const {
   std::string label = catalogTitle;

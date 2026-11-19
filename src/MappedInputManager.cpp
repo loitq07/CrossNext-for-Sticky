@@ -23,13 +23,6 @@ namespace fui = freeink::ui;
 void MappedInputManager::update(const bool deferHomeButtonAction) const {
   remoteInput.reset();
   gpio.update();
-  edgeLight = {};
-  if (Frontlight.present()) {
-    int sx = 0, sy = 0, ex = 0, ey = 0;
-    if (decodeSwipe(sx, sy, ex, ey))
-      edgeLight = edgelight::classify(sx, sy, ex, ey, renderer.getScreenWidth(), renderer.getScreenHeight(),
-                                      SETTINGS.leftEdgeLightAction, SETTINGS.rightEdgeLightAction);
-  }
   const bool pagePressed =
       SETTINGS.vibration == CrossPointSettings::VIBRATION_TOUCH_PAGE && gpio.wasCapacitivePagePressed();
   HalHaptics::feedback(SETTINGS.vibration != CrossPointSettings::VIBRATION_OFF, pagePressed, SETTINGS.hapticIntensity);
@@ -387,7 +380,7 @@ MappedInputManager::RowTouch MappedInputManager::colTouch(int& col, const int le
 }
 
 bool MappedInputManager::decodeSwipe(int& sx, int& sy, int& ex, int& ey) const {
-  if (isTouchscreenLocked() || edgeLight.action != edgelight::Action::None) return false;
+  if (isTouchscreenLocked()) return false;
   float nxs = 0.0f;
   float nys = 0.0f;
   float nxe = 0.0f;
@@ -427,7 +420,18 @@ bool MappedInputManager::wasEdgeSwipe(const freeink::ui::ScreenEdge edge) const 
   int ex = 0;
   int ey = 0;
   if (!decodeSwipe(sx, sy, ex, ey)) return false;
-  const bool hit = fui::edgeSwipe(edge, sx, sy, ex, ey, renderer.getScreenWidth(), renderer.getScreenHeight());
+  const int width = renderer.getScreenWidth();
+  const int height = renderer.getScreenHeight();
+  bool hit = false;
+  if (edge == fui::ScreenEdge::Bottom) {
+    // FORK CHANGE (Sticky): with no Home key the bottom-edge swipe IS Home, and
+    // 2.0's lists and buttons reach the bottom of the screen, so a scroll that
+    // started low kept going Home. The gesture now has to start in the bottom
+    // 8% and travel at least 12% of the height, like a phone's Home swipe.
+    hit = fui::edgeSwipe(edge, sx, sy, ex, ey, width, height, 0.08f) && (sy - ey) >= height * 12 / 100;
+  } else {
+    hit = fui::edgeSwipe(edge, sx, sy, ex, ey, width, height);
+  }
   if (hit) rememberTouchHeldTime();
   return hit;
 }

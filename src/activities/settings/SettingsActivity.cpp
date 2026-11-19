@@ -89,8 +89,6 @@ int settingsGroup(const SettingInfo& s, int category) {
     if (s.valuePtr == &CrossPointSettings::touchScreenLocked ||
         s.valuePtr == &CrossPointSettings::touchReaderControls || s.valuePtr == &CrossPointSettings::pageTurnGesture ||
         s.valuePtr == &CrossPointSettings::previousPageGesture ||
-        s.valuePtr == &CrossPointSettings::leftEdgeLightAction ||
-        s.valuePtr == &CrossPointSettings::rightEdgeLightAction ||
         s.valuePtr == &CrossPointSettings::xtcInvertPageDirection)
       return 1;
     if (s.valuePtr == &CrossPointSettings::vibration || s.valuePtr == &CrossPointSettings::hapticIntensity || s.valuePtr == &CrossPointSettings::keySound || s.valuePtr == &CrossPointSettings::buzzerVolume) return 2;
@@ -330,6 +328,8 @@ void SettingsActivity::rebuildSettingsLists() {
                         SettingInfo::Action(StrId::STR_READING_FORMATS, SettingAction::ReadingFormats));
   readerSettings.insert(readerSettings.begin(),
                         SettingInfo::Action(StrId::STR_TEXT_SETTINGS, SettingAction::TextSettings));
+  readerSettings.insert(readerSettings.begin() + 1,
+                        SettingInfo::Action(StrId::STR_MANAGE_FONTS, SettingAction::DownloadFonts));
   readerSettings.push_back(SettingInfo::Action(StrId::STR_SETTINGS_MANGA, SettingAction::Manga));
   readerSettings.push_back(SettingInfo::Action(StrId::STR_CUSTOMISE_STATUS_BAR, SettingAction::CustomiseStatusBar));
   if (Frontlight.present())

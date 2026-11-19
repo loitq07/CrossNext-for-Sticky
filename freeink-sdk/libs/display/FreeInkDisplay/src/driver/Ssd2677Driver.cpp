@@ -181,48 +181,52 @@ void Ssd2677Driver::latchWaveform(EpdBus& bus, RefreshMode mode, bool gray4) {
   delay(10);
 }
 
+// The SSD2677 takes rows in gate order with no data-entry-mode register, but the
+// Sticky mounts it gate-reversed relative to the SSD1677 revision (whose driver
+// writes Y-decrementing). Stream the framebuffer bottom row first so both
+// revisions show the same image; streaming top-down mirrors the portrait UI
+// left-to-right.
 void Ssd2677Driver::streamFullMono(EpdBus& bus, const uint8_t* fb) {
   constexpr size_t IN_CHUNK = 512;
   uint8_t out[IN_CHUNK * 2];
-  size_t offset = 0;
+  const size_t rowsPerChunk = _wb && _wb <= IN_CHUNK ? IN_CHUNK / _wb : 1;
 
   bus.cmd(0x10);
-  while (offset < _bufferSize) {
-    const size_t chunk = (_bufferSize - offset) > IN_CHUNK ? IN_CHUNK : (_bufferSize - offset);
-    for (size_t i = 0; i < chunk; i++) {
-      pack_mono_byte_to_2bpp(fb[offset + i], &out[i * 2]);
+  for (uint32_t row = 0; row < _h;) {
+    size_t used = 0;
+    for (size_t n = 0; n < rowsPerChunk && row < _h; n++, row++) {
+      const uint8_t* src = fb + static_cast<size_t>(_h - 1U - row) * _wb;
+      for (uint16_t i = 0; i < _wb; i++) pack_mono_byte_to_2bpp(src[i], &out[(used + i) * 2]);
+      used += _wb;
     }
-    bus.data(out, static_cast<uint16_t>(chunk * 2));
-    offset += chunk;
+    bus.data(out, static_cast<uint16_t>(used * 2));
   }
 }
 
 void Ssd2677Driver::streamPartialDiff(EpdBus& bus, const uint8_t* prev, const uint8_t* curr) {
   constexpr size_t IN_CHUNK = 512;
   uint8_t out[IN_CHUNK * 2];
-  size_t offset = 0;
+  const size_t rowsPerChunk = _wb && _wb <= IN_CHUNK ? IN_CHUNK / _wb : 1;
 
   bus.cmd(0x10);
-  while (offset < _bufferSize) {
-    const size_t chunk = (_bufferSize - offset) > IN_CHUNK ? IN_CHUNK : (_bufferSize - offset);
-    for (size_t i = 0; i < chunk; i++) {
-      pack_interleave(prev[offset + i], curr[offset + i], &out[i * 2]);
+  for (uint32_t row = 0; row < _h;) {
+    size_t used = 0;
+    for (size_t n = 0; n < rowsPerChunk && row < _h; n++, row++) {
+      const size_t base = static_cast<size_t>(_h - 1U - row) * _wb;
+      for (uint16_t i = 0; i < _wb; i++) pack_interleave(prev[base + i], curr[base + i], &out[(used + i) * 2]);
+      used += _wb;
     }
-    bus.data(out, static_cast<uint16_t>(chunk * 2));
-    offset += chunk;
+    bus.data(out, static_cast<uint16_t>(used * 2));
   }
 }
 
 void Ssd2677Driver::streamGray4(EpdBus& bus) {
   if (!_gray4Fb || !_gray4Valid) return;
-  constexpr size_t CHUNK = 1024;
-  size_t offset = 0;
+  const size_t stride = _w / 4U;
 
   bus.cmd(0x10);
-  while (offset < _gray4BufferSize) {
-    const size_t chunk = (_gray4BufferSize - offset) > CHUNK ? CHUNK : (_gray4BufferSize - offset);
-    bus.data(_gray4Fb + offset, static_cast<uint16_t>(chunk));
-    offset += chunk;
+  for (uint32_t row = 0; row < _h; row++) {
+    bus.data(_gray4Fb + static_cast<size_t>(_h - 1U - row) * stride, static_cast<uint16_t>(stride));
   }
 }
 

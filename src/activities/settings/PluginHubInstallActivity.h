@@ -17,6 +17,7 @@ class PluginHubInstallActivity final : public CatalogActivity {
   bool hasSearch() const override { return false; }
   void activateIndex(int) override {}
   void buildScreen(UiScreen& screen) override;
+  void drawChrome() override {}
   bool handleCustomInput() override;
   void onBackButton() override;
   void startBrowse() override;

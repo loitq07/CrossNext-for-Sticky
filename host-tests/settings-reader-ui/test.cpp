@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
                                        StrId::STR_SIDE_BTN_LAYOUT,   StrId::STR_SIDE_LEFT_ACTION,
                                        StrId::STR_SIDE_RIGHT_ACTION, StrId::STR_POWER_SHORT_ACTION,
                                        StrId::STR_POWER_LONG_ACTION, StrId::STR_LONG_PRESS_BEHAVIOR,
-                                       StrId::STR_POWER_WAKE_MODE,   StrId::STR_LEFT_EDGE_LIGHT};
+                                       StrId::STR_POWER_WAKE_MODE};
   static constexpr StrId touch[] = {StrId::STR_TOUCHSCREEN_LOCK,     StrId::STR_TOUCH_READER_CONTROLS,
                                     StrId::STR_NEXT_PAGE_GESTURE,    StrId::STR_PREV_PAGE_GESTURE,
                                     StrId::STR_XTC_INVERT_DIRECTION, StrId::STR_KEYBOARD_LAYOUTS};

@@ -4,7 +4,6 @@
 
 #include "apps_local/readertext/ReaderMenuTrigger.h"
 #include "util/ButtonReleaseGate.h"
-#include "util/EdgeLightGesture.h"
 #include "util/HomeButtonInput.h"
 #include "util/RemoteButtonInput.h"
 #include "util/SideButtonActions.h"
@@ -63,7 +62,6 @@ class MappedInputManager {
 
   // Timed logical actions can remain pending after their physical contact ends.
   uint32_t nextActionDelayMs(uint32_t now, uint32_t maximum) const;
-  edgelight::Event edgeLightEvent() const { return edgeLight; }
   void setGlobalHomeAction(HomeButtonAction action) { homeAction = action; }
   void setReaderTextContext(bool active) {
     if (!active) {
@@ -269,7 +267,6 @@ class MappedInputManager {
   bool readerTextContext = false;
   mutable bool readerHomeOwned = false;
   mutable readertext::MenuButtonInput readerMenuButtons;
-  mutable edgelight::Event edgeLight;
   mutable HomeButtonAction deferredHomeAction = HomeButtonAction::Ignore;
   mutable bool touchHeldOverrideValid = false;
   mutable unsigned long touchHeldOverrideMs = 0;
