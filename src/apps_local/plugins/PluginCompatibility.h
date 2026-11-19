@@ -5,7 +5,7 @@
 namespace plugincompat {
 // These bundles require host features absent from this firmware. Keep IDs,
 // rather than display titles, so translated catalogs cannot bypass the guard.
-inline constexpr std::string_view BLOCKED[] = {"dropbox", "google-drive", "localsend", "reading-statistics"};
+inline constexpr std::string_view BLOCKED[] = {"localsend", "reading-statistics"};
 inline bool sameName(std::string_view left, std::string_view right) {
   if (left.size() != right.size()) return false;
   for (size_t n = 0; n < left.size(); ++n) {
