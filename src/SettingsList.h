@@ -348,7 +348,7 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
           v.end());
 
   // FORK CHANGE (Sticky): hide controls for hardware the Sticky lacks (Home
-  // key, frontlight, rotation/side-button layout) and offer only the side-button
+  // key, frontlight, physical buttons, rotation/side-button layout) and offer only the side-button
   // actions it can perform. UI-only, like the filters above.
   if (BoardConfig::isSticky()) {
     v.erase(std::remove_if(v.begin(), v.end(),
@@ -360,7 +360,19 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
                                     s.nameId == StrId::STR_XTC_COVER_CCW ||
                                     s.nameId == StrId::STR_SIDE_LEFT_ACTION ||
                                     s.nameId == StrId::STR_SIDE_RIGHT_ACTION ||
+                                    s.nameId == StrId::STR_FRONT_BTN_FOLLOW_ORIENTATION ||
+                                    s.nameId == StrId::STR_LONG_PRESS_BEHAVIOR ||
+                                    s.nameId == StrId::STR_LEFT_EDGE_LIGHT ||
+                                    s.nameId == StrId::STR_RIGHT_EDGE_LIGHT ||
+                                    s.nameId == StrId::STR_DBL_CLICK_PWR_LIGHT ||
+                                    s.nameId == StrId::STR_SHORT_PWR_BTN ||
                                     (s.key && std::strncmp(s.key, "homeButton", 10) == 0) ||
+                                    s.valuePtr == &CrossPointSettings::frontButtonFollowOrientation ||
+                                    s.valuePtr == &CrossPointSettings::longPressButtonBehavior ||
+                                    s.valuePtr == &CrossPointSettings::leftEdgeLightAction ||
+                                    s.valuePtr == &CrossPointSettings::rightEdgeLightAction ||
+                                    s.valuePtr == &CrossPointSettings::doubleClickPwrLight ||
+                                    s.valuePtr == &CrossPointSettings::shortPwrBtn ||
                                     s.valuePtr == &CrossPointSettings::frontlightBrightness ||
                                     s.valuePtr == &CrossPointSettings::frontlightWarmth ||
                                     s.valuePtr == &CrossPointSettings::frontlightWarmthMemory ||
@@ -385,12 +397,52 @@ inline std::vector<SettingInfo> getSettingsList(const SdCardFontRegistry* regist
         },
         s.key, s.category);
   }
-  // Frontlit and lightless variants of a board share one binary (EEGO A4);
+  // Remove light actions from power button short/long action when frontlight is absent
+  if (!Frontlight.present() || BoardConfig::isSticky()) {
+    for (auto& s : v) {
+      if (s.valuePtr != &CrossPointSettings::touchPowerShortAction &&
+          s.valuePtr != &CrossPointSettings::touchPowerLongAction)
+        continue;
+      const auto field = s.valuePtr;
+      static constexpr uint8_t NO_LIGHT_ACTIONS[] = {0, 1, 4, 5, 6};  // Sleep, Menu, Refresh, Home, Ignore
+      static const std::vector<StrId> LABELS = {
+          StrId::STR_SLEEP, StrId::STR_POWER_MENU, StrId::STR_FORCE_REFRESH, StrId::STR_HOME, StrId::STR_IGNORE};
+      s = SettingInfo::DynamicEnum(
+          s.nameId, LABELS,
+          [field]() -> uint8_t {
+            const uint8_t val = SETTINGS.*field;
+            for (size_t r = 0; r < sizeof(NO_LIGHT_ACTIONS); ++r) {
+              if (NO_LIGHT_ACTIONS[r] == val) return static_cast<uint8_t>(r);
+            }
+            return 0;
+          },
+          [field](uint8_t row) {
+            if (row < sizeof(NO_LIGHT_ACTIONS)) {
+              SETTINGS.*field = NO_LIGHT_ACTIONS[row];
+            }
+          },
+          s.key, s.category);
+    }
+  }
+  // Frontlit and lightless variants of a board share one binary (EEGO A4, Sticky);
   // presence is the I2C probe result from Frontlight.begin(). UI-only: the probe
   // has not run at load time, so persistence visits the unfiltered base descriptors.
   if (!Frontlight.present()) {
     v.erase(std::remove_if(v.begin(), v.end(),
-                           [](const SettingInfo& s) { return s.nameId == StrId::STR_RESTORE_LIGHT_ON_WAKE; }),
+                           [](const SettingInfo& s) {
+                             return s.nameId == StrId::STR_RESTORE_LIGHT_ON_WAKE ||
+                                    s.nameId == StrId::STR_LEFT_EDGE_LIGHT ||
+                                    s.nameId == StrId::STR_RIGHT_EDGE_LIGHT ||
+                                    s.nameId == StrId::STR_DBL_CLICK_PWR_LIGHT ||
+                                    s.valuePtr == &CrossPointSettings::frontlightRestoreOnWake ||
+                                    s.valuePtr == &CrossPointSettings::leftEdgeLightAction ||
+                                    s.valuePtr == &CrossPointSettings::rightEdgeLightAction ||
+                                    s.valuePtr == &CrossPointSettings::doubleClickPwrLight ||
+                                    s.valuePtr == &CrossPointSettings::frontlightBrightness ||
+                                    s.valuePtr == &CrossPointSettings::frontlightWarmth ||
+                                    s.valuePtr == &CrossPointSettings::frontlightWarmthMemory ||
+                                    s.valuePtr == &CrossPointSettings::frontlightOn;
+                           }),
             v.end());
   }
   if (registry && registry->getFamilyCount() > 0) {

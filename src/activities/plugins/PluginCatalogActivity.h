@@ -221,7 +221,8 @@ class PluginCatalogActivity final : public CatalogActivity {
   void downloadFinished(bool cancelled) override;
   // Header label for the browsing screen (list title / search / page suffix).
   std::string browsingHeaderLabel() const;
-  const char* headerTitle() const override;
+  void drawChrome() override {}
+  const char* headerTitle() const override { return nullptr; }
   mutable std::string cachedHeaderTitle;
   // JSON pagination adds rows before/after the current items.
   bool prevRowVisible() const;
