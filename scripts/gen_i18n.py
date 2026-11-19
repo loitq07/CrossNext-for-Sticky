@@ -881,9 +881,15 @@ def _append_string_entry(lines: List[str], text: str, comment: str = "") -> None
 
 
 def _write_file(path: str, lines: List[str], verbose: bool = False) -> None:
+    text = "\n".join(lines) + "\n"
+    try:
+        with open(path, encoding="utf-8", newline="") as f:
+            if f.read() == text:
+                return  # unchanged: keep the timestamp so dependents are not rebuilt
+    except OSError:
+        pass
     with open(path, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(lines))
-        f.write("\n")
+        f.write(text)
     if verbose:
         print(f"Generated: {path}")
 

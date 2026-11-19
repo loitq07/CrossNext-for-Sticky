@@ -1,3 +1,4 @@
+import io
 import os
 import re
 import gzip
@@ -95,7 +96,8 @@ for root, _, files in os.walk(SRC_DIR):
             base_name = sanitize_identifier(f"{os.path.splitext(file)[0]}{suffix}")
             header_path = os.path.join(root, f"{base_name}.generated.h")
 
-            with open(header_path, "w", encoding="utf-8") as h:
+            h = io.StringIO()
+            if True:
                 h.write(HEADER_PREAMBLE)
                 h.write(HEADER_PRAGMA)
                 h.write(HEADER_INCLUDE)
@@ -119,6 +121,17 @@ for root, _, files in os.walk(SRC_DIR):
                 # echo it back as If-None-Match, enabling 304 responses.
                 etag = hashlib.sha256(compressed).hexdigest()[:16]
                 h.write(f'constexpr const char* {base_name}ETag = "\\"{etag}\\"";\n')
+
+            text = h.getvalue()
+            # Rewrite only on change: an untouched timestamp keeps the web
+            # server translation unit from being rebuilt on every build.
+            old = None
+            if os.path.exists(header_path):
+                with open(header_path, encoding="utf-8") as f:
+                    old = f.read()
+            if old != text:
+                with open(header_path, "w", encoding="utf-8") as f:
+                    f.write(text)
 
             print(f"Generated: {header_path}")
             print(f"  Original: {len(content)} bytes")

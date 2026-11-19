@@ -23,6 +23,7 @@ Usage:
   python build_module.py link    [module ...]
 """
 
+import concurrent.futures
 import json
 import os
 import re
@@ -30,6 +31,8 @@ import subprocess
 import sys
 
 NL = chr(10)
+# Compiles are independent processes: run as many as there are cores.
+JOBS = max(1, int(os.environ.get("MODULE_JOBS", os.cpu_count() or 4)))
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 ENV = os.environ.get("PIO_ENV", "gh_release_sticky")
@@ -203,6 +206,19 @@ def sources(name):
     return out
 
 
+def dep_paths(dep):
+    """Prerequisites listed in a gcc -MMD file: "target: a b <backslash-newline> c",
+    with spaces inside a path written as backslash-space."""
+    with open(dep, encoding="utf-8") as f:
+        text = f.read().replace("\\" + NL, " ").replace("\\ ", "\t")
+    tokens = text.split(" ")
+    tokens = [t.strip(NL + "\r") for t in tokens if t.strip(NL + "\r")]
+    while tokens and not tokens[0].endswith(":"):
+        tokens.pop(0)  # the target itself (a Windows path may hold a drive colon)
+    # Relative entries (forced includes) are relative to the project directory.
+    return [os.path.join(ROOT, t.replace("\t", " ")) for t in tokens[1:]]
+
+
 CXX_ONLY = re.compile(r"(^| )(-std=gnu\+\+\w+|-fno-rtti|-fuse-cxa-atexit|-Wno-bidi-chars)(?= |$)")
 
 
@@ -218,29 +234,61 @@ def objects(names):
     """
     flags = compile_template()
     all_keep = set()
+    jobs, module_objs = [], {}
     for name in names:
         mdir = os.path.join(OBJ_DIR, name)
         os.makedirs(mdir, exist_ok=True)
-        for f in os.listdir(mdir):
-            if f.endswith(".o"):
-                os.remove(os.path.join(mdir, f))
         stub = os.path.join(mdir, "module_descriptor.cpp")
-        open(stub, "w", encoding="utf-8").write(stub_source(name))
-        objs = []
+        stub_text = stub_source(name)
+        if not os.path.exists(stub) or open(stub, encoding="utf-8").read() != stub_text:
+            open(stub, "w", encoding="utf-8").write(stub_text)
+        wanted = {os.path.basename(src) + ".o" for src in sources(name) + [stub]}
+        for f in os.listdir(mdir):
+            # Objects of sources that no longer exist would be linked in.
+            if f.endswith(".cpp.o") or f.endswith(".c.o"):
+                if f not in wanted and f != "module_descriptor.cpp.o":
+                    os.remove(os.path.join(mdir, f))
         extra_inc = []
         for d in MODULES[name][1]:
             if d.startswith("lib/"):
                 extra_inc.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
+        module_objs[name] = []
         for src in sources(name) + [stub]:
             obj = os.path.join(mdir, os.path.basename(src) + ".o")
-            print("  CC", os.path.relpath(src, ROOT))
             is_c = src.endswith(".c")
-            run(GCC if is_c else GXX, CXX_ONLY.sub(" ", flags) if is_c else flags,
-                ["-DSTICKY_MODULE_ABI=0", "-mtext-section-literals", "-fPIC"] + extra_inc + ["-c", src, "-o", obj],
-                name + ".cc.rsp")
-            objs.append(obj)
+            jobs.append((GCC if is_c else GXX, CXX_ONLY.sub(" ", flags) if is_c else flags,
+                         ["-DSTICKY_MODULE_ABI=0", "-mtext-section-literals", "-fPIC", "-MMD", "-MF", obj + ".d"]
+                         + extra_inc + ["-c", src, "-o", obj],
+                         os.path.join(name, os.path.basename(src) + ".cc.rsp")))
+            module_objs[name].append(obj)
+
+    def up_to_date(job):
+        """Reuse an object when its flags, source and every header it read are unchanged."""
+        obj, rsp = job[2][-1], os.path.join(OBJ_DIR, job[3])
+        dep = obj + ".d"
+        if os.environ.get("MODULE_REBUILD") or not all(os.path.exists(x) for x in (obj, dep, rsp)):
+            return False
+        if open(rsp, encoding="utf-8").read() != job[1] + " " + " ".join(q(a) for a in job[2]):
+            return False
+        built = os.path.getmtime(obj)
+        try:
+            return all(os.path.getmtime(x) <= built for x in dep_paths(dep))
+        except OSError:  # a header moved or was deleted
+            return False
+
+    def compile_one(job):
+        print("  CC", os.path.relpath(job[2][-3], ROOT), flush=True)
+        run(*job)
+
+    stale = [j for j in jobs if not up_to_date(j)]
+    print(f"compiling {len(stale)} of {len(jobs)} sources with {JOBS} jobs", flush=True)
+    with concurrent.futures.ThreadPoolExecutor(JOBS) as pool:
+        for f in [pool.submit(compile_one, j) for j in stale]:
+            f.result()  # re-raises the first failed compile
+
+    def scan(name):
         undefined, defined, shared = set(), set(), set()
-        for obj in objs:
+        for obj in module_objs[name]:
             out = subprocess.run([NM, "-g", obj], capture_output=True, text=True).stdout
             for line in out.splitlines():
                 parts = line.split()
@@ -250,10 +298,14 @@ def objects(names):
                     defined.add(parts[2])
                     if parts[1] in ("V", "u"):
                         shared.add(parts[2])
-        imports = undefined - defined - {"__dso_handle"}
-        open(os.path.join(mdir, "shared_data.txt"), "w", encoding="utf-8").write(NL.join(sorted(shared)) + NL)
-        all_keep |= {"U " + x for x in imports} | {"S " + x for x in shared}
-        print(f"  {name}: {len(imports)} imports, {len(shared)} shared data objects")
+        return name, undefined - defined - {"__dso_handle"}, shared
+
+    with concurrent.futures.ThreadPoolExecutor(JOBS) as pool:
+        for name, imports, shared in pool.map(scan, names):
+            mdir = os.path.join(OBJ_DIR, name)
+            open(os.path.join(mdir, "shared_data.txt"), "w", encoding="utf-8").write(NL.join(sorted(shared)) + NL)
+            all_keep |= {"U " + x for x in imports} | {"S " + x for x in shared}
+            print(f"  {name}: {len(imports)} imports, {len(shared)} shared data objects")
     existing = set()
     # A partial build adds to the list; a full one replaces it, so symbols no
     # module imports any more stop being kept in the firmware.
@@ -270,7 +322,8 @@ def objects(names):
 def link(names):
     flags = compile_template()
     abi = abi_value()
-    for name in names:
+
+    def link_one(name):
         folder = MODULES[name][0]
         mdir = os.path.join(OBJ_DIR, name)
         stub = os.path.join(mdir, "module_descriptor.cpp")
@@ -309,7 +362,11 @@ def link(names):
         # headers, so the ELF loader never sees it.
         with open(out, "ab") as f:
             f.write(b"SMAB" + int(abi, 16).to_bytes(4, "little"))
-        print(f"  LD {out} ({os.path.getsize(out):,} bytes, abi {abi})")
+        print(f"  LD {out} ({os.path.getsize(out):,} bytes, abi {abi})", flush=True)
+
+    with concurrent.futures.ThreadPoolExecutor(JOBS) as pool:
+        for f in [pool.submit(link_one, n) for n in names]:
+            f.result()
 
 
 if __name__ == "__main__":

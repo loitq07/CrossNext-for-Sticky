@@ -76,7 +76,14 @@ build:
    on the default branch (`main`).
 7. **Package** (workspace root): `python package_clean_release.py` -- copies the
    current `.pio` build, no rebuild. Confirm `output/release/SHA256SUMS.txt`
-   shows the sha256 of the binary you tested.
+   shows the sha256 of the binary you tested. It also produces
+   `CrossNext-Sticky-Resources.zip` (microSD `apps/` artwork for PET, Reading
+   Quest and The Intercept, plus the reader fonts) with
+   `tools_local/sticky_sd_resources.py`. That pack does not depend on the
+   firmware build: it is cut from upstream CrossNext's resources, pinned by
+   version and sha256 in the script. When you move the pin to a newer upstream,
+   check the PET pack image counts still match `petui::*_COUNT`. The loader
+   refuses a mismatched pack.
 8. **Publish:** `python publish_release.py`. Its preflight refuses to publish
    unless the OTA asset carries the module ABI of the last build, every
    catalog module (`module = true`) is on the `appstore` branch for that ABI,
