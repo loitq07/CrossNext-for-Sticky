@@ -84,6 +84,16 @@ build:
    version and sha256 in the script. When you move the pin to a newer upstream,
    check the PET pack image counts still match `petui::*_COUNT`. The loader
    refuses a mismatched pack.
+
+   The same content also installs over Wi-Fi from the App Store (Resources
+   tab: PET / Reading Quest / The Intercept resources). Its files are
+   flat assets of the `resources-<upstream version>` release, a prerelease
+   without `firmware-sticky.bin`, so OTA never picks it. The firmware pins each
+   file's path, size and SHA-256 in `src/apps_local/appstore/ResourcePacks.generated.h`.
+   After moving the pin, run `python tools_local/sticky_sd_resources.py --ota <dir>`.
+   That regenerates the header and writes the assets. Create the new
+   `resources-<version>` prerelease with `--latest=false` and upload them
+   *before* releasing a firmware that points at it.
 8. **Publish:** `python publish_release.py`. Its preflight refuses to publish
    unless the OTA asset carries the module ABI of the last build, every
    catalog module (`module = true`) is on the `appstore` branch for that ABI,

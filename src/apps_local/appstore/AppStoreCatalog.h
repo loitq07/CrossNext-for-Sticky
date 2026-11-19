@@ -3,10 +3,15 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "ResourcePacks.generated.h"
+
 enum class StoreCategory : uint8_t {
   All = 0,
   Games = 1,
-  Apps = 2
+  Apps = 2,
+  Languages = 3,  // interface language packs
+  Resources = 4,  // microSD content packs (StoreItem::resources)
+  Count
 };
 
 struct StoreItem {
@@ -29,6 +34,10 @@ struct StoreItem {
   // with the firmware); needed, and refreshed after every firmware update, when
   // the saved interface language uses it. Requires module = true for the URL.
   bool languagePack = false;
+  // FORK CHANGE: microSD content an app reads at run time (PET / Reading Quest /
+  // Intercept artwork, the Noto Serif reading font). Several files, each checked
+  // against the size and SHA-256 the firmware carries; folder is where they go.
+  const ResourcePack* resources = nullptr;
 };
 
 // Only apps with no built-in copy are listed. A small host-API plugin named
@@ -223,7 +232,23 @@ inline const StoreItem kStoreItems[] = {
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
-    StoreCategory::Apps, "/languages", "vi.cplang", 426439, "416.4 KB", true, true
+    StoreCategory::Languages, "/languages", "vi.cplang", 426467, "416.5 KB", true, true
+  },
+  // Resource packs (ResourcePacks.generated.h). Sizes are the whole pack.
+  {
+    "res-pet", "PET RESOURCES", "Tài nguyên Thú cưng",
+    "Artwork the PET app needs", "Hình ảnh cần cho app Thú cưng (PET)",
+    StoreCategory::Resources, "/apps/pet-v2", "", 10903670, "10.4 MB", false, false, &kResourcePacks[0]
+  },
+  {
+    "res-quest", "READING QUEST RESOURCES", "Tài nguyên Reading Quest",
+    "Artwork Reading Quest needs", "Hình ảnh cần cho Reading Quest",
+    StoreCategory::Resources, "/apps/reading-adventure-v2", "", 28724452, "27.4 MB", false, false, &kResourcePacks[1]
+  },
+  {
+    "res-intercept", "THE INTERCEPT RESOURCES", "Tài nguyên The Intercept",
+    "Artwork The Intercept needs", "Hình ảnh cần cho The Intercept",
+    StoreCategory::Resources, "/apps/intercept", "", 276357, "269.9 KB", false, false, &kResourcePacks[2]
   },
 };
 

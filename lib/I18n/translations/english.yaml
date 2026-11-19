@@ -4705,7 +4705,7 @@ STR_PET_MEMORIES_EMPTY: "Your memories will appear here as you share reading, ca
 STR_PET_AFFECTION_RECEIPT: "Mood %u to %u (+%u)"
 STR_PET_REMOVE_HOME: "Remove"
 STR_PET_HOME_NO_SELECTION: "No decoration selected. Explore the categories to decorate their home."
-STR_APP_RESOURCES_COPY: "This app needs its contents to work. Extract CrossNext-Resources.zip to the microSD root and replace the folder shown below. Restart the reader."
+STR_APP_RESOURCES_COPY: "This app needs its contents to work. Download them over Wi-Fi in App Store > Resources, or copy the folder shown below from CrossNext-Sticky-Resources.zip to the microSD. Then open the app again."
 STR_READING_SYNC_NEWER: "A newer firmware created this imported history. Update CrossNext before importing again."
 STR_READING_SYNC_LOCAL_CHANGED: "The saved journal is older than its synced history or has changed. Restore its complete backup before syncing. No local reading was deleted."
 STR_READER_FINISH_BOOK: "Finish book"

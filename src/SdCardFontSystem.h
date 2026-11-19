@@ -80,6 +80,10 @@ class SdCardFontSystem {
   void loadReaderDefaults(GfxRenderer& renderer, uint8_t requestedSize = 0);
   bool refreshRegistry(GfxRenderer& renderer);
   SdCardFontManager readerDefaults_;
+  // Directory the default reader face was loaded from ("Noto Serif" or the
+  // downloadable "NotoSerif"); readerDefaultId() maps the setting's name to it.
+  std::string readerDefaultsName_ = "Noto Serif";
+  int readerDefaultId(const char* familyName, uint8_t pointSize) const;
   LanguageUiFonts languageUiFonts_;
   bool readerDefaultsReady_ = false;
   uint32_t readerDefaultsHash_ = 0;

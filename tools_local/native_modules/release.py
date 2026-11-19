@@ -82,6 +82,8 @@ def main():
 
     os.environ["MODULE_OUT"] = OUT
     os.environ.setdefault("PLATFORMIO_CORE_DIR", os.path.join(WORKSPACE, ".platformio"))
+    os.environ["PYTHONUTF8"] = "1"
+    os.environ["PYTHONIOENCODING"] = "utf-8"
     # Generate flags for this checkout: the workspace wrapper may build a
     # different worktree, which would produce an incompatible firmware ABI.
     if compiledb_stale():

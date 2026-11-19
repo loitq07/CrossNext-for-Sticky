@@ -102,14 +102,14 @@ void begin(Screen& screen, int bottomReserve = 0) {
 
 template <typename Screen>
 void tabs(Screen& screen, const fui::TabItem* items, int count, fui::ActionId action, fui::FontId font = 3,
-          int height = 52, int gap = 10) {
+          int height = 52, int gap = 10, uint8_t maxLines = 1) {
   fui::TabBarProps props;
   props.tabs = items;
   props.count = static_cast<uint8_t>(count);
   props.action = action;
   props.inputMask = fui::InputTouch;
   props.text.font = font;
-  props.text.maxLines = 2;
+  props.text.maxLines = maxLines;
   props.text.align = fui::TextAlign::Center;
   props.tabStyles = chrome::lightHeader ? lightui::tabStyles() : rowStyles();
   props.tabInset = {};

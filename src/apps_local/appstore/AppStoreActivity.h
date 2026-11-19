@@ -39,11 +39,12 @@ class AppStoreActivity final : public UiTabListActivity {
  private:
   // Follow-up work chosen inside a popup callback. Deferred to loop() because a
   // popup cannot safely re-open itself from inside its own callback.
-  enum class PendingAction : uint8_t { None, Open, ConfirmDelete, Delete, WifiSetup, UpdateAll, Finish };
+  enum class PendingAction : uint8_t { None, Open, ConfirmDelete, Delete, WifiSetup, UpdateAll, Finish, Reinstall };
 
   // --- UiTabListActivity contract ---
   int listCount() const override { return static_cast<int>(rows_.size()); }
-  int tabCount() const override { return 3; }
+  static constexpr int kTabCount = static_cast<int>(StoreCategory::Count);
+  int tabCount() const override { return kTabCount; }
   int activeTab() const override { return static_cast<int>(currentCategory); }
   const char* tabLabel(int index) const override;
   void buildScreen(UiScreen& screen) override;
@@ -68,6 +69,7 @@ class AppStoreActivity final : public UiTabListActivity {
   void showUpdatePrompt();
 
   void executeDownload();
+  void executeResourceDownload(const StoreItem& item);
   void checkWifiAndDownload(int catalogIndex);
   void beginDownload(int catalogIndex);
   void launchWifiSetup();

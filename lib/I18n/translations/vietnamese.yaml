@@ -4705,7 +4705,7 @@ STR_PET_MEMORIES_EMPTY: "Kỷ niệm của bạn sẽ xuất hiện ở đây kh
 STR_PET_AFFECTION_RECEIPT: "Tâm trạng %u → %u (+%u)"
 STR_PET_REMOVE_HOME: "Gỡ bỏ"
 STR_PET_HOME_NO_SELECTION: "Chưa chọn đồ trang trí nào. Khám phá các danh mục để trang trí ngôi nhà của thú cưng."
-STR_APP_RESOURCES_COPY: "Ứng dụng này cần tệp nội dung để hoạt động. Giải nén CrossNext-Resources.zip vào thư mục gốc thẻ microSD và thay thế thư mục hiện bên dưới, rồi khởi động lại máy đọc."
+STR_APP_RESOURCES_COPY: "Ứng dụng này cần tệp nội dung để hoạt động. Tải qua Wi-Fi trong Cửa hàng ứng dụng > Tài nguyên, hoặc chép thư mục bên dưới từ CrossNext-Sticky-Resources.zip vào thẻ microSD, rồi mở lại ứng dụng."
 STR_READING_SYNC_NEWER: "Lịch sử được nhập này do firmware mới hơn tạo ra. Hãy cập nhật CrossNext trước khi nhập lại."
 STR_READING_SYNC_LOCAL_CHANGED: "Nhật ký đã lưu cũ hơn lịch sử đã đồng bộ hoặc đã thay đổi. Khôi phục bản sao lưu đầy đủ trước khi đồng bộ. Không có dữ liệu đọc sách cục bộ nào bị xóa."
 STR_READER_FINISH_BOOK: "Hoàn thành sách"

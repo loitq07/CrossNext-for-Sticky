@@ -33,38 +33,38 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Nâng cấp nền CrossNext 2.0";
-    rowSubtitles_[0] = "Kế thừa reader và thư viện từ bản 2.0.3";
+    rowLabels_[0] = "1. App Store: Tab Ngôn ngữ & Tài nguyên";
+    rowSubtitles_[0] = "Tách tab riêng tải gói tiếng Việt và đồ họa";
 
-    rowLabels_[1] = "2. Cài đặt riêng cho từng sách";
-    rowSubtitles_[1] = "Tùy chỉnh chữ, giãn dòng và thanh đọc";
+    rowLabels_[1] = "2. Quản lý phông chữ đọc sách";
+    rowSubtitles_[1] = "Tải phông qua Wi-Fi, nhận diện Noto Serif";
 
-    rowLabels_[2] = "3. Điều khiển Bluetooth mới";
-    rowSubtitles_[2] = "Ghép remote, gán phím và lật trang";
+    rowLabels_[2] = "3. Giao diện tab 1 dòng";
+    rowSubtitles_[2] = "Tên tab gọn gàng, tự động rút gọn dấu ...";
 
-    rowLabels_[3] = "4. Ứng dụng FOCUS";
-    rowSubtitles_[3] = "Quản lý dự án, công việc và giờ tập trung";
+    rowLabels_[3] = "4. Nâng cấp nền CrossNext 2.0";
+    rowSubtitles_[3] = "Kế thừa reader và thư viện từ bản 2.0.3";
 
-    rowLabels_[4] = "5. Thư viện và plugin";
-    rowSubtitles_[4] = "Yêu thích, bộ sưu tập và chi tiết plugin";
+    rowLabels_[4] = "5. Điều khiển Bluetooth & Remote";
+    rowSubtitles_[4] = "Ghép remote BLE, gán phím và lật trang";
 
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. CrossNext 2.0 foundation";
-    rowSubtitles_[0] = "Reader and library updates from 2.0.3";
+    rowLabels_[0] = "1. App Store: Languages & Resources";
+    rowSubtitles_[0] = "Dedicated tabs for language packs and assets";
 
-    rowLabels_[1] = "2. Per-book reading settings";
-    rowSubtitles_[1] = "Customize text, spacing and reading bars";
+    rowLabels_[1] = "2. Reader font downloads";
+    rowSubtitles_[1] = "Fetch fonts over Wi-Fi, auto Noto Serif";
 
-    rowLabels_[2] = "3. New Bluetooth controls";
-    rowSubtitles_[2] = "Pair remotes, map keys and turn pages";
+    rowLabels_[2] = "3. Single-line tab bar";
+    rowSubtitles_[2] = "Clean labels with automatic ellipsis";
 
-    rowLabels_[3] = "4. FOCUS app";
-    rowSubtitles_[3] = "Projects, tasks and focus sessions";
+    rowLabels_[3] = "4. CrossNext 2.0 foundation";
+    rowSubtitles_[3] = "Reader and library updates from 2.0.3";
 
-    rowLabels_[4] = "5. Library and plugins";
-    rowSubtitles_[4] = "Favorites, collections and plugin details";
+    rowLabels_[4] = "5. Bluetooth & remotes";
+    rowSubtitles_[4] = "Pair BLE remotes, map keys and turn pages";
 
     rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";

@@ -4,6 +4,7 @@
 #include <I18n.h>
 #include <Logging.h>
 #include <WiFi.h>
+#include <mbedtls/sha256.h>
 
 #include <cstdio>
 #include <cstring>
@@ -35,8 +36,46 @@ bool isVi() {
          (!I18N.hasLanguagePack() && SETTINGS.language == static_cast<uint8_t>(Language::VI));
 }
 
+// --- resource packs ------------------------------------------------------------
+
+// A file counts as present when its size matches; the hash is checked once,
+// right after download, not on every list rebuild (packs reach 28 MB).
+bool resourceFilePresent(const ResourceFile& file) {
+  HalFile f;
+  if (!Storage.exists(file.path) || !Storage.openFileForRead(TAG, file.path, f)) return false;
+  return f.fileSize64() == file.size;
+}
+
+bool resourcePackInstalled(const ResourcePack& pack) {
+  for (size_t i = 0; i < pack.count; ++i)
+    if (!resourceFilePresent(pack.files[i])) return false;
+  return true;
+}
+
+bool fileMatchesSha256(const char* path, const uint8_t expected[32]) {
+  HalFile f;
+  if (!Storage.openFileForRead(TAG, path, f)) return false;
+  mbedtls_sha256_context ctx;
+  mbedtls_sha256_init(&ctx);
+  mbedtls_sha256_starts(&ctx, 0);
+  uint8_t buffer[2048];
+  int n;
+  while ((n = f.read(buffer, sizeof(buffer))) > 0) mbedtls_sha256_update(&ctx, buffer, static_cast<size_t>(n));
+  uint8_t digest[32];
+  mbedtls_sha256_finish(&ctx, digest);
+  mbedtls_sha256_free(&ctx);
+  return n == 0 && std::memcmp(digest, expected, sizeof(digest)) == 0;
+}
+
+// Parent directory of a card path ("/apps/pet-v2/x.bin" -> "/apps/pet-v2").
+std::string parentOf(const char* path) {
+  const char* slash = std::strrchr(path, '/');
+  return slash && slash != path ? std::string(path, slash) : std::string("/");
+}
+
 // Where a catalog item sits on the card, or "" when it is not installed.
 std::string installedPathOf(const StoreItem& item) {
+  if (item.resources) return resourcePackInstalled(*item.resources) ? std::string(item.folder) : std::string();
   std::string path = std::string(item.folder) + "/" + item.filename;
   if (Storage.exists(path.c_str())) return path;
   path = std::string("/sdcard") + item.folder + "/" + item.filename;
@@ -66,6 +105,7 @@ std::string firmwareAbiText() {
 }
 
 bool isOutdated(const StoreItem& item) {
+  if (item.resources) return false;  // pinned content: never part of "update all"
   if (item.languagePack) {
     if (!languagePackNeeded(item)) return false;
     if (installedPathOf(item).empty()) return true;
@@ -187,7 +227,11 @@ void AppStoreActivity::rebuildRows() {
   }
   for (size_t i = 0; i < kStoreItemCount; ++i) {
     const StoreItem& item = kStoreItems[i];
-    if (currentCategory != StoreCategory::All && item.category != currentCategory) continue;
+    // "All" is the games and apps; languages and resources have their own tabs.
+    if (currentCategory == StoreCategory::All
+            ? item.category != StoreCategory::Games && item.category != StoreCategory::Apps
+            : item.category != currentCategory)
+      continue;
     Row row;
     row.catalogIndex = static_cast<int>(i);
     row.installed = isItemInstalled(item);
@@ -221,8 +265,12 @@ const char* AppStoreActivity::tabLabel(const int index) const {
       return isVi() ? "Tất cả" : "All";
     case 1:
       return isVi() ? "Trò chơi" : "Games";
-    default:
+    case 2:
       return isVi() ? "Ứng dụng" : "Apps";
+    case 3:
+      return isVi() ? "Ngôn ngữ" : "Languages";
+    default:
+      return isVi() ? "Tài nguyên" : "Resources";
   }
 }
 
@@ -258,9 +306,9 @@ void AppStoreActivity::buildScreen(UiScreen& screen) {
   const int hints = mappedInput.hasTouch() ? 0 : UITheme::getInstance().getMetrics().buttonHintsHeight;
   pixelui::begin(screen, hints);
 
-  fui::TabItem tabs[3];
-  for (int i = 0; i < 3; ++i) tabs[i] = fui::tabItem(i, activeTab() == i, true, tabLabel(i));
-  pixelui::tabs(screen, tabs, 3, ACTION_TAB, 0);
+  fui::TabItem tabs[kTabCount];
+  for (int i = 0; i < kTabCount; ++i) tabs[i] = fui::tabItem(i, activeTab() == i, true, tabLabel(i));
+  pixelui::tabs(screen, tabs, kTabCount, ACTION_TAB, 0);
 
   fui::ListProps props;
   props.items = rowItems_.data();
@@ -350,6 +398,18 @@ void AppStoreActivity::activateIndex(const int index) {
 
 void AppStoreActivity::showItemActions(const int catalogIndex) {
   selectedCatalogIndex = catalogIndex;
+  if (kStoreItems[catalogIndex].resources) {
+    // Nothing to open: the app that uses the pack is on the shelf.
+    static const char* const kResVi[] = {"Tải lại", "Xoá", "Huỷ"};
+    static const char* const kResEn[] = {"Download again", "Delete", "Cancel"};
+    optionPopup.show(displayName(kStoreItems[catalogIndex]), isVi() ? kResVi : kResEn, 3, 2,
+                     [this](const int choice) {
+                       if (choice == 0) pendingAction = PendingAction::Reinstall;
+                       if (choice == 1) pendingAction = PendingAction::ConfirmDelete;
+                     });
+    requestUpdate();
+    return;
+  }
   static const char* const kVi[] = {"Mở", "Xoá", "Huỷ"};
   static const char* const kEn[] = {"Open", "Delete", "Cancel"};
   const StoreItem& item = kStoreItems[catalogIndex];
@@ -390,15 +450,23 @@ void AppStoreActivity::runPendingAction() {
       static const char* const kVi[] = {"Xoá", "Huỷ"};
       static const char* const kEn[] = {"Delete", "Cancel"};
       char msg[128];
-      snprintf(msg, sizeof(msg), isVi() ? "Xoá %s khỏi thẻ nhớ?" : "Remove %s from the SD card?", displayName(item));
-      optionPopup.showMessage(isVi() ? "Xoá ứng dụng" : "Delete app", msg, isVi() ? kVi : kEn, 2, 1,
+      snprintf(msg, sizeof(msg), isVi() ? "Xoá %s khỏi thẻ nhớ?" : "Remove %s from the SD card?", displayName(item));      optionPopup.showMessage(isVi() ? "Xoá ứng dụng" : "Delete app", msg, isVi() ? kVi : kEn, 2, 1,
                               [this](const int choice) {
                                 if (choice == 0) pendingAction = PendingAction::Delete;
                               });
       requestUpdate();
       break;
     }
+    case PendingAction::Reinstall:
+      checkWifiAndDownload(selectedCatalogIndex);
+      break;
     case PendingAction::Delete:
+      if (item.resources) {
+        for (size_t i = 0; i < item.resources->count; ++i) Storage.remove(item.resources->files[i].path);
+        rebuildRows();
+        requestUpdate();
+        break;
+      }
       Storage.remove(getInstalledPath(item).c_str());
       shelf::refreshApps();
       rebuildRows();
@@ -548,6 +616,10 @@ void AppStoreActivity::executeDownload() {
   }
 
   const StoreItem& item = kStoreItems[selectedCatalogIndex];
+  if (item.resources) {
+    executeResourceDownload(item);
+    return;
+  }
 
   // Check heap before TLS
   if (ESP.getFreeHeap() < HttpDownloader::MIN_TLS_FREE_HEAP ||
@@ -645,4 +717,118 @@ void AppStoreActivity::executeDownload() {
                isVi() ? "Không thể tải ứng dụng. Kiểm tra Wi-Fi rồi thử lại."
                       : "Could not download the app. Check Wi-Fi and retry.");
   }
+}
+
+// A resource pack: every file of an app's content folder, fetched from the
+// pinned resources release. Files already on the card at the right size are
+// kept, so a pack interrupted by a dropped connection resumes where it stopped.
+// Each download lands in "<path>.part", is checked against the SHA-256 the
+// firmware carries, and only then replaces the real file: a half-written or
+// tampered file never takes the place of a working one.
+void AppStoreActivity::executeResourceDownload(const StoreItem& item) {
+  const ResourcePack& pack = *item.resources;
+  auto fail = [this](const char* viMsg, const char* enMsg) {
+    downloading = false;
+    showNotice(isVi() ? "Tải về thất bại" : "Download failed", isVi() ? viMsg : enMsg);
+  };
+
+  if (ESP.getFreeHeap() < HttpDownloader::MIN_TLS_FREE_HEAP ||
+      ESP.getMaxAllocHeap() < HttpDownloader::MIN_TLS_MAX_ALLOC) {
+    LOG_ERR(TAG, "Low heap before resource download: %u free, %u max block", ESP.getFreeHeap(),
+            ESP.getMaxAllocHeap());
+    fail("Thiết bị thiếu RAM để mở kết nối bảo mật. Vui lòng thử lại sau.",
+         "Device RAM is low for a secure transfer. Please retry.");
+    return;
+  }
+
+  uint64_t needed = 0;
+  for (size_t i = 0; i < pack.count; ++i)
+    if (!resourceFilePresent(pack.files[i])) needed += pack.files[i].size;
+  uint64_t freeBytes = 0;
+  if (needed && Storage.freeBytes(freeBytes) && freeBytes < needed + needed / 20 + 512 * 1024) {
+    char msg[160];
+    snprintf(msg, sizeof(msg),
+             isVi() ? "Thẻ nhớ cần thêm khoảng %u MB trống." : "The card needs about %u MB more free space.",
+             static_cast<unsigned>((needed - freeBytes + 1048575) / 1048576 + 1));
+    downloading = false;
+    showNotice(isVi() ? "Thẻ nhớ đầy" : "Card full", msg);
+    return;
+  }
+
+  downloadTotal = pack.totalBytes;
+  downloadProgress = 0;
+  cancelDownload = false;
+  lastRenderedPercent = -1;
+  lastProgressUpdateMs = millis();
+  size_t done = 0;
+
+  for (size_t i = 0; i < pack.count; ++i) {
+    const ResourceFile& file = pack.files[i];
+    if (resourceFilePresent(file)) {
+      done += file.size;
+      downloadProgress = done;
+      continue;
+    }
+    Storage.ensureDirectoryExists(parentOf(file.path).c_str());
+    const std::string part = std::string(file.path) + ".part";
+    const std::string url = std::string(kResourceReleaseUrl) + file.asset;
+    LOG_INF(TAG, "Resource %s -> %s", url.c_str(), file.path);
+
+    auto progressCb = [this, done](size_t downloaded, size_t) {
+      downloadProgress = done + downloaded;
+      mappedInput.update(true);
+      if (mappedInput.wasReleased(MappedInputManager::Button::Back)) cancelDownload = true;
+      int tx = 0, ty = 0;
+      if (mappedInput.wasScreenTapped(tx, ty)) cancelDownload = true;
+      const int percent = downloadTotal ? static_cast<int>(downloadProgress * 100 / downloadTotal) : 0;
+      const unsigned long now = millis();
+      if (percent >= 100 || lastRenderedPercent < 0 || percent >= lastRenderedPercent + 5 ||
+          now - lastProgressUpdateMs >= 1500) {
+        lastRenderedPercent = percent;
+        lastProgressUpdateMs = now;
+        requestUpdate(true);
+      }
+    };
+    const HttpDownloader::DownloadError err = HttpDownloader::downloadToFile(url, part, progressCb, &cancelDownload);
+    if (err == HttpDownloader::ABORTED) {
+      Storage.remove(part.c_str());
+      downloading = false;
+      rebuildRows();
+      requestUpdate(true);
+      return;
+    }
+    if (err != HttpDownloader::OK) {
+      Storage.remove(part.c_str());
+      rebuildRows();
+      fail("Không tải được tài nguyên. Kiểm tra Wi-Fi rồi thử lại; phần đã tải được giữ lại.",
+           "Could not download the resources. Check Wi-Fi and retry; finished files are kept.");
+      return;
+    }
+    if (!fileMatchesSha256(part.c_str(), file.sha256)) {
+      LOG_ERR(TAG, "Checksum mismatch: %s", file.path);
+      Storage.remove(part.c_str());
+      rebuildRows();
+      fail("Tệp tải về bị lỗi (sai mã kiểm tra). Vui lòng thử lại.",
+           "A downloaded file was damaged (checksum mismatch). Please retry.");
+      return;
+    }
+    Storage.remove(file.path);
+    if (!Storage.rename(part.c_str(), file.path)) {
+      Storage.remove(part.c_str());
+      rebuildRows();
+      fail("Không ghi được tệp lên thẻ nhớ. Kiểm tra thẻ rồi thử lại.",
+           "Could not write to the card. Check it and retry.");
+      return;
+    }
+    done += file.size;
+    downloadProgress = done;
+  }
+
+  downloading = false;
+  haptic_feedback::touchAction();
+  rebuildRows();
+  char msg[160];
+  snprintf(msg, sizeof(msg),
+           isVi() ? "Đã cài %s vào %s." : "%s installed in %s.", displayName(item), pack.folder);
+  showNotice(isVi() ? "Đã cài đặt" : "Installed", msg);
 }
