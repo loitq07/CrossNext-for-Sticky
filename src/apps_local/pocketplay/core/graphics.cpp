@@ -1,5 +1,8 @@
 #include "graphics.h"
 
+#include <cmath>
+#include <cstdlib>
+
 namespace {
 
 // True if (x, y) is inside a rounded rectangle. Only the four corner squares need
@@ -58,11 +61,38 @@ void fillRect(uint8_t* frame, int left, int top, int width, int height, bool bla
   }
 }
 
-void drawRectOutline(uint8_t* frame, int left, int top, int width, int height, int thickness) {
-  fillRect(frame, left, top, width, thickness, true);
-  fillRect(frame, left, top + height - thickness, width, thickness, true);
-  fillRect(frame, left, top, thickness, height, true);
-  fillRect(frame, left + width - thickness, top, thickness, height, true);
+void drawRectOutline(uint8_t* frame, int left, int top, int width, int height, int thickness, bool black) {
+  fillRect(frame, left, top, width, thickness, black);
+  fillRect(frame, left, top + height - thickness, width, thickness, black);
+  fillRect(frame, left, top, thickness, height, black);
+  fillRect(frame, left + width - thickness, top, thickness, height, black);
+}
+
+void drawLine(uint8_t* frame, int x0, int y0, int x1, int y1, int thickness, bool black) {
+  int dx = std::abs(x1 - x0);
+  int dy = std::abs(y1 - y0);
+  int sx = (x0 < x1) ? 1 : -1;
+  int sy = (y0 < y1) ? 1 : -1;
+  int err = dx - dy;
+
+  int half = thickness / 2;
+  while (true) {
+    if (thickness <= 1) {
+      setPixel(frame, x0, y0, black);
+    } else {
+      fillRect(frame, x0 - half, y0 - half, thickness, thickness, black);
+    }
+    if (x0 == x1 && y0 == y1) break;
+    int e2 = 2 * err;
+    if (e2 > -dy) {
+      err -= dy;
+      x0 += sx;
+    }
+    if (e2 < dx) {
+      err += dx;
+      y0 += sy;
+    }
+  }
 }
 
 void drawRing(uint8_t* frame, int centerX, int centerY, int radius, int thickness, bool black) {
@@ -81,6 +111,16 @@ void fillRoundRect(uint8_t* frame, int left, int top, int width, int height, int
   for (int y = top; y < top + height; y++) {
     for (int x = left; x < left + width; x++) {
       if (insideRounded(x, y, left, top, width, height, radius)) setPixel(frame, x, y, black);
+    }
+  }
+}
+
+void fillDitherRoundRect(uint8_t* frame, int left, int top, int width, int height, int radius) {
+  for (int y = top; y < top + height; y++) {
+    for (int x = left; x < left + width; x++) {
+      if ((x + y) % 2 == 0 && insideRounded(x, y, left, top, width, height, radius)) {
+        setPixel(frame, x, y, true);
+      }
     }
   }
 }

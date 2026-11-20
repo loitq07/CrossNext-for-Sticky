@@ -33,14 +33,14 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Thêm 23 game mới từ Pocket Play";
-    rowSubtitles_[0] = "Tải từ App Store: Sokoban, Zork, Suguru, Queens...";
+    rowLabels_[0] = "1. Đồng bộ giao diện CrossNext cho 23 game";
+    rowSubtitles_[0] = "Header chuẩn CDS với pin, đồng hồ, nút bo góc r=6";
 
-    rowLabels_[1] = "2. Dòng kẻ chấm dưới chữ trong sách";
-    rowSubtitles_[1] = "Bật dòng kẻ trang vở, dễ theo dõi dòng đọc";
+    rowLabels_[1] = "2. Thêm 23 game mới từ Pocket Play";
+    rowSubtitles_[1] = "Tải từ App Store: Sokoban, Zork, Suguru, Queens...";
 
-    rowLabels_[2] = "3. Nâng cấp nền CrossNext 2.0";
-    rowSubtitles_[2] = "Kế thừa reader và thư viện từ bản 2.0.3";
+    rowLabels_[2] = "3. Dòng kẻ chấm dưới chữ trong sách";
+    rowSubtitles_[2] = "Bật dòng kẻ trang vở, dễ theo dõi dòng đọc";
 
     rowLabels_[3] = "4. App Store: Tab Ngôn ngữ & Tài nguyên";
     rowSubtitles_[3] = "Tách tab riêng tải gói tiếng Việt và đồ họa";
@@ -51,11 +51,14 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. 23 new games from Pocket Play";
-    rowSubtitles_[0] = "Download from App Store: Sokoban, Zork, Suguru...";
+    rowLabels_[0] = "1. CrossNext CDS UI sync for 23 games";
+    rowSubtitles_[0] = "Native header with battery, clock, and r=6 rounded buttons";
 
-    rowLabels_[1] = "2. Dotted line guides in reader";
-    rowSubtitles_[1] = "Ruled-paper look, easier to follow reading";
+    rowLabels_[1] = "2. 23 new games from Pocket Play";
+    rowSubtitles_[1] = "Download from App Store: Sokoban, Zork, Suguru...";
+
+    rowLabels_[2] = "3. Dotted line guides in reader";
+    rowSubtitles_[2] = "Ruled-paper look, easier to follow reading";
 
     rowLabels_[2] = "3. CrossNext 2.0 foundation";
     rowSubtitles_[2] = "Reader and library updates from 2.0.3";

@@ -838,6 +838,7 @@ U _ZNK11GfxRenderer9drawPixelEiib
 U _ZNK12readingstats7Summary13currentStreakEi
 U _ZNK12readingstats7Summary5onDayEi
 U _ZNK13EpdFontFamily8getGlyphEmNS_5StyleE
+U _ZNK15HalPowerManager20getBatteryPercentageEv
 U _ZNK16EmbeddedKeyboard15preferredHeightEv
 U _ZNK16EmbeddedKeyboard4textEv
 U _ZNK16EmbeddedKeyboard4unitEjPc
@@ -1214,6 +1215,7 @@ U memmove
 U memset
 U micros
 U millis
+U powerManager
 U pthread_mutex_destroy
 U pthread_mutex_init
 U pthread_mutex_lock

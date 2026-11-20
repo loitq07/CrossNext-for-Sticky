@@ -11,8 +11,8 @@ constexpr int MARGIN = 12;
 constexpr int GAP = 12;
 
 constexpr int HEADER_TOP = 8;
-constexpr int HEADER_BUTTON_WIDTH = 150;
-constexpr int HEADER_BUTTON_HEIGHT = 64;
+constexpr int HEADER_BUTTON_WIDTH = 72;
+constexpr int HEADER_BUTTON_HEIGHT = 72;
 
 // The warning line, under the header. Content starts below it, so a warning never
 // has to move anything.
@@ -30,24 +30,23 @@ bool isOnBack(int x, int y);
 
 void drawWarning(uint8_t* frame, const char* text);
 
-// CrossPlay's Toybox look, for screens moved over to it. Values from its
-// ToyboxMetrics.h.
+// CrossNext CDS look (UnifiedDesignTokens).
 constexpr int HAIRLINE = 1;
-constexpr int RULE = 3;
+constexpr int RULE = 2;
 constexpr int FRAME = 4;
 constexpr int BOARD_FRAME = 9;
-constexpr int ROW_HEIGHT = 62;
+constexpr int ROW_HEIGHT = 60;
 constexpr int ROW_GAP = 4;
-constexpr int PILL_HEIGHT = 52;
-constexpr int PILL_RADIUS = 20;
+constexpr int PILL_HEIGHT = 48;
+constexpr int PILL_RADIUS = 6;
 constexpr int ICON_SIZE = 32;  // a game's home-page icon: 4 bytes a row
 
 // The solid black header, then a white gap and a rule. It ends above WARNING_TOP,
 // so the warning line and CONTENT_TOP are where they always are. The title is the
 // largest cut that fits, never shortened. rightLabel, such as "2/3", can be null.
 // With hasBack, BACK sits where isOnBack() looks.
-constexpr int BAND_HEIGHT = 66;
-constexpr int BAND_RULE_GAP = 3;
+constexpr int BAND_HEIGHT = 72;
+constexpr int BAND_RULE_GAP = 2;
 void drawBand(uint8_t* frame, const char* title, const char* rightLabel, bool hasBack, Font labelFont = Font::Size30);
 
 // In landscape the band is slimmer, as CrossPlay's Solitaire has it, because 480 px
@@ -60,6 +59,9 @@ constexpr int LANDSCAPE_CONTENT_TOP = LANDSCAPE_BAND_HEIGHT + BAND_RULE_GAP + RU
 // band buttons go to its right.
 constexpr int LANDSCAPE_WARNING_LEFT = 428;
 constexpr int LANDSCAPE_WARNING_WIDTH = 144;
+
+// CrossNext chevron arrow (white on black band)
+void drawBackArrow(uint8_t* frame, int left, int cy, bool white = true);
 
 // A rounded button. A filled one is black with white type.
 void drawPill(uint8_t* frame, int left, int top, int width, const char* label, bool filled, int height = PILL_HEIGHT);

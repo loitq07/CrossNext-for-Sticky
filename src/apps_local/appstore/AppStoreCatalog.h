@@ -52,7 +52,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "minesweeper", "MINESWEEPER", "Dò Mìn",
     "Classic grid minefield", "Trò chơi dò mìn kinh điển",
-    StoreCategory::Games, "/games", "minesweeper.elf", 129092, "126.1 KB", true
+    StoreCategory::Games, "/games", "minesweeper.elf", 1912160, "1867.3 KB", true
   },
   {
     "picross", "PICROSS", "Picross",

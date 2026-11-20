@@ -3,6 +3,7 @@
 #include <cstring>
 
 #include "../Shelf.h"
+#include "components/HeaderBackTapTarget.h"
 #include "core/graphics.h"
 #include "core/storage.h"
 
@@ -20,6 +21,7 @@ PocketPlayActivity::~PocketPlayActivity() {
 
 void PocketPlayActivity::onEnter() {
   Activity::onEnter();
+  HeaderBackTapTarget::set(0, 0, 80, 72);
   storage::begin();
   game_.open();
   wasLandscape_ = game_.landscape();
@@ -36,6 +38,7 @@ void PocketPlayActivity::onEnter() {
 }
 
 void PocketPlayActivity::onExit() {
+  HeaderBackTapTarget::clear();
   game_.retrySave();
   if (wasLandscape_) {
     renderer.setOrientation(GfxRenderer::Orientation::Portrait);

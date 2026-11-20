@@ -26,7 +26,8 @@ int screenHeight();
 // Anything outside the screen is skipped, so callers can draw across an edge.
 void setPixel(uint8_t* frame, int x, int y, bool black);
 void fillRect(uint8_t* frame, int left, int top, int width, int height, bool black);
-void drawRectOutline(uint8_t* frame, int left, int top, int width, int height, int thickness);
+void drawRectOutline(uint8_t* frame, int left, int top, int width, int height, int thickness, bool black = true);
+void drawLine(uint8_t* frame, int x0, int y0, int x1, int y1, int thickness, bool black = true);
 
 // A circle outline. radius is its outer edge, and thickness grows inward.
 void drawRing(uint8_t* frame, int centerX, int centerY, int radius, int thickness, bool black);
@@ -34,6 +35,7 @@ void drawRing(uint8_t* frame, int centerX, int centerY, int radius, int thicknes
 // A rectangle with rounded corners. radius is the corners' outer edge, and an
 // outline's thickness grows inward, like drawRing().
 void fillRoundRect(uint8_t* frame, int left, int top, int width, int height, int radius, bool black);
+void fillDitherRoundRect(uint8_t* frame, int left, int top, int width, int height, int radius);
 void drawRoundRectOutline(uint8_t* frame, int left, int top, int width, int height, int radius, int thickness, bool black = true);
 
 // A 1-bit icon in CrossPlay's format: rows padded to whole bytes, most significant

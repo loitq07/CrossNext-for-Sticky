@@ -1,15 +1,29 @@
 #include "ui.h"
 
+#include <algorithm>
 #include <cstdio>
 
 #include "battery_icon.h"
 #include "core/graphics.h"
 #include "core/text.h"
 
+// Forward declarations for CrossNext system singletons exported in firmware.elf
+class HalPowerManager {
+ public:
+  uint16_t getBatteryPercentage() const;
+};
+extern HalPowerManager powerManager;
+
+class HalClock {
+ public:
+  bool formatTime(char* buf, size_t bufSize, bool use12Hour = false) const;
+};
+extern HalClock halClock;
+
 namespace ui {
 
 namespace {
-constexpr int BORDER = 3;
+constexpr int BORDER = 2;
 
 constexpr int BATTERY_WIDTH = 28;
 constexpr int BATTERY_HEIGHT = 14;
@@ -70,22 +84,30 @@ void drawBattery(uint8_t* frame, int left, int top, int height, int percent, boo
 bool isInBox(int x, int y, int left, int top, int width, int height) { return x >= left && x < left + width && y >= top && y < top + height; }
 
 void drawButton(uint8_t* frame, int left, int top, int width, int height, const char* label) {
-  drawRectOutline(frame, left, top, width, height, BORDER);
-  drawTextInBox(frame, Font::Size20, left, top, width, height, label);
+  fillRoundRect(frame, left, top, width, height, PILL_RADIUS, false);
+  drawRoundRectOutline(frame, left, top, width, height, PILL_RADIUS, BORDER, true);
+  const Font font = textWidth(Font::Size20, label) <= width - 2 * PILL_RADIUS - 8 ? Font::Size20 :
+                    (textWidth(Font::Size14, label) <= width - 2 * PILL_RADIUS - 4 ? Font::Size14 : Font::Size10);
+  drawTextInBox(frame, font, left, top, width, height, label, true);
+}
+
+void drawBackArrow(uint8_t* frame, int left, int cy, bool white) {
+  const int x = left + 20;
+  const int y = cy;
+  const bool ink = !white;
+  drawLine(frame, x + 16, y - 14, x, y, 4, ink);
+  drawLine(frame, x, y, x + 16, y + 14, 4, ink);
+  drawLine(frame, x, y, x + 28, y, 4, ink);
 }
 
 void drawHeader(uint8_t* frame, const char* title, bool hasRightButton) {
-  drawButton(frame, MARGIN, HEADER_TOP, HEADER_BUTTON_WIDTH, HEADER_BUTTON_HEIGHT, "BACK");
-
-  const int side = MARGIN + HEADER_BUTTON_WIDTH;
-  const int left = side + GAP;
-  const int right = hasRightButton ? SCREEN_WIDTH - side - GAP : SCREEN_WIDTH - MARGIN;
-  drawTextInBox(frame, Font::Size20, left, HEADER_TOP, right - left, HEADER_BUTTON_HEIGHT, title);
+  (void)hasRightButton;
+  drawBand(frame, title, nullptr, true);
 }
 
 bool isOnBack(int x, int y) {
-  if (orientation() == Orientation::Landscape) return isInBox(x, y, MARGIN, 0, HEADER_BUTTON_WIDTH, LANDSCAPE_BAND_HEIGHT);
-  return isInBox(x, y, MARGIN, HEADER_TOP, HEADER_BUTTON_WIDTH, HEADER_BUTTON_HEIGHT);
+  const int h = orientation() == Orientation::Landscape ? LANDSCAPE_BAND_HEIGHT : BAND_HEIGHT;
+  return x >= 0 && x <= 80 && y >= 0 && y <= h + 8;
 }
 
 void drawWarning(uint8_t* frame, const char* text) {
@@ -100,7 +122,6 @@ void drawWarning(uint8_t* frame, const char* text) {
 namespace {
 
 constexpr int ROW_WIDTH = SCREEN_WIDTH - 2 * MARGIN;
-constexpr int BACK_HEIGHT = 46;
 constexpr int ROW_TEXT_INSET = 14;
 
 // The cuts a title tries, largest first.
@@ -124,65 +145,109 @@ void drawBand(uint8_t* frame, const char* title, const char* rightLabel, bool ha
   const bool landscape = orientation() == Orientation::Landscape;
   const int width = screenWidth();
   const int height = landscape ? LANDSCAPE_BAND_HEIGHT : BAND_HEIGHT;
+  
+  // Solid black header band (CDS kHeaderHeight = 72)
   fillRect(frame, 0, 0, width, height, true);
   fillRect(frame, 0, height + BAND_RULE_GAP, width, RULE, true);
 
-  int left = MARGIN + 4;
+  // 1. Back button: CrossNext chevron arrow (white)
+  int left = 16;
   if (hasBack) {
-    const int backTop = (height - BACK_HEIGHT) / 2;
-    drawRoundRectOutline(frame, MARGIN, backTop, HEADER_BUTTON_WIDTH, BACK_HEIGHT, PILL_RADIUS, RULE, false);
-    drawTextInBox(frame, Font::Size20, MARGIN, backTop, HEADER_BUTTON_WIDTH, BACK_HEIGHT, "BACK", false);
-    left = MARGIN + HEADER_BUTTON_WIDTH + GAP;
+    drawBackArrow(frame, 0, height / 2, true);
+    left = 72;
   }
 
-  int right = width - MARGIN - 4;
+  // 2. Status cluster on right side
+  int right = width - 16;
+
+  // Battery icon & percentage
+  const int percent = std::max(0, std::min(100, static_cast<int>(powerManager.getBatteryPercentage())));
+  const int battW = 24;
+  const int battH = 12;
+  const int nubW = 3;
+  const int nubH = 6;
+  const int battX = right - battW - nubW;
+  const int battY = (height - battH) / 2;
+
+  // Battery outline (white)
+  drawRectOutline(frame, battX, battY, battW, battH, 2, false);
+  // Terminal nub (white)
+  fillRect(frame, battX + battW, battY + (battH - nubH) / 2, nubW, nubH, false);
+  // Battery fill
+  const int innerW = battW - 4;
+  const int innerH = battH - 4;
+  const int fillW = (percent * innerW) / 100;
+  if (fillW > 0) {
+    fillRect(frame, battX + 2, battY + 2, fillW, innerH, false);
+  }
+  right = battX - 6;
+
+  // Battery percentage text (white)
+  char pctBuf[8];
+  std::snprintf(pctBuf, sizeof(pctBuf), "%d%%", percent);
+  const int pctW = textWidth(Font::Size14, pctBuf);
+  const int baseline = (height + capHeight(Font::Size14)) / 2;
+  drawText(frame, Font::Size14, right, baseline, pctBuf, Align::Right, false);
+  right -= pctW + 12;
+
+  // System clock (white)
+  char clockBuf[16] = {0};
+  if (halClock.formatTime(clockBuf, sizeof(clockBuf), true) && clockBuf[0] != '\0') {
+    const int clkW = textWidth(Font::Size14, clockBuf);
+    drawText(frame, Font::Size14, right, baseline, clockBuf, Align::Right, false);
+    right -= clkW + 14;
+  }
+
+  // Optional game rightLabel (e.g. "LEVEL 5", "1/64")
   if (rightLabel != nullptr && rightLabel[0] != '\0') {
-    const int baseline = (height + capHeight(labelFont)) / 2;
-    drawText(frame, labelFont, right, baseline, rightLabel, Align::Right, false);
-    right -= textWidth(labelFont, rightLabel) + GAP;
+    Font rFont = labelFont;
+    if (textWidth(rFont, rightLabel) > 160) rFont = Font::Size14;
+    const int rBase = (height + capHeight(rFont)) / 2;
+    const int rW = textWidth(rFont, rightLabel);
+    drawText(frame, rFont, right, rBase, rightLabel, Align::Right, false);
+    right -= rW + 14;
   }
-  if (landscape && right > LANDSCAPE_WARNING_LEFT - GAP) right = LANDSCAPE_WARNING_LEFT - GAP;
 
-  drawTextLeft(frame, largestFitting(title, right - left), left, 0, height, title, false);
+  if (landscape && right > LANDSCAPE_WARNING_LEFT - GAP) {
+    right = LANDSCAPE_WARNING_LEFT - GAP;
+  }
+
+  // 3. Title typography
+  const int availTitleWidth = right - left;
+  if (availTitleWidth > 0 && title != nullptr && title[0] != '\0') {
+    const Font tFont = largestFitting(title, availTitleWidth);
+    drawTextLeft(frame, tFont, left, 0, height, title, false);
+  }
 }
 
-// Labels are Size14, the cut CrossPlay's buttons use, stepping down only if one
-// doesn't fit.
 void drawPill(uint8_t* frame, int left, int top, int width, const char* label, bool filled, int height) {
   if (filled) {
     fillRoundRect(frame, left, top, width, height, PILL_RADIUS, true);
   } else {
-    drawRoundRectOutline(frame, left, top, width, height, PILL_RADIUS, RULE);
+    fillRoundRect(frame, left, top, width, height, PILL_RADIUS, false);
+    drawRoundRectOutline(frame, left, top, width, height, PILL_RADIUS, RULE, true);
   }
-  const Font font = textWidth(Font::Size14, label) <= width - 2 * PILL_RADIUS ? Font::Size14 : Font::Size10;
+  const Font font = textWidth(Font::Size20, label) <= width - 2 * PILL_RADIUS - 8 ? Font::Size20 :
+                    (textWidth(Font::Size14, label) <= width - 2 * PILL_RADIUS - 4 ? Font::Size14 : Font::Size10);
   drawTextInBox(frame, font, left, top, width, height, label, !filled);
 }
 
 void drawDimmedPill(uint8_t* frame, int left, int top, int width, const char* label, int height) {
   constexpr int R = PILL_RADIUS;
-  // One dot in four, inside the rounded corners.
-  for (int y = top; y < top + height; y++) {
-    for (int x = left; x < left + width; x++) {
-      if (x % 2 != 0 || y % 2 != 0) continue;
-      int dx = 0;
-      int dy = 0;
-      if (x < left + R) dx = left + R - x;
-      if (x >= left + width - R) dx = x - (left + width - R - 1);
-      if (y < top + R) dy = top + R - y;
-      if (y >= top + height - R) dy = y - (top + height - R - 1);
-      if (dx * dx + dy * dy <= R * R) setPixel(frame, x, y, true);
-    }
-  }
-  drawRoundRectOutline(frame, left, top, width, height, R, HAIRLINE);
-  const Font font = textWidth(Font::Size14, label) <= width - 2 * R ? Font::Size14 : Font::Size10;
-  drawTextInBox(frame, font, left, top, width, height, label);
+  fillRoundRect(frame, left, top, width, height, R, false);
+  fillDitherRoundRect(frame, left, top, width, height, R);
+  drawRoundRectOutline(frame, left, top, width, height, R, HAIRLINE, true);
+  const Font font = textWidth(Font::Size20, label) <= width - 2 * R - 8 ? Font::Size20 :
+                    (textWidth(Font::Size14, label) <= width - 2 * R - 4 ? Font::Size14 : Font::Size10);
+  drawTextInBox(frame, font, left, top, width, height, label, true);
 }
 
 void drawRow(uint8_t* frame, int top, const char* label, const uint8_t* icon, int height) {
-  drawRectOutline(frame, MARGIN, top, ROW_WIDTH, height, HAIRLINE);
-  drawTextLeft(frame, Font::Size20, MARGIN + ROW_TEXT_INSET, top, height, label);
+  fillRoundRect(frame, MARGIN, top, ROW_WIDTH, height, PILL_RADIUS, false);
+  drawRoundRectOutline(frame, MARGIN, top, ROW_WIDTH, height, PILL_RADIUS, HAIRLINE, true);
+  drawTextLeft(frame, Font::Size20, MARGIN + ROW_TEXT_INSET, top, height, label, true);
   if (icon != nullptr) {
-    drawIcon(frame, icon, ICON_SIZE, ICON_SIZE, MARGIN + ROW_WIDTH - ROW_TEXT_INSET - ICON_SIZE, top + (height - ICON_SIZE) / 2);
+    drawIcon(frame, icon, ICON_SIZE, ICON_SIZE, MARGIN + ROW_WIDTH - ROW_TEXT_INSET - ICON_SIZE, top + (height - ICON_SIZE) / 2, true);
   }
 }
 
