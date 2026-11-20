@@ -232,7 +232,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
-    StoreCategory::Languages, "/languages", "vi.cplang", 426467, "416.5 KB", true, true
+    StoreCategory::Languages, "/languages", "vi.cplang", 426166, "416.2 KB", true, true
   },
   // Resource packs (ResourcePacks.generated.h). Sizes are the whole pack.
   {

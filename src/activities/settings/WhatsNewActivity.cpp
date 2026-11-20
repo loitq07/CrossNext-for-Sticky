@@ -33,14 +33,14 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. App Store: Tab Ngôn ngữ & Tài nguyên";
-    rowSubtitles_[0] = "Tách tab riêng tải gói tiếng Việt và đồ họa";
+    rowLabels_[0] = "1. Sửa game tải về không mở được";
+    rowSubtitles_[0] = "Hiện đủ tên, mở được Xúc Xắc, Đố Vui…";
 
-    rowLabels_[1] = "2. Quản lý phông chữ đọc sách";
-    rowSubtitles_[1] = "Tải phông qua Wi-Fi, nhận diện Noto Serif";
+    rowLabels_[1] = "2. Hearts kiểu CrossPlay";
+    rowSubtitles_[1] = "Điểm ván, lượt n/13, bàn la bàn";
 
-    rowLabels_[2] = "3. Giao diện tab 1 dòng";
-    rowSubtitles_[2] = "Tên tab gọn gàng, tự động rút gọn dấu ...";
+    rowLabels_[2] = "3. Thêm 14 game/app vào kệ";
+    rowSubtitles_[2] = "Toy Battle, Yahtzee, XKCD, Wikipedia…";
 
     rowLabels_[3] = "4. Nâng cấp nền CrossNext 2.0";
     rowSubtitles_[3] = "Kế thừa reader và thư viện từ bản 2.0.3";
@@ -51,14 +51,14 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. App Store: Languages & Resources";
-    rowSubtitles_[0] = "Dedicated tabs for language packs and assets";
+    rowLabels_[0] = "1. Fixed store games not opening";
+    rowSubtitles_[0] = "Names show and Dice, Trivia… launch";
 
-    rowLabels_[1] = "2. Reader font downloads";
-    rowSubtitles_[1] = "Fetch fonts over Wi-Fi, auto Noto Serif";
+    rowLabels_[1] = "2. CrossPlay-style Hearts";
+    rowSubtitles_[1] = "Round score, trick n/13, compass table";
 
-    rowLabels_[2] = "3. Single-line tab bar";
-    rowSubtitles_[2] = "Clean labels with automatic ellipsis";
+    rowLabels_[2] = "3. 14 more games/apps on the shelf";
+    rowSubtitles_[2] = "Toy Battle, Yahtzee, XKCD, Wikipedia…";
 
     rowLabels_[3] = "4. CrossNext 2.0 foundation";
     rowSubtitles_[3] = "Reader and library updates from 2.0.3";
