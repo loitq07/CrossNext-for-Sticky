@@ -39,6 +39,19 @@ bool active = false, haveSaved = false;
 unsigned activeSlot = 1;
 uint32_t sequence = 0;
 char directory[80]{};
+// Line guides are a global display preference, deliberately outside TEXT_FIELDS (adding a field
+// would change RECORD_SIZE and orphan every saved per-book record). Toggled from the reader
+// sheet, it would otherwise never reach settings.json, since save() only looks at TEXT_FIELDS.
+uint8_t persistedLineGuides = 0;
+bool saveGlobalDisplayChanges() {
+  if (SETTINGS.readerLineGuides == persistedLineGuides) return true;
+  if (!SETTINGS.saveToFile()) {
+    LOG_ERR("BTEXT", "Could not save line guide preference");
+    return false;
+  }
+  persistedLineGuides = SETTINGS.readerLineGuides;
+  return true;
+}
 constexpr size_t RECORD_SIZE = 4 + 4 + Count + 32 + 4;
 Preferences capture() {
   Preferences p;
@@ -132,6 +145,7 @@ bool begin(const std::string& book) {
     return false;
   }
   defaults = capture();
+  persistedLineGuides = SETTINGS.readerLineGuides;
   std::snprintf(directory, sizeof(directory), "/.crosspoint/epub_%llu",
                 static_cast<unsigned long long>(std::hash<std::string>{}(book)));
   active = true;
@@ -153,6 +167,7 @@ bool begin(const std::string& book) {
 }
 bool save() {
   if (!active) return true;
+  if (!saveGlobalDisplayChanges()) return false;
   const auto p = capture();
   if (!SETTINGS.perBookTextSettings) {
     if (!std::memcmp(&p, &defaults, sizeof(p))) return true;

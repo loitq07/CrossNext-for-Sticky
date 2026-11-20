@@ -317,6 +317,9 @@ class CrossPointSettings : public PersistableStore<CrossPointSettings> {
   uint8_t characterSpacing = CHARACTER_SPACING_OFFSET;
   int8_t getCharacterSpacing() const { return static_cast<int8_t>(characterSpacing - CHARACTER_SPACING_OFFSET); }
   uint8_t textAntiAliasing = 0;
+  // Draw a dotted guide under every text line in the reader (ruled-paper look). Render-only:
+  // it never changes layout, so it stays out of the render spec and the section cache.
+  uint8_t readerLineGuides = 0;
   // Short power button click behaviour
   uint8_t shortPwrBtn = IGNORE;
   uint8_t touchPowerShortAction = 0, touchPowerLongAction = 1;

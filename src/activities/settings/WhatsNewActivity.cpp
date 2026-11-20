@@ -33,17 +33,17 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Sửa game tải về không mở được";
-    rowSubtitles_[0] = "Hiện đủ tên, mở được Xúc Xắc, Đố Vui…";
+    rowLabels_[0] = "1. Dòng kẻ chấm dưới chữ trong sách";
+    rowSubtitles_[0] = "Bật dòng kẻ trang vở, dễ theo dõi dòng đọc";
 
-    rowLabels_[1] = "2. Hearts kiểu CrossPlay";
-    rowSubtitles_[1] = "Điểm ván, lượt n/13, bàn la bàn";
+    rowLabels_[1] = "2. Nâng cấp nền CrossNext 2.0";
+    rowSubtitles_[1] = "Kế thừa reader và thư viện từ bản 2.0.3";
 
-    rowLabels_[2] = "3. Thêm 14 game/app vào kệ";
-    rowSubtitles_[2] = "Toy Battle, Yahtzee, XKCD, Wikipedia…";
+    rowLabels_[2] = "3. App Store: Tab Ngôn ngữ & Tài nguyên";
+    rowSubtitles_[2] = "Tách tab riêng tải gói tiếng Việt và đồ họa";
 
-    rowLabels_[3] = "4. Nâng cấp nền CrossNext 2.0";
-    rowSubtitles_[3] = "Kế thừa reader và thư viện từ bản 2.0.3";
+    rowLabels_[3] = "4. Hearts & 14 game/app mới trong kệ";
+    rowSubtitles_[3] = "Bàn chơi la bàn, điểm ván; hiện đủ icon và tên";
 
     rowLabels_[4] = "5. Điều khiển Bluetooth & Remote";
     rowSubtitles_[4] = "Ghép remote BLE, gán phím và lật trang";
@@ -51,17 +51,17 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. Fixed store games not opening";
-    rowSubtitles_[0] = "Names show and Dice, Trivia… launch";
+    rowLabels_[0] = "1. Dotted line guides in reader";
+    rowSubtitles_[0] = "Ruled-paper look, easier to follow reading";
 
-    rowLabels_[1] = "2. CrossPlay-style Hearts";
-    rowSubtitles_[1] = "Round score, trick n/13, compass table";
+    rowLabels_[1] = "2. CrossNext 2.0 foundation";
+    rowSubtitles_[1] = "Reader and library updates from 2.0.3";
 
-    rowLabels_[2] = "3. 14 more games/apps on the shelf";
-    rowSubtitles_[2] = "Toy Battle, Yahtzee, XKCD, Wikipedia…";
+    rowLabels_[2] = "3. App Store: Languages & Resources";
+    rowSubtitles_[2] = "Dedicated tabs for language packs and assets";
 
-    rowLabels_[3] = "4. CrossNext 2.0 foundation";
-    rowSubtitles_[3] = "Reader and library updates from 2.0.3";
+    rowLabels_[3] = "4. Hearts & 14 shelf games/apps";
+    rowSubtitles_[3] = "Compass table, round score; shelf fixed";
 
     rowLabels_[4] = "5. Bluetooth & remotes";
     rowSubtitles_[4] = "Pair BLE remotes, map keys and turn pages";

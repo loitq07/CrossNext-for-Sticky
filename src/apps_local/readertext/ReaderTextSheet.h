@@ -23,6 +23,7 @@ enum Control : int {
   Antialiasing,
   WeightDown,
   WeightUp,
+  LineGuides,
   Placement = 20,
   Percentage,
   Night,
@@ -89,7 +90,7 @@ struct Model {
   // -1 is a plain row; 0/1 display an unchecked/checked option.
   int (*listCheck)(const void*, int) = nullptr;
   bool fixed = false, statusAvailable = true, paragraphs = false, focus = false, hyphenation = false, embedded = false,
-       antialiasing = false, percentage = true, night = false, bold = false;
+       antialiasing = false, lineGuides = false, percentage = true, night = false, bold = false;
 };
 struct Work {
   freeink::ui::ButtonProps button;

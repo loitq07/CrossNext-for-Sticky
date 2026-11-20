@@ -262,6 +262,8 @@ class EpubReaderActivity final : public ReaderActivity {
   void renderContents(Page& page, int orientedMarginTop, int orientedMarginRight, int orientedMarginBottom,
                       int orientedMarginLeft);
   void drawClippingHighlights(const Page& page, int fontId, int orientedMarginTop, int orientedMarginLeft) const;
+  void drawLineGuides(const Page& page, int fontId, int orientedMarginTop, int orientedMarginRight,
+                      int orientedMarginLeft) const;
   char barChapterTitle[64]{};
   int barChapterSpine = -1;
   void renderStatusBar();

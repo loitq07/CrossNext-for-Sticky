@@ -2632,6 +2632,7 @@ void EpubReaderActivity::renderContents(Page& content, const int orientedMarginT
   }
 
   drawClippingHighlights(*page, fontId, orientedMarginTop, orientedMarginLeft);
+  drawLineGuides(*page, fontId, orientedMarginTop, orientedMarginRight, orientedMarginLeft);
   page->render(renderer, fontId, orientedMarginLeft, orientedMarginTop);
   renderStatusBar();
   const auto tBwRender = millis();
@@ -2863,6 +2864,38 @@ int EpubReaderActivity::clippingAtPoint(const Page& page, const int x, const int
     }
   }
   return -1;
+}
+
+// Ruled-paper guides: one dotted rule under each text line, spanning the text column. Drawn into
+// the B/W frame only; the line's own descenders sit above it, the next line's ascenders below.
+void EpubReaderActivity::drawLineGuides(const Page& page, const int fontId, const int orientedMarginTop,
+                                        const int orientedMarginRight, const int orientedMarginLeft) const {
+  if (!SETTINGS.readerLineGuides) return;
+  constexpr int kDotPitch = 3;  // 1 px ink, 2 px paper: reads as a light rule on the panel
+  const int left = orientedMarginLeft;
+  const int right = renderer.getScreenWidth() - orientedMarginRight;
+  if (right - left < kDotPitch) return;
+  const float compression = SETTINGS.getReaderLineCompression();
+  for (const auto& element : page.elements) {
+    if (element->getTag() != TAG_PageLine) continue;
+    const auto& line = static_cast<const PageLine&>(*element);
+    const auto* block = line.getBlock();
+    if (!block || !block->valid() || block->wordCount() == 0) continue;
+    const int lineFont = TextBlock::renderFontId(renderer, block->blockFontId(fontId), fontId);
+    const int ascent = block->lineAscent(renderer, fontId);
+    const int rubyShift = block->getRubyShift(renderer.getFontAscenderSize(lineFont));
+    const int top = orientedMarginTop + line.yPos;
+    const int baseline = top + rubyShift + ascent;
+    // Below the descenders, but never past the slot this line owns (tight spacing).
+    const int descent = std::max(2, renderer.getLineHeight(lineFont) - renderer.getFontAscenderSize(lineFont));
+    const int slotBottom = top + renderer.getLineHeight(lineFont, compression) +
+                           block->extraAscent(renderer, fontId) + rubyShift - 1;
+    const int y = std::max(baseline + 1, std::min(baseline + descent, slotBottom));
+    // Anchor the dot phase to the screen so rules on adjacent lines line up in columns.
+    for (int x = left + (kDotPitch - left % kDotPitch) % kDotPitch; x < right; x += kDotPitch) {
+      renderer.drawPixel(x, y, true);
+    }
+  }
 }
 
 void EpubReaderActivity::drawClippingHighlights(const Page& page, const int fontId, const int orientedMarginTop,
@@ -3294,6 +3327,7 @@ void EpubReaderActivity::renderOverlay() {
     text.hyphenation = SETTINGS.hyphenationEnabled;
     text.embedded = SETTINGS.embeddedStyle;
     text.antialiasing = SETTINGS.textAntiAliasing;
+    text.lineGuides = SETTINGS.readerLineGuides;
     toolbarUi->setModel(model);
     toolbarUi->render();
     return;
@@ -3680,6 +3714,10 @@ void EpubReaderActivity::handleTextSheetInput(const ReaderToolbarUi::Routed& rou
         break;
       case readertext::Antialiasing:
         SETTINGS.textAntiAliasing = !SETTINGS.textAntiAliasing;
+        changed = true;
+        break;
+      case readertext::LineGuides:
+        SETTINGS.readerLineGuides = !SETTINGS.readerLineGuides;
         changed = true;
         break;
       default:

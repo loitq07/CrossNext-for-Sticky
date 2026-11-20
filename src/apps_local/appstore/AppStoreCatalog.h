@@ -47,92 +47,92 @@ inline const StoreItem kStoreItems[] = {
   {
     "2048", "2048", "2048",
     "Number tile puzzle", "Trò chơi ghép ô số 2048",
-    StoreCategory::Games, "/games", "2048.elf", 94532, "92.3 KB", true
+    StoreCategory::Games, "/games", "2048.elf", 94552, "92.3 KB", true
   },
   {
     "minesweeper", "MINESWEEPER", "Dò Mìn",
     "Classic grid minefield", "Trò chơi dò mìn kinh điển",
-    StoreCategory::Games, "/games", "minesweeper.elf", 129060, "126.0 KB", true
+    StoreCategory::Games, "/games", "minesweeper.elf", 129080, "126.1 KB", true
   },
   {
     "picross", "PICROSS", "Picross",
     "Nonogram logic picture", "Tranh giải đố số Nonogram",
-    StoreCategory::Games, "/games", "picross.elf", 173436, "169.4 KB", true
+    StoreCategory::Games, "/games", "picross.elf", 173448, "169.4 KB", true
   },
   {
     "sudoku", "SUDOKU", "Sudoku",
     "Number logic grid puzzle", "Giải đố điền số Sudoku",
-    StoreCategory::Games, "/games", "sudoku.elf", 128568, "125.6 KB", true
+    StoreCategory::Games, "/games", "sudoku.elf", 128580, "125.6 KB", true
   },
   {
     "wordle", "WORDLE", "Đoán Từ",
     "5-letter word puzzle", "Trò chơi đoán từ 5 chữ cái",
-    StoreCategory::Games, "/games", "wordle.elf", 266552, "260.3 KB", true
+    StoreCategory::Games, "/games", "wordle.elf", 266564, "260.3 KB", true
   },
   {
     "connectfour", "CONNECT FOUR", "Nối 4 Điểm",
     "Drop & connect 4 discs", "Cờ nối 4 điểm đối kháng",
-    StoreCategory::Games, "/games", "connectfour.elf", 115960, "113.2 KB", true
+    StoreCategory::Games, "/games", "connectfour.elf", 115980, "113.3 KB", true
   },
   {
     "checkers", "CHECKERS", "Cờ Đam",
     "Draughts board game", "Cờ đam quốc tế truyền thống",
-    StoreCategory::Games, "/games", "checkers.elf", 191564, "187.1 KB", true
+    StoreCategory::Games, "/games", "checkers.elf", 191584, "187.1 KB", true
   },
   {
     "battleship", "BATTLESHIP", "Bắn Tàu",
     "Naval fleet combat", "Bắn tàu chiến hải quân",
-    StoreCategory::Games, "/games", "battleship.elf", 119840, "117.0 KB", true
+    StoreCategory::Games, "/games", "battleship.elf", 119852, "117.0 KB", true
   },
   {
     "othello", "OTHELLO", "Cờ Lật",
     "Reversi disc-flipping", "Cờ lật Othello Reversi",
-    StoreCategory::Games, "/games", "othello.elf", 132516, "129.4 KB", true
+    StoreCategory::Games, "/games", "othello.elf", 132528, "129.4 KB", true
   },
   {
     "chess", "CHESS", "Cờ Vua",
     "Chess with puzzles", "Cờ vua và câu đố cờ",
-    StoreCategory::Games, "/games", "chess.elf", 284008, "277.4 KB", true
+    StoreCategory::Games, "/games", "chess.elf", 284028, "277.4 KB", true
   },
   {
     "go", "GO", "Cờ Vây",
     "The board game Go", "Cờ vây",
-    StoreCategory::Games, "/games", "go.elf", 255820, "249.8 KB", true
+    StoreCategory::Games, "/games", "go.elf", 255832, "249.8 KB", true
   },
   {
     "theintercept", "THE INTERCEPT", "The Intercept",
     "Decode the intercepted message", "Giải mã thông điệp",
-    StoreCategory::Games, "/games", "theintercept.elf", 96232, "94.0 KB", true
+    StoreCategory::Games, "/games", "theintercept.elf", 96244, "94.0 KB", true
   },
   {
     "solitaire", "SOLITAIRE", "Xếp Bài",
     "Klondike solitaire", "Xếp bài Solitaire",
-    StoreCategory::Games, "/games", "solitaire.elf", 152452, "148.9 KB", true
+    StoreCategory::Games, "/games", "solitaire.elf", 152464, "148.9 KB", true
   },
   {
     "hearts", "HEARTS", "Bài Hearts",
     "Card game Hearts", "Đánh bài Hearts",
-    StoreCategory::Games, "/games", "hearts.elf", 140044, "136.8 KB", true
+    StoreCategory::Games, "/games", "hearts.elf", 140004, "136.7 KB", true
   },
   {
     "murdle", "MURDLE", "Murdle",
     "Logic murder mysteries", "Giải đố phá án",
-    StoreCategory::Games, "/games", "murdle.elf", 283584, "276.9 KB", true
+    StoreCategory::Games, "/games", "murdle.elf", 283608, "277.0 KB", true
   },
   {
     "carnivoro", "CARNIVORO", "Carnivoro",
     "Party deduction game", "Trò chơi suy luận",
-    StoreCategory::Games, "/games", "carnivoro.elf", 166032, "162.1 KB", true
+    StoreCategory::Games, "/games", "carnivoro.elf", 166044, "162.2 KB", true
   },
   {
     "pet", "PET", "Thú Cưng",
     "Virtual pet that grows as you read", "Thú cưng lớn lên theo việc đọc sách",
-    StoreCategory::Apps, "/apps", "pet.elf", 418944, "409.1 KB", true
+    StoreCategory::Apps, "/apps", "pet.elf", 418972, "409.2 KB", true
   },
   {
     "readingquest", "READING QUEST", "Hành Trình Đọc",
     "Gamified reading adventure", "Phiêu lưu nhập vai từ việc đọc sách",
-    StoreCategory::Apps, "/apps", "readingquest.elf", 388420, "379.3 KB", true
+    StoreCategory::Apps, "/apps", "readingquest.elf", 388448, "379.3 KB", true
   },
   {
     "habits", "HABITS", "Thói Quen",
@@ -147,17 +147,17 @@ inline const StoreItem kStoreItems[] = {
   {
     "calculator", "CALCULATOR", "Máy Tính",
     "Pocket calculator", "Máy tính bỏ túi",
-    StoreCategory::Apps, "/apps", "calculator.elf", 133180, "130.1 KB", true
+    StoreCategory::Apps, "/apps", "calculator.elf", 133200, "130.1 KB", true
   },
   {
     "focus", "FOCUS", "Tập Trung",
     "Projects, tasks and focus timer", "Dự án, công việc và đồng hồ tập trung",
-    StoreCategory::Apps, "/apps", "focus.elf", 157160, "153.5 KB", true
+    StoreCategory::Apps, "/apps", "focus.elf", 157168, "153.5 KB", true
   },
   {
     "instapaper", "INSTAPAPER", "Instapaper",
     "Read saved web articles", "Đọc bài viết đã lưu từ Instapaper",
-    StoreCategory::Apps, "/apps", "instapaper.elf", 155500, "151.9 KB", true
+    StoreCategory::Apps, "/apps", "instapaper.elf", 155512, "151.9 KB", true
   },
   {
     "connections", "CONNECTIONS", "Connections",
@@ -187,7 +187,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "trivia", "TRIVIA", "Đố Vui",
     "Trivia questions quiz", "Câu hỏi đố vui kiến thức",
-    StoreCategory::Games, "/games", "trivia.elf", 112560, "109.9 KB", true
+    StoreCategory::Games, "/games", "trivia.elf", 112580, "109.9 KB", true
   },
   {
     "underhand", "UNDERHAND", "Underhand",
@@ -222,7 +222,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "wikipedia", "WIKIPEDIA", "Wikipedia",
     "Offline Wikipedia article reader", "Đọc bách khoa toàn thư Wikipedia",
-    StoreCategory::Apps, "/apps", "wikipedia.elf", 144704, "141.3 KB", true
+    StoreCategory::Apps, "/apps", "wikipedia.elf", 144724, "141.3 KB", true
   },
   {
     "dice", "DICE", "Xúc Xắc",
@@ -232,7 +232,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
-    StoreCategory::Languages, "/languages", "vi.cplang", 426166, "416.2 KB", true, true
+    StoreCategory::Languages, "/languages", "vi.cplang", 426214, "416.2 KB", true, true
   },
   // Resource packs (ResourcePacks.generated.h). Sizes are the whole pack.
   {

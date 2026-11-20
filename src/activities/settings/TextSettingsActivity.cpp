@@ -31,7 +31,7 @@ constexpr StrId LAYOUT_ROW_NAME_IDS[] = {
     StrId::STR_LINE_SPACING,          StrId::STR_WORD_SPACING, StrId::STR_CHARACTER_SPACING, StrId::STR_EXTRA_SPACING,
     StrId::STR_PARAGRAPH_INDENTATION, StrId::STR_ALIGNMENT,    StrId::STR_SCREEN_MARGIN};
 constexpr StrId STYLE_ROW_NAME_IDS[] = {StrId::STR_FOCUS_READING, StrId::STR_HYPHENATION, StrId::STR_EMBEDDED_STYLE,
-                                        StrId::STR_TEXT_AA};
+                                        StrId::STR_TEXT_AA, StrId::STR_LINE_GUIDES};
 
 int findCurrentFontIndex(const SdCardFontRegistry* registry, const char* sdFontFamilyName, uint8_t) {
   return readerFontFamilyIndex(registry, sdFontFamilyName);
@@ -562,6 +562,9 @@ void TextSettingsActivity::confirmStyleRow(int row) {
     case StyleRow::AntiAliasing:
       SETTINGS.textAntiAliasing = !SETTINGS.textAntiAliasing;
       break;
+    case StyleRow::LineGuides:
+      SETTINGS.readerLineGuides = !SETTINGS.readerLineGuides;
+      break;
 
     default:
       return;
@@ -580,6 +583,8 @@ bool TextSettingsActivity::styleRowChecked(int row) const {
       return SETTINGS.embeddedStyle;
     case StyleRow::AntiAliasing:
       return SETTINGS.textAntiAliasing;
+    case StyleRow::LineGuides:
+      return SETTINGS.readerLineGuides;
 
     default:
       return false;
@@ -592,7 +597,8 @@ bool TextSettingsActivity::focusedRowHasNoPreview() const {
   if (tab_ == Tab::Layout) return ringPos() - 1 == static_cast<int>(LayoutRow::ParaSpacing);
   if (tab_ != Tab::Style) return false;
   const StyleRow row = static_cast<StyleRow>(ringPos() - 1);
-  return row == StyleRow::Hyphenation || row == StyleRow::EmbeddedStyle || row == StyleRow::AntiAliasing;
+  return row == StyleRow::Hyphenation || row == StyleRow::EmbeddedStyle || row == StyleRow::AntiAliasing ||
+         row == StyleRow::LineGuides;
 }
 
 void TextSettingsActivity::switchTab(const int direction) {
@@ -663,6 +669,7 @@ void TextSettingsActivity::buildSheet(UiScreen& screen) {
   model.hyphenation = SETTINGS.hyphenationEnabled;
   model.embedded = SETTINGS.embeddedStyle;
   model.antialiasing = SETTINGS.textAntiAliasing;
+  model.lineGuides = SETTINGS.readerLineGuides;
   readertext::build(screen, model, sheetWork_);
 }
 void TextSettingsActivity::sheetControl(int control) {
@@ -790,6 +797,9 @@ void TextSettingsActivity::sheetControl(int control) {
         break;
       case readertext::Antialiasing:
         confirmStyleRow(int(StyleRow::AntiAliasing));
+        break;
+      case readertext::LineGuides:
+        confirmStyleRow(int(StyleRow::LineGuides));
         break;
       default:
         return;

@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <cstdio>
+#include <iterator>
 
 #include "../../components/icons/listIcons.h"
 #include "../../components/icons/readerToolbarIcons.h"
@@ -379,17 +380,19 @@ void build(Screen& screen, const Model& model, Work& work) {
     }
     const auto area = screen.body();
     const int cols = screen.device().width > screen.device().height ? 2 : 1;
-    const int rows = 4 / cols;
+    static constexpr StrId labels[] = {StrId::STR_FOCUS_READING, StrId::STR_HYPHENATION, StrId::STR_EMBEDDED_STYLE,
+                                       StrId::STR_TEXT_AA, StrId::STR_LINE_GUIDES};
+    static constexpr Control controls[] = {Focus, Hyphenation, Embedded, Antialiasing, LineGuides};
+    const bool checks[] = {model.focus, model.hyphenation, model.embedded, model.antialiasing, model.lineGuides};
+    constexpr int count = int(std::size(labels));
+    const int rows = (count + cols - 1) / cols;
     const int width = (area.width - (cols - 1) * kSectionGap) / cols;
     const int height = std::min(88, (area.height - (rows - 1) * kSectionGap) / rows);
-    static constexpr StrId labels[] = {StrId::STR_FOCUS_READING, StrId::STR_HYPHENATION, StrId::STR_EMBEDDED_STYLE,
-                                       StrId::STR_TEXT_AA};
-    const bool checks[] = {model.focus, model.hyphenation, model.embedded, model.antialiasing};
-    for (int n = 0; n < 4; ++n) {
+    for (int n = 0; n < count; ++n) {
       const auto option = fui::makeRect(area.x + n % cols * (width + kSectionGap),
                                         area.y + n / cols * (height + kSectionGap), width, height);
       panelLabel(work.label, sizeof(work.label), I18N.get(labels[n]));
-      styleToggle(screen, option, work.label, Focus + n, checks[n]);
+      styleToggle(screen, option, work.label, controls[n], checks[n]);
     }
     return;
   }
