@@ -124,6 +124,75 @@ MODULES = {
                 "apps_local/seasalt/SeaSaltActivity.h"),
     "toybattle": ("games", ["apps_local/toybattle", "apps_local/link"], "TOY BATTLE", "ToyBattleActivity::create",
                   "apps_local/toybattle/ToyBattleActivity.h"),
+    "tictactoe": ("games", ["apps_local/pocketplay/games/tictactoe", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "TIC-TAC-TOE",
+                  "pocketplay::createTicTacToe", "apps_local/pocketplay/games/tictactoe/tictactoe_activity.h"),
+    "dungeon": ("games", ["apps_local/pocketplay/games/dungeon", "apps_local/pocketplay/bridge",
+                         "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "D&DIAGRAMS",
+               "pocketplay::createDungeon", "apps_local/pocketplay/games/dungeon/dungeon_activity.h"),
+    "oneclue": ("games", ["apps_local/pocketplay/games/oneclue", "apps_local/pocketplay/bridge",
+                         "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "ONE CLUE",
+               "pocketplay::createOneClue", "apps_local/pocketplay/games/oneclue/oneclue_activity.h"),
+    "lightsout": ("games", ["apps_local/pocketplay/games/lightsout", "apps_local/pocketplay/bridge",
+                           "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "LIGHTS OUT",
+                 "pocketplay::createLightsOut", "apps_local/pocketplay/games/lightsout/lightsout_activity.h"),
+    "suguru": ("games", ["apps_local/pocketplay/games/suguru", "apps_local/pocketplay/bridge",
+                        "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "SUGURU",
+              "pocketplay::createSuguru", "apps_local/pocketplay/games/suguru/suguru_activity.h"),
+    "sokoban": ("games", ["apps_local/pocketplay/games/sokoban", "apps_local/pocketplay/bridge",
+                         "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "SOKOBAN",
+               "pocketplay::createSokoban", "apps_local/pocketplay/games/sokoban/sokoban_activity.h"),
+    "queens": ("games", ["apps_local/pocketplay/games/queens", "apps_local/pocketplay/bridge",
+                        "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "QUEENS",
+              "pocketplay::createQueens", "apps_local/pocketplay/games/queens/queens_activity.h"),
+    "symboldice": ("games", ["apps_local/pocketplay/games/symboldice", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "SYMBOL DICE",
+                  "pocketplay::createSymbolDice", "apps_local/pocketplay/games/symboldice/symboldice_activity.h"),
+    "pegsolitaire": ("games", ["apps_local/pocketplay/games/pegsolitaire", "apps_local/pocketplay/bridge",
+                              "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "PEG SOLITAIRE",
+                    "pocketplay::createPegSolitaire", "apps_local/pocketplay/games/pegsolitaire/pegsolitaire_activity.h"),
+    "textadv": ("games", ["apps_local/pocketplay/games/textadv", "apps_local/pocketplay/bridge",
+                         "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "TEXT ADVENTURES",
+               "pocketplay::createTextAdv", "apps_local/pocketplay/games/textadv/textadv_activity.h"),
+    "wordladder": ("games", ["apps_local/pocketplay/games/wordladder", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "WORD LADDER",
+                  "pocketplay::createWordLadder", "apps_local/pocketplay/games/wordladder/wordladder_activity.h"),
+    "diceroller": ("games", ["apps_local/pocketplay/games/diceroller", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "DICE ROLLER",
+                  "pocketplay::createDiceRoller", "apps_local/pocketplay/games/diceroller/diceroller_activity.h"),
+    "nonogram": ("games", ["apps_local/pocketplay/games/nonogram", "apps_local/pocketplay/bridge",
+                          "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "NONOGRAM",
+                "pocketplay::createNonogram", "apps_local/pocketplay/games/nonogram/nonogram_activity.h"),
+    "kakuro": ("games", ["apps_local/pocketplay/games/kakuro", "apps_local/pocketplay/bridge",
+                        "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "KAKURO",
+              "pocketplay::createKakuro", "apps_local/pocketplay/games/kakuro/kakuro_activity.h"),
+    "bingocaller": ("games", ["apps_local/pocketplay/games/bingocaller", "apps_local/pocketplay/bridge",
+                             "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "BINGO CALLER",
+                   "pocketplay::createBingoCaller", "apps_local/pocketplay/games/bingocaller/bingocaller_activity.h"),
+    "islandmaps": ("games", ["apps_local/pocketplay/games/islandmaps", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "ISLAND MAPS",
+                  "pocketplay::createIslandMaps", "apps_local/pocketplay/games/islandmaps/islandmaps_activity.h"),
+    "thinkalike": ("games", ["apps_local/pocketplay/games/thinkalike", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "THINK ALIKE",
+                  "pocketplay::createThinkAlike", "apps_local/pocketplay/games/thinkalike/thinkalike_activity.h"),
+    "authoritytracker": ("games", ["apps_local/pocketplay/games/authoritytracker", "apps_local/pocketplay/bridge",
+                                  "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "AUTHORITY TRACKER",
+                        "pocketplay::createAuthorityTracker", "apps_local/pocketplay/games/authoritytracker/authoritytracker_activity.h"),
+    "gridgambit": ("games", ["apps_local/pocketplay/games/gridgambit", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "GRID GAMBIT",
+                  "pocketplay::createGridGambit", "apps_local/pocketplay/games/gridgambit/gridgambit_activity.h"),
+    "chesspuzzles": ("games", ["apps_local/pocketplay/games/chesspuzzles", "apps_local/pocketplay/bridge",
+                              "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "CHESS PUZZLES",
+                    "pocketplay::createChessPuzzles", "apps_local/pocketplay/games/chesspuzzles/chesspuzzles_activity.h"),
+    "polyominopanic": ("games", ["apps_local/pocketplay/games/polyominopanic", "apps_local/pocketplay/bridge",
+                                "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "POLYOMINO PANIC",
+                      "pocketplay::createPolyominoPanic", "apps_local/pocketplay/games/polyominopanic/polyominopanic_activity.h"),
+    "crowncrest": ("games", ["apps_local/pocketplay/games/crowncrest", "apps_local/pocketplay/bridge",
+                            "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "CROWN & CREST",
+                  "pocketplay::createCrownCrest", "apps_local/pocketplay/games/crowncrest/crowncrest_activity.h"),
+    "lastpiece": ("games", ["apps_local/pocketplay/games/lastpiece", "apps_local/pocketplay/bridge",
+                           "apps_local/pocketplay/core", "apps_local/pocketplay/ui"], "LAST PIECE",
+                 "pocketplay::createLastPiece", "apps_local/pocketplay/games/lastpiece/lastpiece_activity.h"),
 }
 
 
@@ -222,6 +291,24 @@ def dep_paths(dep):
 CXX_ONLY = re.compile(r"(^| )(-std=gnu\+\+\w+|-fno-rtti|-fuse-cxa-atexit|-Wno-bidi-chars)(?= |$)")
 
 
+def extra_inc_for(name):
+    extra = []
+    has_pp = any("pocketplay" in d for d in MODULES[name][1])
+    if has_pp:
+        pp_root = os.path.join(ROOT, "src", "apps_local", "pocketplay").replace("\\", "/")
+        extra.append("-I" + pp_root)
+        extra.append("-I" + pp_root + "/core")
+        extra.append("-I" + pp_root + "/ui")
+        extra.append("-I" + pp_root + "/bridge")
+    for d in MODULES[name][1]:
+        if d.startswith("lib/"):
+            extra.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
+        else:
+            extra.append("-I" + os.path.join(ROOT, "src", d).replace("\\", "/"))
+    seen = set()
+    return [x for x in extra if not (x in seen or seen.add(x))]
+
+
 def objects(names):
     """Compile modules; record what each imports from the firmware.
 
@@ -248,10 +335,7 @@ def objects(names):
             if f.endswith(".cpp.o") or f.endswith(".c.o"):
                 if f not in wanted and f != "module_descriptor.cpp.o":
                     os.remove(os.path.join(mdir, f))
-        extra_inc = []
-        for d in MODULES[name][1]:
-            if d.startswith("lib/"):
-                extra_inc.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
+        extra_inc = extra_inc_for(name)
         module_objs[name] = []
         for src in sources(name) + [stub]:
             obj = os.path.join(mdir, os.path.basename(src) + ".o")
@@ -328,10 +412,7 @@ def link(names):
         mdir = os.path.join(OBJ_DIR, name)
         stub = os.path.join(mdir, "module_descriptor.cpp")
         stub_obj = os.path.join(mdir, "module_descriptor.cpp.o")
-        extra_inc = []
-        for d in MODULES[name][1]:
-            if d.startswith("lib/"):
-                extra_inc.append("-I" + os.path.join(ROOT, d).replace("\\", "/"))
+        extra_inc = extra_inc_for(name)
         # Recompile only the descriptor with the real ABI of this firmware.
         run(GXX, flags, ["-DSTICKY_MODULE_ABI=" + abi, "-mtext-section-literals", "-fPIC"] + extra_inc + ["-c", stub, "-o", stub_obj],
             name + ".stub.rsp")

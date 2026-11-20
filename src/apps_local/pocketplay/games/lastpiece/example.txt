@@ -1,0 +1,15 @@
+# Last Piece challenges: copy this file to /lastpiece/beginner.txt on the card.
+# Each challenge is 4 rows of 4 cells, top row first, with a blank line after it.
+# P pawn, N knight, B bishop, R rook, Q queen, K king, . empty.
+
+# 1
+Q . . .
+. . N .
+. P . .
+. . . R
+
+# 2
+. B . .
+K . . N
+. . P .
+R . . .

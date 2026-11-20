@@ -1,0 +1,203 @@
+# Think Alike questions. Copy this file to /thinkalike/questions.txt on the SD card.
+# One question per line. Blank lines and lines starting with # are skipped.
+# Up to 1000 questions, each up to 200 characters. Edit it on any computer.
+Name a fruit you can eat without peeling it.
+What is the best day of the week?
+Name something people always forget to pack.
+What is the best pizza topping?
+Name an animal you would ride to work.
+How many cans of Coke could the average person drink in one day?
+What's the best dessert?
+What's your favorite kitchen utensil?
+Name a famous dragon.
+What's your favorite piece of cutlery?
+What is the most useful app on a phone?
+If you could win one, which would you choose: Oscar, Olympic Gold or Nobel Prize?
+What's the fastest animal with no legs?
+What's the best type of cookie?
+Name a musical.
+Name something found on a beach.
+Name something you keep in your back pocket.
+What's the best superpower?
+What's your favorite part of a human face?
+What's your favorite musical instrument that is blown?
+What is the first thing you do in the morning?
+Should you open Christmas presents before or after lunch?
+You roll a die. What number do you get?
+Choose your carb: rice, potato, pasta or bread?
+Name a famous lion.
+What is the heaviest vegetable or fruit?
+Name a band beginning with R.
+Name a famous redhead.
+Would you rather be the richest person in the world or the smartest?
+What would be the best game show to go on?
+Describe the President in one word.
+Where's the worst place on your body to have hair?
+Name something you take in the bath with you.
+What's the best part of a meal: starter, main course or dessert?
+Would you rather be too hot or too cold?
+Which extinct animal would you bring back: T-Rex, mammoth or saber-toothed tiger?
+Would you rather have fingers instead of toes or toes instead of fingers?
+Name a famous Wild West outlaw.
+What is the most annoying genre of music?
+What's the biggest animal you could wrestle to the ground?
+Would you rather have a statue of yourself or a painting of yourself?
+If you could be an expert at any musical instrument, which one would you choose?
+Which invention would you love to own: a jetpack, a robot butler or a driverless car?
+What's the best donut filling?
+What's scarier: heights, spiders or public speaking?
+Name a film by Steven Spielberg.
+If you could become instantly fluent in any language, which would you choose?
+What's the worst part of a salad?
+Who would you bring back from the dead: Einstein, Shakespeare or Mozart?
+Out of all the animals in the world, which is the toughest?
+Name a food that everyone knows how to cook.
+What's your favorite Australian animal?
+Name a planet in the solar system (not including Earth).
+What's more likely to be real: Bigfoot sightings or alien abductions?
+What's your favorite coin under a dollar?
+Name Tom Hanks' best film.
+What's the easiest musical instrument to learn?
+What's the best flavor of potato chips?
+Name something purple.
+Name a part of your body that you could live without.
+What is the best sauce?
+What's the best food when you are sick?
+What's the best TV channel?
+What's the best Star Wars movie?
+You're playing rock, paper, scissors. What do you hit them with first?
+Name a famous boy band.
+What is the best room in the house?
+What's the best sport to watch live?
+Name something you use to decorate a Christmas tree.
+What is the worst day of the working week?
+What is the largest thing you can think of?
+Which country makes the best food?
+Name an American state beginning with A.
+Name something you lose as you get older.
+If you could have an extra eye somewhere on your body, where would you choose?
+What's the biggest object with wheels that you could lift up?
+Name something you do before going to sleep.
+Name a part of a cow's body.
+What's the best Christmas movie?
+Would you rather be covered in feathers or covered in fur?
+Would you rather be able to understand animals or have animals understand you?
+Who is the toughest Disney princess?
+What's the best song by the band Queen?
+What's the greatest American sport?
+What's the best brand of sneakers?
+Write down a noise that an animal makes.
+Name a food with a hole in it.
+If you could be a farm animal, which one would you choose?
+Out of all the players, who is the best dressed today?
+You're wearing a brand new white shirt. What meal should you definitely avoid?
+If your hair could be any color, what would you choose?
+Name a fictional mouse.
+What's your favorite meal of the day?
+What is the stickiest food?
+How many Big Macs could the average human eat in a 20-minute sitting?
+Whole milk, 2%, 1% or skim?
+What's your favorite bodily noise?
+Name a cold country.
+A bear runs at you. What do you do?
+Name a farm animal that you wouldn't want to eat.
+What's the best time to wake up on a weekend?
+You've got 10 minutes to make a Halloween costume. What do you dress up as?
+Name one of Santa's reindeer (not Rudolph).
+Would you rather have your food too salty or too sweet?
+What is the best thing to come out of the UK: Cheddar cheese, The Beatles or Harry Potter?
+Name a book by Dr. Seuss.
+Which letter wouldn't you miss if it got kicked out of the alphabet?
+What's the slipperiest thing in the world?
+Name a type of hat.
+What is your favorite dinosaur (excluding T-rex)?
+Name a drink beginning with C.
+What's the best American invention: hamburger, iPhone or basketball?
+Name something that would scare a dog.
+Which is the hardest US state to spell?
+Name a famous Jennifer.
+Would you rather be abducted by aliens, pirates or ghosts?
+Name a bird that can't fly.
+Name a famous horror film.
+What's the best flavor of popcorn: sweet, salty or half-and-half?
+What's the tastiest meat?
+Name a movie trilogy.
+Name a country beginning with S.
+Name a country beginning with B.
+What is the smallest thing you can think of?
+What's the best name for a cow?
+If you could be part of any fictional family, which one would you choose?
+If you could have any animal as a pet, what would it be?
+At what time does breakfast become lunch?
+Name the biggest fruit you can fit in your mouth without chopping it up.
+How many days do you think you could go without washing before people started to notice?
+What's the best topping for pancakes?
+Name a brand beginning with A.
+If you could pick one nation's cuisine to eat for the rest of your life, what would it be?
+Name something you pickle.
+Name a famous robot.
+What's the worst place for a tattoo?
+Name a cartoon bear.
+If you were an animal that lived underwater, which one would you want to be?
+If you paid $100 for a meal, how much would you leave as a tip?
+Name something you would cook in the microwave.
+If you could rig the sorting hat, which house would you choose?
+Would you rather talk like Yoda or Darth Vader?
+Name a popular dance.
+How many pairs of shoes should an average person own?
+Name a type of bean.
+What's the best tree to be?
+Name one of the Seven Deadly Sins.
+Name a character from The Simpsons.
+What should you put on first: underwear or socks?
+Name a famous John.
+Name a rapper.
+Name a sea creature you wouldn't eat.
+What's the best coffee-based drink?
+What is the best way to cook an egg?
+Name a food that you don't have to chew.
+Who is the best Muppet?
+Out of all the animals in the world, which is the cutest?
+What's the best thing to come out of France: The Statue of Liberty, Champagne or baguettes?
+Name an animal beginning with P.
+Name a musical instrument you can fit in your pocket.
+Which is the best Disney film of all time?
+What weapon would you choose for a duel?
+What is the worst vegetable?
+What's the smallest animal that could carry your weight?
+What's the best ride at the carnival?
+Would you rather have an endless supply of chocolate, candy or potato chips?
+What is the best nursery rhyme?
+Name a beach activity.
+What's the tastiest thing you eat during Christmas?
+What's the best fast-food drive-thru to stop at?
+What's your favorite season?
+What's the best pasta shape?
+Name a country that's bigger than Germany.
+Would you rather have robot arms or robot legs?
+Name a slang word for money.
+Name a fruit that would be hard to juggle.
+If it could be this day every day, which would you choose: Christmas Day, Halloween or your birthday?
+What is the best flavor of ice cream?
+Name a sport that uses a net.
+Name one of the Seven Dwarfs.
+What's the best science class: physics, chemistry or biology?
+Name a film starring Jennifer Lawrence.
+How many days would have to pass before you wouldn't eat leftover pizza?
+Name a part of the body that everybody only has one of.
+If you had a time machine, would you visit the past or the future?
+Name something waterproof.
+Would you rather have one gigantic eye or one huge ear?
+Name an occupation beginning with B.
+If you had to choose, on which part of your body would you let a wasp sting you?
+Who's the best character in Friends?
+Which North American wild animal would make the coolest pet?
+If you were a teacher, what would be the easiest class to teach kids?
+Name a vegetable beginning with C.
+What's the best hot drink?
+What's your favorite finger?
+Would you rather be 4'4" or 7'7"?
+What's the best color of underwear?
+What's the most boring event at the Olympics?
+Name a famous wizard.
+Name a word beginning with Z.

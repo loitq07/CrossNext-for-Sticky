@@ -1,4 +1,5 @@
 U ESP
+U HWCDCSerial
 U LANGUAGE_CODES
 S WORDLE_CASE_PAIRS
 U WiFi
@@ -40,6 +41,7 @@ U _ZN10HalStorage6renameEPKcS1_
 U _ZN10HalStorage8instanceE
 U _ZN10HalStorage8readFileEPKc
 U _ZN10HalStorage9freeBytesERy
+U _ZN10HalStorage9listFilesEPKci
 U _ZN10HalStorage9removeDirEPKc
 U _ZN10HalStorage9writeFileEPKcRK6String
 U _ZN10RenderLock4peekEv
@@ -354,6 +356,8 @@ S _ZN3cds5paperE
 U _ZN4I18n11getInstanceEv
 U _ZN5Print5printEPKc
 U _ZN5Print5printEmi
+U _ZN5Print6printfEPKcz
+U _ZN5Print7printlnEPKc
 S _ZN5petui10OBJECT_ARTE
 S _ZN5petui11DISCOVERIESE
 S _ZN5petui11actionicons4CAREE
@@ -581,6 +585,7 @@ S _ZN8questexp15CHAPTER_REWARDSE
 S _ZN8questexp15REQUEST_REWARDSE
 S _ZN8questexp18ACTIVE_DECORATIONSE
 S _ZN8questexp7ENEMIESE
+S _ZN8zmachine7Machine5kColsE
 U _ZN9BaseTheme17applyHeaderStatusERK11GfxRendererRN7freeink2ui11HeaderPropsE
 U _ZN9BidiUtils13startsWithRtlEPKci
 U _ZN9UiAppHost10routeTouchERK18MappedInputManagerbbb
@@ -880,11 +885,17 @@ U _ZNK9HalMemory12PsramDeleterclEPh
 U _ZNSt7__cxx1112basic_stringIcSt11char_traitsIcESaIcEE15_M_replace_coldEPcjPKcjj
 S _ZNSt8__detail9__variant12__gen_vtableIvOZNS0_16_Variant_storageILb0EJSt9monostate10WifiResult14KeyboardResult10MenuResult13ChapterResult13PercentResult14IntervalResult10PageResult14ClippingResult20ProgressChangeResult17NetworkModeResult14FootnoteResult14FilePathResultEE8_M_resetEvEUlOT_E_JRSt7variantIJS3_S4_S5_S6_S7_S8_S9_SA_SB_SC_SD_SE_SF_EEEE9_S_vtableE
 U _ZSt17__throw_bad_allocv
+U _ZSt18_Rb_tree_decrementPSt18_Rb_tree_node_base
+U _ZSt18_Rb_tree_incrementPKSt18_Rb_tree_node_base
+U _ZSt18_Rb_tree_incrementPSt18_Rb_tree_node_base
 U _ZSt19__throw_logic_errorPKc
 U _ZSt20__throw_length_errorPKc
 U _ZSt20__throw_system_errori
 U _ZSt24__throw_out_of_range_fmtPKcz
+U _ZSt25__throw_bad_function_callv
+U _ZSt28_Rb_tree_rebalance_for_erasePSt18_Rb_tree_node_baseRS_
 U _ZSt28__throw_bad_array_new_lengthv
+U _ZSt29_Rb_tree_insert_and_rebalancebPSt18_Rb_tree_node_baseS0_RS_
 U _ZSt7nothrow
 S _ZTV10GoActivity
 S _ZTV11PetActivity
@@ -925,6 +936,7 @@ S _ZTV20KnucklebonesActivity
 S _ZTV20ReadingQuestActivity
 U _ZTV21KeyboardEntryActivity
 U _ZTV8Activity
+S _ZTVN10pocketplay18PocketPlayActivityE
 S _ZTVN10voicenotes18VoiceNotesActivityE
 S _ZTVN11ArduinoJson8V742PB226detail16DefaultAllocatorE
 S _ZTVN5petui13DecorationInkE
@@ -943,6 +955,8 @@ S _ZZN10paintclock7counterEvE7painted
 S _ZZN10questcover4drawERN7freeink2ui10DrawTargetENS1_4RectEjE6PAINTS
 S _ZZN10questicons3bowERN7freeink2ui10DrawTargetENS1_4RectEE4LIMB
 S _ZZN10questicons4starERN7freeink2ui10DrawTargetENS1_4RectEbbbE6points
+S _ZZN10wordladder9dateLabelB5cxx11ElE5kDays
+S _ZZN10wordladder9dateLabelB5cxx11ElE7kMonths
 S _ZZN11ArduinoJson8V742PB226detail11FloatTraitsIdLj8EE25negativeBinaryPowersOfTenEvE7factors
 S _ZZN11ArduinoJson8V742PB226detail11FloatTraitsIdLj8EE25positiveBinaryPowersOfTenEvE7factors
 S _ZZN11ArduinoJson8V742PB226detail11FloatTraitsIfLj4EE25negativeBinaryPowersOfTenEvE7factors
@@ -997,6 +1011,7 @@ S _ZZN5petui7symbols4drawERN6toybox6ScreenEN7freeink2ui4RectENS0_4KindEbE5large
 S _ZZN5petui7symbols4drawERN6toybox6ScreenEN7freeink2ui4RectENS0_4KindEbE5small
 S _ZZN5petui7symbols9referenceERN6toybox6ScreenEN7freeink2ui4RectEPKhbiE6colors
 S _ZZN5quest11huntVictoryERKNS_7ProfileEiE5empty
+S _ZZN6kakuro5levelEiE5kList
 S _ZZN6toybox11themeTokensEvE8instance
 S _ZZN6toybox12headerStatusERK11GfxRendererE5props
 S _ZZN7chessui6Losses14estimateLegacyERKN5chess8PositionEE7initial
@@ -1010,6 +1025,7 @@ S _ZZN7questui9requestui8goalTextERNS_4WorkERKNS_5ModelEibbE10shortGoals
 S _ZZN7questui9requestui8goalTextERNS_4WorkERKNS_5ModelEibbE5goals
 S _ZZN7seasalt17describeTheirTurnERKNS_4GameES2_iPKPKcPcjE8kLoudest
 S _ZZN8forehead12categoryIconEiE6kIcons
+S _ZZN8nonogram7bankForEiE6kBanks
 S _ZZN8petsleep5frameEjE6frames
 S _ZZN8petsleep9headWidthEN3pet7SpeciesEE6widths
 S _ZZN9HalBuzzer8instanceEvE6buzzer
@@ -1069,7 +1085,10 @@ U _ctype_
 U abort
 U activityManager
 U atoi
+U calloc
+U ceilf
 U clock
+U cosf
 U delay
 U div
 U eTaskGetState
@@ -1174,6 +1193,7 @@ S extra_trophy_64
 S extra_trophy_64_bits
 U fclose
 U fgets
+U floorf
 U fopen
 U fprintf
 U fputc
@@ -1181,6 +1201,7 @@ U fputs
 U free
 U gpio
 U halClock
+U heap_caps_free
 U heap_caps_malloc
 U isspace
 U localtime
@@ -1191,6 +1212,7 @@ U memcmp
 U memcpy
 U memmove
 U memset
+U micros
 U millis
 U pthread_mutex_destroy
 U pthread_mutex_init
@@ -1203,6 +1225,7 @@ U raise
 U realloc
 U rewind
 U sdFontSystem
+U sinf
 U snprintf
 U sprintf
 U sqrt
@@ -1213,6 +1236,7 @@ U strcmp
 U strcpy
 U strcspn
 U strlen
+U strncat
 U strncmp
 U strncpy
 U strnlen
