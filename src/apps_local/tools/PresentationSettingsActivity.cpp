@@ -101,7 +101,11 @@ uint8_t& PresentationSettingsActivity::fontChoice(int row) {
   if (!contentFonts()) return row ? SETTINGS.menuFontOverrides[row] : SETTINGS.menuFontStyle;
   if (row == 0) return SETTINGS.menuFontOverrides[int(fontSection())];
   const auto item = menufont::itemFor(shelf::folders()[fontFolder()].items[row - 1].title);
-  assert(item < menufont::kItemCount);
+  // A plugin dropped on the card (/games/*.elf) appears as a shelf row with no
+  // font key. It has nothing to store, so hand back a scratch byte instead of
+  // indexing past menuFontItemOverrides.
+  static uint8_t unkeyed = 0;
+  if (item >= menufont::kItemCount) return unkeyed = 0;
   return SETTINGS.menuFontItemOverrides[item];
 }
 uint8_t& PresentationSettingsActivity::themeChoice(int row) {

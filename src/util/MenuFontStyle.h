@@ -61,7 +61,11 @@ inline constexpr const char* kItemKeys[] = {
     "FLASHCARDS",    "WORDS",     "CALENDAR", "CLOCK",       "COUNTER", "VOICE NOTES",
     "INSTAPAPER",    "CALCULATOR", "APP STORE",
     // Upstream 2.0 added FOCUS; appended so the fork's saved item indices hold.
-    "FOCUS"};
+    "FOCUS",
+    // App Store games and apps that used to reach the shelf only as bare
+    // filenames (see Shelf.cpp). Appended for the same reason as FOCUS.
+    "CONNECTIONS",   "KNUCKLEBONES", "YAHTZEE",  "SEA SALT",    "TOY BATTLE", "TRIVIA",      "UNDERHAND", "WAVELENGTH",
+    "FOREHEAD",      "INSIDER",      "DICE",     "XKCD",        "HACKER NEWS", "WIKIPEDIA"};
 inline constexpr int kItemCount = sizeof(kItemKeys) / sizeof(kItemKeys[0]);
 inline constexpr uint8_t kNoItem = kItemCount;
 constexpr bool sameKey(const char* a, const char* b) {

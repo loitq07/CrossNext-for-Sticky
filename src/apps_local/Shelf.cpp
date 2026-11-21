@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <deque>
 #include <string>
 #include <map>
 #include <vector>
@@ -63,6 +64,22 @@ constexpr shelf::Item kGames[] = {
     {"CONNECT FOUR", &gameicons::ConnectFour40, &moduleNotInstalled},
     {"SUDOKU", &gameicons::Sudoku40, &moduleNotInstalled},
     {"OTHELLO", &navicons::Othello32, &moduleNotInstalled},
+    // FORK CHANGE: games the App Store ships as native modules (or, for DICE, a
+    // small host-API plugin) that used to reach the shelf only as bare
+    // filenames. Registered like the rows above so they keep a real title,
+    // icon and translated label; each stays hidden until its file is on the
+    // card. Appended so saved order and resume positions hold.
+    {"CONNECTIONS", &icon_connections_32, &moduleNotInstalled},
+    {"KNUCKLEBONES", &icon_knucklebones_32, &moduleNotInstalled},
+    {"YAHTZEE", &icon_yahtzee_32, &moduleNotInstalled},
+    {"SEA SALT", &icon_seasalt_32, &moduleNotInstalled},
+    {"TOY BATTLE", &icon_toybattle_32, &moduleNotInstalled},
+    {"TRIVIA", &icon_trivia_32, &moduleNotInstalled},
+    {"UNDERHAND", &icon_underhand_32, &moduleNotInstalled},
+    {"WAVELENGTH", &icon_wavelength_32, &moduleNotInstalled},
+    {"FOREHEAD", &icon_forehead_32, &moduleNotInstalled},
+    {"INSIDER", &icon_insider_32, &moduleNotInstalled},
+    {"DICE", &icon_knucklebones_32, &moduleNotInstalled},
 };
 // FORK CHANGE (v1.4.13): Voice Notes is hidden from the Apps shelf while its
 // recording/transcription path is being fixed. Its code stays in the tree;
@@ -94,6 +111,11 @@ constexpr shelf::Item kApps[] = {
     // reuses the Pomodoro sources, which ship as a native module here, so it
     // is a module row too (hidden until a Focus module is on the card).
     {"FOCUS", &navicons::Focus32, &moduleNotInstalled},
+    // FORK CHANGE: App Store reader modules, registered for the same reason as
+    // the extra games above.
+    {"XKCD", &icon_xkcd_32, &moduleNotInstalled},
+    {"HACKER NEWS", &icon_hackernews_32, &moduleNotInstalled},
+    {"WIKIPEDIA", &icon_wikipedia_32, &moduleNotInstalled},
 };
 
 // The two rows Home grows, in reading order. Titles are Title Case because
@@ -456,6 +478,34 @@ const char* label(const char* stableTitle) {
     if (I18N.getLanguage() == Language::ES) return "Tienda Apps";
     return "App Store";
   }
+  // App Store games and apps with no string-table entry of their own. Spelled
+  // like the Store's own names (AppStoreCatalog.h), upper-cased like the rows
+  // around them; any other language shows the stable English title.
+  struct Localized {
+    const char* title;
+    const char* vi;
+    const char* es;
+  };
+  static constexpr Localized kLocalized[] = {
+      {"CONNECTIONS", "CONNECTIONS", nullptr},
+      {"KNUCKLEBONES", "CỜ XƯƠNG", nullptr},
+      {"YAHTZEE", "YAHTZEE", nullptr},
+      {"SEA SALT", "SEA SALT & PAPER", nullptr},
+      {"TRIVIA", "ĐỐ VUI", "TRIVIA"},
+      {"UNDERHAND", "UNDERHAND", nullptr},
+      {"WAVELENGTH", "WAVELENGTH", nullptr},
+      {"INSIDER", "KẺ NỘI GIÁN", nullptr},
+      {"DICE", "XÚC XẮC", "DADOS"},
+      {"XKCD", "TRUYỆN XKCD", nullptr},
+      {"HACKER NEWS", "HACKER NEWS", nullptr},
+      {"WIKIPEDIA", "WIKIPEDIA", nullptr},
+  };
+  for (const Localized& entry : kLocalized) {
+    if (std::strcmp(stableTitle, entry.title) != 0) continue;
+    if (I18N.getLanguage() == Language::VI && entry.vi) return entry.vi;
+    if (I18N.getLanguage() == Language::ES && entry.es) return entry.es;
+    return stableTitle;
+  }
   if (std::strcmp(stableTitle, "Games") == 0) return tr(STR_SHORT_GAMES);
   if (std::strcmp(stableTitle, "Apps") == 0) return tr(STR_SHORT_APPS);
   return stableTitle;
@@ -464,7 +514,13 @@ const char* label(const char* stableTitle) {
 namespace {
 std::vector<shelf::Item> s_games;
 std::vector<shelf::Item> s_apps;
-std::vector<std::string> s_dynamicTitles;
+// A deque, not a vector: shelf::Item keeps a pointer into each title, and a
+// vector reallocates as it grows. Titles under 16 characters live inside the
+// std::string object itself (small-string optimisation), so a reallocation moved
+// them and left every earlier row's title pointing at freed memory -- a row
+// with a garbage or blank name that could not be opened (its title no longer
+// matched s_dynamicPaths). A deque never moves its elements on push_back.
+std::deque<std::string> s_dynamicTitles;
 std::map<std::string, std::string> s_dynamicPaths;
 shelf::Folder s_folders[kFolderCount];
 bool s_foldersInitialized = false;

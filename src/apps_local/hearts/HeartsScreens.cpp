@@ -106,108 +106,219 @@ void buildSettings(toybox::Screen& s, const Options& o, bool failed) {
   dashboard::button(s, fui::makeRect(b.x, b.bottom() - 48, b.width, 48), tr(STR_CARDS_SAVE), ActionButton, ButtonSave,
                     true, nullptr, 1);
 }
+namespace {
+// THE TABLE IS A RAIL AND A DIAMOND (ported from CrossPlay's Hearts). Position
+// means SEAT: the four plaques run down the left in play order, and a card lands
+// on the table where its player sits, so "West is out of clubs" is something you
+// SEE rather than something you were told.
+constexpr int16_t kStatusH = 34;
+constexpr int16_t kRailW = 264;
+constexpr int16_t kPlaqueH = 48;
+constexpr int16_t kRailGap = 10;
+
+// A seat's plaque: who, what this hand has cost them, and where they would stand
+// if the hand ended now. The seat ON TURN is inverted -- solid black is the
+// loudest thing the panel has, and a plaque is small enough to afford it.
+//
+// A SEAT THAT HAS TAKEN NOTHING SHOWS NOTHING: the "+n" pill appears only once
+// it has something to say, so the first heart of a hand is an event you see.
+void seatPlaque(toybox::Screen& s, const fui::Rect& box, const SeatView& seat) {
+  auto& t = s.target();
+  const bool invert = seat.isTurn;
+  if (invert)
+    t.fill(box, dashboard::ink);
+  else
+    dashboard::frame(s, box, 2);
+  // THREE DIGITS: a seat on 99 that takes all 26 reaches 125.
+  const int16_t pad = 12, pillW = 44, totalW = 60;
+  const int16_t numbersW = static_cast<int16_t>(pillW + 8 + totalW + pad);
+  dashboard::text(s, fui::makeRect(box.x + pad, box.y, box.width - pad - numbersW, box.height), seat.name, 1,
+                  fui::TextAlign::Left, invert);
+  // The PROJECTED total (the score before this hand plus what it has put there):
+  // `total` alone reads 0 for all four seats through the whole first hand.
+  char running[16];
+  std::snprintf(running, sizeof(running), "%d", seat.total + seat.taken);
+  dashboard::text(s, fui::makeRect(box.right() - pad - totalW, box.y, totalW, box.height), running, 1,
+                  fui::TextAlign::Right, invert);
+  if (seat.taken > 0) {
+    char points[16];
+    std::snprintf(points, sizeof(points), "+%d", seat.taken);
+    const auto pill = fui::makeRect(box.right() - pad - totalW - 8 - pillW, box.y + 10, pillW, box.height - 20);
+    t.fill(pill, invert ? dashboard::paper : dashboard::ink, static_cast<uint8_t>(pill.height / 2));
+    dashboard::text(s, pill, points, 0, fui::TextAlign::Center, !invert);
+  }
+}
+
+// Where a seat's card sits, as a compass. Written once so the empty place, the
+// played card and the winner's frame cannot disagree about it.
+fui::Rect trickSlot(const fui::Rect& felt, Seat seat, int16_t cw, int16_t ch, int16_t gap) {
+  const int16_t cx = static_cast<int16_t>(felt.x + (felt.width - cw) / 2);
+  const int16_t cy = static_cast<int16_t>(felt.y + (felt.height - ch) / 2);
+  switch (seat) {
+    case Seat::North:
+      return fui::makeRect(cx, felt.y + gap, cw, ch);
+    case Seat::South:
+      return fui::makeRect(cx, felt.bottom() - gap - ch, cw, ch);
+    case Seat::West:
+      return fui::makeRect(static_cast<int16_t>(cx - cw - gap * 2), cy, cw, ch);
+    case Seat::East:
+      return fui::makeRect(static_cast<int16_t>(cx + cw + gap * 2), cy, cw, ch);
+  }
+  return fui::makeRect(cx, cy, cw, ch);
+}
+
+// A seat's place while it is empty: card-shaped and dithered, tagged with the
+// seat's name (the same word as its plaque, so it needs no key). The first
+// letter alone was not enough once "BẠN" and "BẮC" both start with B. The seat
+// on turn gets the heavy frame -- that is the whole of "whose go is it" here.
+void drawPlace(toybox::Screen& s, const fui::Rect& rect, const char* name, bool onTurn) {
+  auto& t = s.target();
+  t.fill(rect, fui::Paint::dither(fui::Color::DarkGray), cardart::kRadius);
+  t.stroke(rect, dashboard::ink, onTurn ? toybox::kFrame : toybox::kHairline, cardart::kRadius);
+  const auto tag = fui::makeRect(rect.x + 6, rect.y + (rect.height - 30) / 2, rect.width - 12, 30);
+  t.fill(tag, dashboard::paper, 8);
+  t.stroke(tag, dashboard::ink, toybox::kHairline, 8);
+  dashboard::text(s, tag, name, 0);
+}
+}  // namespace
+
 void buildBoard(toybox::Screen& s, const BoardModel& m, Layout& l) {
   if (!m.game) return;
   const auto& g = *m.game;
   auto b = begin(s, true);
   auto& t = s.target();
   const bool passing = g.phase == Phase::Passing;
-  const auto status = fui::makeRect(b.x - 6, b.y - 6, b.width + 12, 34);
-  dashboard::frame(s, status, 2);
-  char label[100];
-  std::snprintf(label, sizeof(label), tr(STR_HEARTS_ROUND), int(g.handNumber) + 1);
-  dashboard::text(s, fui::makeRect(status.x + 10, status.y, 146, status.height), label, 0, fui::TextAlign::Left);
-  dashboard::text(s, fui::makeRect(status.x + 158, status.y, status.width - (passing ? 320 : 420), status.height),
-                  passing ? passText(g.passDirection())
-                          : (g.phase == Phase::Playing && g.turn == Seat::South ? tr(STR_HEARTS_TURN) : m.status),
-                  1);
-  if (passing) {
-    std::snprintf(label, sizeof(label), "%d/3", m.pickedCount);
-  } else
-    std::snprintf(label, sizeof(label), "%s", g.heartsBroken ? tr(STR_HEARTS_OPEN) : tr(STR_HEARTS_CLOSED));
-  if (!passing)
-    cardart::drawSuit(s, fui::makeRect(status.right() - 248, status.y + 5, 24, 24), cards::Suit::Hearts, true);
-  dashboard::text(s,
-                  fui::makeRect(status.right() - (passing ? 164 : 218), status.y, passing ? 154 : 208, status.height),
-                  label, 0, fui::TextAlign::Right);
-  const int handH = passing ? 168 : 158;
-  const auto upper = fui::makeRect(b.x, status.bottom() + 8, b.width, b.bottom() - handH - status.bottom() - 16);
-  const int scoreW = b.width / 4;
-  const int scoreH = (upper.height - 18) / 4;
-  for (int n = 0; n < kSeats; ++n) {
-    const auto r = fui::makeRect(upper.x, upper.y + n * (scoreH + 6), scoreW, scoreH);
-    const bool active = !passing && m.seats[n].isTurn;
-    if (active)
-      t.fill(r, dashboard::ink);
-    else
-      dashboard::frame(s, r, 2);
-    dashboard::text(s, fui::makeRect(r.x + 10, r.y, r.width - 60, r.height), m.seats[n].name, 1, fui::TextAlign::Left,
-                    active);
-    std::snprintf(label, sizeof(label), "%d", m.seats[n].total);
-    dashboard::text(s, fui::makeRect(r.right() - 52, r.y, 42, r.height), label, 1, fui::TextAlign::Right, active);
+  const auto& hand = g.hands[seatIndex(Seat::South)];
+
+  // Vertical budget, from the bottom up: the hand, a status row, the table.
+  const int16_t cardH = b.height >= 380 ? cardart::kCardH : 102;
+  const int16_t cardW = cardH == cardart::kCardH ? cardart::kCardW : 74;
+  const int16_t handTop = static_cast<int16_t>(b.bottom() - cardH);
+  const int16_t statusTop = static_cast<int16_t>(handTop - kStatusH - 4);
+  const int16_t tableTop = b.y;
+  const int16_t tableBottom = static_cast<int16_t>(statusTop - 4);
+
+  // RAIL: seats down the left in play order from you.
+  const int16_t railTop =
+      static_cast<int16_t>(tableTop + ((tableBottom - tableTop) - (kPlaqueH * 4 + kRailGap * 3)) / 2);
+  static const Seat kOrder[kSeats] = {Seat::South, Seat::West, Seat::North, Seat::East};
+  for (int i = 0; i < kSeats; ++i) {
+    seatPlaque(s, fui::makeRect(b.x, railTop + i * (kPlaqueH + kRailGap), kRailW, kPlaqueH),
+               m.seats[seatIndex(kOrder[i])]);
   }
-  const auto felt = fui::makeRect(upper.x + scoreW + 10, upper.y, upper.width - scoreW - 10, upper.height);
+
+  const auto felt = fui::makeRect(b.x + kRailW + 16, tableTop, b.width - kRailW - 16, tableBottom - tableTop);
   l.felt = felt;
   dashboard::frame(s, felt, 2);
-  const auto& hand = g.hands[seatIndex(Seat::South)];
+
   if (passing) {
-    dashboard::text(s, fui::makeRect(felt.x + 12, felt.y + 2, felt.width - 24, 34),
-                    m.pickedCount == 3 ? tr(STR_HEARTS_SELECTED) : tr(STR_HEARTS_PICK), 1, fui::TextAlign::Left);
-    const int ch = std::min(112, int(felt.height) - 48), cw = ch * 3 / 4;
-    int shown = 0;
-    for (int n = 0; n < hand.count; ++n)
-      if (m.picked[n]) {
-        cardart::drawCardFace(s, fui::makeRect(felt.x + 22 + shown * (cw + 14), felt.y + 42, cw, ch), hand.at(n), ch,
-                              cardart::Fan::None, cardart::Ink::Picked);
-        ++shown;
+    // The pass owns the table: the cards you are giving away, at full size,
+    // with the direction in words. Four empty places for a trick that does not
+    // exist would be the largest region on screen saying nothing.
+    dashboard::text(s, fui::makeRect(felt.x + 18, felt.y + 10, felt.width - 36, 34), passText(g.passDirection()), 1,
+                    fui::TextAlign::Left);
+    const int16_t gap = 14;
+    const int16_t ch = std::min<int16_t>(cardH, static_cast<int16_t>(felt.height - 66));
+    const int16_t cw = static_cast<int16_t>(ch * 3 / 4);
+    uint8_t chosen[kPassCount] = {kNoCard, kNoCard, kNoCard};
+    int from[kPassCount] = {-1, -1, -1};
+    int n = 0;
+    for (int i = 0; i < hand.count && n < kPassCount; ++i)
+      if (m.picked[i]) {
+        from[n] = i;
+        chosen[n] = hand.at(i);
+        ++n;
       }
-    const auto pass = fui::makeRect(felt.x + felt.width * 62 / 100, felt.y + 60, felt.width * 38 / 100 - 12,
-                                    std::min(80, int(felt.height) - 72));
+    const int16_t sx = static_cast<int16_t>(felt.x + 18);
+    const int16_t sy = static_cast<int16_t>(felt.bottom() - 14 - ch);
+    for (int i = 0; i < kPassCount; ++i) {
+      const auto slot = fui::makeRect(sx + i * (cw + gap), sy, cw, ch);
+      if (chosen[i] == kNoCard) {
+        t.fill(slot, fui::Paint::dither(fui::Color::DarkGray), cardart::kRadius);
+        t.stroke(slot, dashboard::ink, toybox::kHairline, cardart::kRadius);
+      } else {
+        cardart::drawCardFace(s, slot, chosen[i], ch);
+        // Tapping the big copy takes it back: the instinctive undo.
+        dashboard::hit(s, slot, ActionHandCard, from[i]);
+      }
+    }
+    const int16_t bx = static_cast<int16_t>(sx + kPassCount * (cw + gap));
+    const int16_t bh = std::min<int16_t>(80, ch);
+    const auto pass = fui::makeRect(bx, sy + ch - bh, felt.right() - bx - 14, bh);
     gamepanel::row(s, pass, tr(STR_HEARTS_PASS_CARDS), m.confirmEnabled ? ActionButton : fui::ActionId(0),
                    ButtonConfirm, gamepanel::Mark::Play, m.confirmEnabled, nullptr, false);
   } else {
-    const int ch = std::min(80, (int(felt.height) - 60) / 2), cw = ch * 3 / 4, cx = felt.x + felt.width / 2,
-              cy = felt.y + felt.height / 2;
-    const int x[] = {cx - cw / 2, cx - cw * 2, cx - cw / 2, cx + cw},
-              y[] = {felt.bottom() - 24 - ch, cy - ch / 2, felt.y + 24, cy - ch / 2};
+    // The panel's top-left corner, which the diamond leaves empty: which hand
+    // and how far through it, the one thing about its shape nothing else says.
+    // trickNumber counts tricks SWEPT, so after the thirteenth a bare +1 would
+    // print 14/13; the last trick stays on screen as the thirteenth.
+    char label[64];
+    std::snprintf(label, sizeof(label), tr(STR_HEARTS_ROUND), int(g.handNumber) + 1);
+    dashboard::text(s, fui::makeRect(felt.x + 18, felt.y + 8, 170, 26), label, 0, fui::TextAlign::Left);
+    const int shown = g.trickNumber >= kTricks ? int(kTricks) : int(g.trickNumber) + 1;
+    std::snprintf(label, sizeof(label), I18N.getLanguage() == Language::VI ? "LƯỢT %d/%d" : "TRICK %d/%d", shown, int(kTricks));
+    dashboard::text(s, fui::makeRect(felt.x + 18, felt.y + 34, 170, 26), label, 0, fui::TextAlign::Left);
+
+    // Sized so the diamond FITS: two rows of cards plus the gaps, derived from
+    // the panel so it cannot drift if the band above it moves.
+    const int16_t gap = 8;
+    const int16_t middle = 14;
+    const int16_t ch = static_cast<int16_t>((felt.height - gap * 2 - middle) / 2);
+    const int16_t cw = 80;
     for (int n = 0; n < kSeats; ++n) {
-      const auto r = fui::makeRect(x[n], y[n], cw, ch);
-      l.trickCard[n] = r;
-      if (g.trick.played[n] == kNoCard) {
-        t.stroke(r, dashboard::ink, 2, 5);
-      } else
-        cardart::drawCardFace(s, r, g.trick.played[n], ch);
-      const auto name = fui::makeRect(n == 1   ? r.x - 90
-                                      : n == 3 ? r.right() + 8
-                                               : r.x - 30,
-                                      n == 2   ? felt.y
-                                      : n == 0 ? felt.bottom() - 24
-                                               : r.y + ch / 2 - 12,
-                                      n == 1 || n == 3 ? 82 : cw + 60, 24);
-      dashboard::text(s, name, m.seats[n].name, 3);
+      const auto slot = trickSlot(felt, static_cast<Seat>(n), cw, ch, gap);
+      l.trickCard[n] = slot;
+      if (g.trick.played[n] == kNoCard)
+        drawPlace(s, slot, m.seats[n].name, m.seats[n].isTurn);
+      else
+        cardart::drawCardFace(s, slot, g.trick.played[n], ch);
+    }
+    // WHICH CARD IS WINNING: the one fact you need to decide your own play. Its
+    // own pass, because the frame sits outside the card and would be overdrawn
+    // by whichever slot rendered after it.
+    if (!g.trick.empty()) {
+      const auto& won = l.trickCard[seatIndex(g.trick.winner())];
+      t.stroke(fui::makeRect(won.x - 5, won.y - 5, won.width + 10, won.height + 10), dashboard::ink, toybox::kFrame,
+               cardart::kRadius + 4);
     }
   }
-  const auto handBox = fui::makeRect(b.x, b.bottom() - handH + (passing ? 0 : 0), b.width, handH);
-  if (!passing) dashboard::frame(s, handBox, 2);
-  dashboard::text(s, fui::makeRect(handBox.x + 8, handBox.y + 2, handBox.width - 16, 30),
-                  passing ? tr(STR_HEARTS_HAND) : m.status, 0, fui::TextAlign::Left);
-  const int ch = passing ? 108 : 102, cw = 74;
-  const int pitch = hand.count > 1 ? std::min(84, (handBox.width - 24 - cw) / (hand.count - 1)) : cw;
-  const int start = handBox.x + (handBox.width - (cw + std::max(0, int(hand.count) - 1) * pitch)) / 2;
+
+  // The status line and its right-hand note share one row, each in its own
+  // part: assembled at runtime ("WEST TAKES IT, 13 POINTS") and never wrapped.
+  const int16_t half = static_cast<int16_t>(b.width * 60 / 100);
+  if (m.status && *m.status)
+    dashboard::text(s, fui::makeRect(b.x, statusTop, half, kStatusH), m.status, 0, fui::TextAlign::Left);
+  if (m.subStatus && *m.subStatus)
+    dashboard::text(s, fui::makeRect(b.x + half, statusTop, b.width - half, kStatusH), m.subStatus, 0,
+                    fui::TextAlign::Right);
+
+  // YOUR HAND. Spread as far as the cards go and no further; once it overlaps,
+  // every card shows the same sliver (rank over pip) so none reads as selected.
   l.handCount = hand.count;
+  if (hand.count == 0) return;
+  int16_t step = static_cast<int16_t>(cardW + 10);
+  if (hand.count > 1) step = std::min<int16_t>(step, static_cast<int16_t>((b.width - cardW) / (hand.count - 1)));
+  const int16_t span = static_cast<int16_t>(cardW + step * (hand.count - 1));
+  const int16_t x0 = static_cast<int16_t>(b.x + (b.width - span) / 2);
+  const bool fanned = step < cardW;
   for (int n = 0; n < hand.count; ++n) {
-    const bool picked = passing && m.picked[n], highlight = !passing && m.highlight && m.legal[n];
-    const auto r = fui::makeRect(start + n * pitch, handBox.y + 38 - (picked ? 6 : 0), cw, ch);
+    const bool picked = passing && m.picked[n];
+    const bool legal = !passing && m.highlight && m.legal[n];
+    const auto r = fui::makeRect(x0 + step * n, handTop, cardW, cardH);
     l.handCard[n] = r;
-    cardart::drawCardFace(s, r, hand.at(n), ch, cardart::Fan::Sideways,
-                          picked || highlight ? cardart::Ink::Picked : cardart::Ink::Normal);
-    if (picked || highlight) t.stroke(r.inset({4, 4, 4, 4}), dashboard::ink, 2, 5);
-    dashboard::hit(s, fui::makeRect(r.x, r.y, n + 1 < hand.count ? pitch : cw, ch), ActionHandCard, n);
-  }
-  if (passing) {
-    auto notice = fui::makeRect(b.x, b.bottom() - 22, b.width, 26);
-    dashboard::frame(s, notice, 2);
-    dashboard::text(s, notice, m.status && *m.status && !m.confirmEnabled ? m.status : tr(STR_HEARTS_PASS_NOTICE), 0);
+    cardart::drawCardFace(s, r, hand.at(n), fanned ? step : cardH, fanned ? cardart::Fan::Sideways : cardart::Fan::None,
+                          picked || legal ? cardart::Ink::Picked : cardart::Ink::Normal);
+    // The part of the card the player can see; hit-testing and the marks use the
+    // rect that drew it rather than recomputing geometry.
+    const int16_t visibleW = (fanned && n + 1 < hand.count) ? step : cardW;
+    if (picked) {
+      // A chosen card does not move (a lift cut through the status line and hid
+      // its neighbour's index); a tab inside its own visible sliver says it.
+      t.fill(fui::makeRect(r.x + 8, r.y + cardH - 32, visibleW - 16, 18), dashboard::ink, 6);
+    } else if (legal) {
+      t.stroke(fui::makeRect(r.x + 4, r.y + 4, visibleW - 8, r.height - 8), dashboard::ink, 2, 5);
+    }
+    dashboard::hit(s, fui::makeRect(r.x, r.y, visibleW, cardH), ActionHandCard, n);
   }
 }
 void buildScore(toybox::Screen& s, const ScoreModel& m) {
