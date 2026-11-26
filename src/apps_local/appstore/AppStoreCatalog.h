@@ -227,7 +227,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "dice", "DICE", "Xúc Xắc",
     "3D Dice roller physics", "Đổ xúc xắc 3D mô phỏng",
-    StoreCategory::Games, "/games", "dice.elf", 4752, "4.7 KB"
+    StoreCategory::Games, "/games", "dice.elf", 3152, "3.1 KB"
   },
   {
     "tictactoe", "TIC-TAC-TOE", "Cờ Caro",

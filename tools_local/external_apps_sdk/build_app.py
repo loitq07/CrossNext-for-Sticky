@@ -39,6 +39,7 @@ def build_app(app_dir, output_elf):
         "-mlongcalls",
         "-fPIC",
         "-shared",
+        "-nostartfiles",
         "-O2",
         "-Wall",
         "-Wextra",
