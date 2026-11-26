@@ -55,6 +55,7 @@ class PanelDriver {
                              uint16_t h, bool turnOff) {
     display(bus, fb, prev, RefreshMode::Fast, turnOff);
   }
+  virtual bool supportsFastWindow() const { return true; }
 
   // True when displayStart() defers (returns true) rather than completing
   // inline. Lets the facade skip async scaffolding (shadow setup) on blocking

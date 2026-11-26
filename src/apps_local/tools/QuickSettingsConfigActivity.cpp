@@ -23,13 +23,21 @@ void QuickSettingsConfigActivity::activateIndex(int index) {
   int selection = 0;
   if (slot < 0) {
     slot = index;
-    selection = SETTINGS.quickActions[slot];
+    uint8_t resolved[quickui::kSlots]{};
+    quickui::resolveQuickShortcuts(SETTINGS.quickActions, resolved, nullptr, 0);
+    for (int i = 0; i < choiceCount; ++i) {
+      if (uint8_t(choices[i]) == resolved[slot]) {
+        selection = i;
+        break;
+      }
+    }
   } else {
     selection = slot;
+    const uint8_t chosen = uint8_t(choices[index]);
     const uint8_t previous = SETTINGS.quickActions[slot];
-    for (int n = 0; n < 4; ++n)
-      if (n != slot && SETTINGS.quickActions[n] == index) SETTINGS.quickActions[n] = previous;
-    SETTINGS.quickActions[slot] = uint8_t(index);
+    for (int n = 0; n < quickui::kSlots; ++n)
+      if (n != slot && SETTINGS.quickActions[n] == chosen) SETTINGS.quickActions[n] = previous;
+    SETTINGS.quickActions[slot] = chosen;
     saveFailed = !SETTINGS.saveToFile();
     slot = -1;
   }
@@ -42,10 +50,12 @@ void QuickSettingsConfigActivity::buildScreen(UiScreen& screen) {
   pixelui::FontScope fonts(uiTarget, renderer, I18N.getLanguage() != Language::EN);
   useCompactSettingsRows();
   pixelui::begin(screen, saveFailed ? 52 : 0);
+  uint8_t resolved[quickui::kSlots]{};
+  quickui::resolveQuickShortcuts(SETTINGS.quickActions, resolved, nullptr, 0);
   for (int n = 0; n < listCount(); ++n) {
     rows[n] = {};
     rows[n].actionValue = n;
-    const auto shortcut = static_cast<quickui::Shortcut>(slot < 0 ? SETTINGS.quickActions[n] : n);
+    const auto shortcut = slot < 0 ? static_cast<quickui::Shortcut>(resolved[n]) : choices[n];
     rows[n].icon = freeink::ui::bitmapFromIcon(quickui::icon(shortcut));
     if (slot < 0) {
       std::snprintf(names[n], sizeof(names[n]), tr(STR_QUICK_SLOT), n + 1);
@@ -54,7 +64,7 @@ void QuickSettingsConfigActivity::buildScreen(UiScreen& screen) {
     } else {
       rows[n].label = quickui::label(shortcut);
       rows[n].toggle = true;
-      rows[n].toggleChecked = SETTINGS.quickActions[slot] == n;
+      rows[n].toggleChecked = resolved[slot] == uint8_t(shortcut);
     }
   }
   props = {};

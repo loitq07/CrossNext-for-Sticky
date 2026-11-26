@@ -35,8 +35,41 @@ class MappedInputManager {
     ScreenDown
   };
   enum class SwipeDir { None, Left, Right, Up, Down };
+  enum class EdgeSwipe : uint8_t { None, Left, Right, Top, Bottom };
+
+  struct EdgeSwipeContext {
+    bool allowBack = false;
+    bool allowHome = false;
+    bool allowReaderSettings = false;
+    bool allowLightPanel = false;
+  };
 
   void setEdgeBackEnabled(bool enabled) { edgeBackEnabled = enabled; }
+  void setEdgeSwipeContext(const EdgeSwipeContext& context) const { edgeContext = context; }
+  const EdgeSwipeContext& edgeSwipeContext() const { return edgeContext; }
+  EdgeSwipe armedEdgeSwipe() const { return edgeTrack.armedEdge; }
+  EdgeSwipe releasedEdgeSwipe() const { return edgeTrack.releasedEdge; }
+  int edgeSwipeAnchorX() const {
+    return edgeTrack.releasedEdge != EdgeSwipe::None ? edgeTrack.releasedAnchorX : edgeTrack.startX;
+  }
+  int edgeSwipeAnchorY() const {
+    return edgeTrack.releasedEdge != EdgeSwipe::None ? edgeTrack.releasedAnchorY : edgeTrack.startY;
+  }
+  bool wasEdgeIndicatorShown() const {
+    return edgeTrack.releasedEdge != EdgeSwipe::None ? edgeTrack.releasedIndicatorShown : edgeTrack.indicatorShown;
+  }
+  void noteEdgeIndicatorShown() const { edgeTrack.indicatorShown = true; }
+  bool wasEdgeFeedbackGiven() const {
+    return edgeTrack.releasedEdge != EdgeSwipe::None ? edgeTrack.releasedFeedbackGiven : edgeTrack.feedbackGiven;
+  }
+  void noteEdgeFeedbackGiven() const {
+    if (edgeTrack.releasedEdge != EdgeSwipe::None) {
+      edgeTrack.releasedFeedbackGiven = true;
+    } else {
+      edgeTrack.feedbackGiven = true;
+    }
+  }
+  void clearEdgeSwipeState() const { edgeTrack = {}; }
 
   struct Labels {
     const char* btn1;
@@ -253,6 +286,29 @@ class MappedInputManager {
   bool wasBottomEdgeUpSwipe() const;
   // Fetch the pending swipe (if any) and map both endpoints to logical screen coords
   bool decodeSwipe(int& sx, int& sy, int& ex, int& ey) const;
+  void updateEdgeSwipeTracking() const;
+  EdgeSwipe classifyEdgeSwipeMotion(int sx, int sy, int cx, int cy, bool releaseCheck) const;
+  bool edgeSwipeRetained(EdgeSwipe edge, int sx, int sy, int cx, int cy) const;
+
+  struct EdgeTrackState {
+    bool tracking = false;
+    int startX = 0;
+    int startY = 0;
+    int curX = 0;
+    int curY = 0;
+    unsigned long startMs = 0;
+    EdgeSwipe armedEdge = EdgeSwipe::None;
+    bool armedBeforeTimeout = false;
+    bool indicatorShown = false;
+    bool feedbackGiven = false;
+    EdgeSwipe releasedEdge = EdgeSwipe::None;
+    int releasedAnchorX = 0;
+    int releasedAnchorY = 0;
+    bool releasedIndicatorShown = false;
+    bool releasedFeedbackGiven = false;
+  };
+  mutable EdgeSwipeContext edgeContext{};
+  mutable EdgeTrackState edgeTrack{};
 #if FREEINK_CAP_TOUCH
   bool wasPowerConfirmClick() const;
 #endif

@@ -76,6 +76,8 @@ class Activity {
   // transitions so no filesystem code races a raw SD-card owner.
   virtual bool requiresExclusiveStorageLoop() const { return false; }
   virtual bool isReaderActivity() const { return false; }
+  virtual bool hasReadingOverlay() const { return false; }
+  virtual bool suppressesEdgeSwipeIndicator() const { return false; }
   virtual bool acceptsRemoteInput() const { return false; }
   virtual bool allowsRemoteControl() const { return remoteControlEnabled || acceptsRemoteInput() || isHomeActivity(); }
   // Configuration may retain the link while consuming raw buttons instead of executing them.

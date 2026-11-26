@@ -86,6 +86,8 @@ bool HalDisplay::displayWindow(uint16_t x, uint16_t y, uint16_t width, uint16_t 
   return true;
 }
 
+bool HalDisplay::supportsFastWindow() const { return einkDisplay.supportsFastWindow(); }
+
 void HalDisplay::waitRefreshComplete() { einkDisplay.waitRefreshComplete(); }
 
 bool HalDisplay::supportsAsyncRefresh() const { return einkDisplay.supportsAsyncRefresh(); }

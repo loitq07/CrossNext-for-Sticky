@@ -18,6 +18,7 @@
 #include "HapticFeedback.h"
 #include "OpdsServerStore.h"
 #include "apps_local/Shelf.h"
+#include "apps_local/readertext/ReaderMenuTrigger.h"
 #include "apps_local/ui/ToyboxFonts.h"
 #include "boot_sleep/BootActivity.h"
 #include "boot_sleep/SleepActivity.h"
@@ -221,6 +222,7 @@ void ActivityManager::loop() {
   // util/ButtonReleaseGate.h: the arm is what stops one physical press being
   // read by two activities, and this is the only thing that takes it back off.
   mappedInput.setEdgeBackEnabled(!currentActivity || currentActivity->allowsEdgeBack());
+  mappedInput.setEdgeSwipeContext(buildEdgeSwipeContext());
   mappedInput.settleReleaseGate();
 
   if (mappedInput.consumeSuppressedRelease()) return;
@@ -237,6 +239,8 @@ void ActivityManager::loop() {
   }
 
   if (currentActivity && pendingAction == PendingAction::None) {
+    stepEdgeSwipeIndicator();
+
     // Reading reserves the bottom edge for format-aware text/page settings.
     // Resolve it before the global Home gesture on boards without a Home key.
     if ((currentActivity->isReaderActivity() || mappedInput.wasReaderTextSettingsGesture()) &&
@@ -251,11 +255,11 @@ void ActivityManager::loop() {
       return;
     }
 
-    // Guarded on present() so a board without a frontlight never opens a panel
-    // for one. Pushed, so it returns to whatever was underneath -- including
-    // mid-book.
-    if (Frontlight.present() && currentActivity->name != "FrontlightPanel" && mappedInput.wasLightPanelGesture()) {
-      haptic_feedback::touchAction();
+    // Top-edge down-swipe opens Quick Settings on frontlight and touch boards.
+    // Pushed, so it returns to whatever was underneath -- including mid-book.
+    if ((Frontlight.present() || mappedInput.hasTouch()) && currentActivity->name != "FrontlightPanel" &&
+        mappedInput.wasLightPanelGesture()) {
+      if (!mappedInput.wasEdgeFeedbackGiven()) haptic_feedback::touchAction();
       pushActivity(std::make_unique<FrontlightPanelActivity>(renderer, mappedInput));
       return;
     }
@@ -264,6 +268,11 @@ void ActivityManager::loop() {
 
     // Note: do not hold a lock here, the loop() method must be responsible for acquire one if needed
     currentActivity->loop();
+  }
+
+  if (pendingAction != PendingAction::None && edgeSwipeIndicator.isVisible()) {
+    RenderLock lock(RenderLock::Mode::Try);
+    if (lock.ownsLock()) edgeSwipeIndicator.restoreBufferOnly(renderer, false, 0);
   }
 
   while (pendingAction != PendingAction::None) {
@@ -367,6 +376,10 @@ void ActivityManager::loop() {
     // Using direct notification to signal the render task to update
     // Increment counter so multiple rapid calls won't be lost
     if (renderTaskHandle) {
+      if (edgeSwipeIndicator.isVisible()) {
+        RenderLock lock(RenderLock::Mode::Try);
+        if (lock.ownsLock()) edgeSwipeIndicator.restoreBufferOnly(renderer, false, 0);
+      }
       notifyRepaint();
     }
   }
@@ -384,17 +397,104 @@ void ActivityManager::loop() {
 // crash report pops back through. host-tests/pickerseam asserts that no
 // assignment to currentActivity exists outside this function.
 void ActivityManager::setCurrentActivity(std::unique_ptr<Activity>&& next) {
+  edgeSwipeIndicator.clearPendingGlassCleanup();
   idleWorkOwner.store(nullptr);
   pendingRemoteTurns.clear();
   idleWorkCancelled.store(false);
   ++screenVisit;
   mappedInput.resetRemoteInput();
+  mappedInput.clearEdgeSwipeState();
   mappedInput.setReaderTextContext(false);
   mappedInput.swallowNextReleaseOfHeldButtons();
   currentActivity = std::move(next);
   UITheme::getInstance().setInterfaceSection(currentInterfaceFontSection());
   toybox::syncInterfaceFonts(renderer);
   mappedInput.setEdgeBackEnabled(!currentActivity || currentActivity->allowsEdgeBack());
+  mappedInput.setEdgeSwipeContext(buildEdgeSwipeContext());
+}
+
+MappedInputManager::EdgeSwipeContext ActivityManager::buildEdgeSwipeContext() const {
+  MappedInputManager::EdgeSwipeContext ctx{};
+  if (!currentActivity || currentActivity->requiresExclusiveStorageLoop() ||
+      currentActivity->suppressesEdgeSwipeIndicator()) {
+    return ctx;
+  }
+  const bool reader = currentActivity->isReaderActivity();
+  ctx.allowBack = currentActivity->allowsEdgeBack() && !reader;
+  ctx.allowHome = !currentActivity->isHomeActivity() && !reader && !gpio.hasHomeKey();
+  ctx.allowReaderSettings =
+      reader && !currentActivity->hasReadingOverlay() &&
+      (gpio.hasHomeKey() || readertext::menuTrigger(SETTINGS.readerTextTrigger) == readertext::MenuTrigger::SwipeUp);
+  ctx.allowLightPanel =
+      (Frontlight.present() || mappedInput.hasTouch()) && currentActivity->name != "FrontlightPanel";
+  return ctx;
+}
+
+void ActivityManager::stepEdgeSwipeIndicator() {
+  if (!mappedInput.hasTouch()) return;
+
+  if (renderInFlight.load() || requestedUpdate.load()) {
+    edgeSwipeIndicator.clearPendingGlassCleanup();
+    if (edgeSwipeIndicator.isVisible()) {
+      RenderLock lock(RenderLock::Mode::Try);
+      if (lock.ownsLock()) {
+        edgeSwipeIndicator.restoreBufferOnly(renderer, false, 0);
+      }
+    }
+    return;
+  }
+
+  const uint32_t now = millis();
+  const auto released = mappedInput.releasedEdgeSwipe();
+  if (released != MappedInputManager::EdgeSwipe::None) {
+    if (!mappedInput.wasEdgeFeedbackGiven()) {
+      haptic_feedback::touchAction();
+      mappedInput.noteEdgeFeedbackGiven();
+    }
+    RenderLock lock(RenderLock::Mode::Try);
+    if (lock.ownsLock()) {
+      if (edgeSwipeIndicator.isVisible()) {
+        edgeSwipeIndicator.restoreBufferOnly(renderer, true, now);
+      } else {
+        const auto icon = EdgeSwipeIndicator::iconForEdge(released, mappedInput.edgeSwipeContext());
+        edgeSwipeIndicator.flash(renderer, display, released, icon, mappedInput.edgeSwipeAnchorX(),
+                                 mappedInput.edgeSwipeAnchorY(), now);
+      }
+    }
+    return;
+  }
+
+  const auto armed = mappedInput.armedEdgeSwipe();
+  if (armed != MappedInputManager::EdgeSwipe::None) {
+    if (!edgeSwipeIndicator.isVisible()) {
+      if (!mappedInput.wasEdgeFeedbackGiven()) {
+        haptic_feedback::touchAction();
+        mappedInput.noteEdgeFeedbackGiven();
+      }
+      RenderLock lock(RenderLock::Mode::Try);
+      if (lock.ownsLock()) {
+        const auto icon = EdgeSwipeIndicator::iconForEdge(armed, mappedInput.edgeSwipeContext());
+        if (edgeSwipeIndicator.show(renderer, display, armed, icon, mappedInput.edgeSwipeAnchorX(),
+                                    mappedInput.edgeSwipeAnchorY())) {
+          mappedInput.noteEdgeIndicatorShown();
+        }
+      }
+    }
+    return;
+  }
+
+  if (edgeSwipeIndicator.isVisible()) {
+    RenderLock lock(RenderLock::Mode::Try);
+    if (lock.ownsLock()) {
+      edgeSwipeIndicator.hide(renderer, display);
+    }
+    return;
+  }
+
+  RenderLock lock(RenderLock::Mode::Try);
+  if (lock.ownsLock()) {
+    edgeSwipeIndicator.servicePendingGlassCleanup(renderer, display, now);
+  }
 }
 
 void ActivityManager::exitActivity(const RenderLock& lock) {
@@ -750,6 +850,7 @@ void ActivityManager::prepareForRestart() {
 }
 
 void ActivityManager::notifyRepaint() {
+  edgeSwipeIndicator.clearPendingGlassCleanup();
   idleWorkOwner.store(nullptr);
   repaintNotified.store(true);
   xTaskNotify(renderTaskHandle, 1, eIncrement);

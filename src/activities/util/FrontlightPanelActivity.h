@@ -36,6 +36,7 @@ class FrontlightPanelActivity final : public Activity, private UiAppHost {
   std::atomic<unsigned long> lastPanelPaint{0};
   bool suspendedForWifi = false;
   bool wifiConnected = false;
+  bool wifiActive = false;
   unsigned long lastClockPoll = 0;
   std::atomic<int> shownMinute{-1};
   int panelBottom = 0;
@@ -67,8 +68,10 @@ class FrontlightPanelActivity final : public Activity, private UiAppHost {
   void adjustWarmth(int delta);
   void toggleLight();
   void toggleWarmth();
-  void runTile(int idx);
+  void runTile(int idx, bool longPress = false);
   void openWifiSettings();
+  void openBluetoothSettings();
+  void toggleWifi();
   void syncLightState(bool useSavedWarmth = false);
   void syncBluetoothState(bluetoothui::State state);
   // Copy the panel's live brightness/warmth/lightOn into SETTINGS and save if
@@ -89,5 +92,6 @@ class FrontlightPanelActivity final : public Activity, private UiAppHost {
   void loop() override;
   void render(RenderLock&&) override;
   bool handleHomeGesture() override;
+  bool suppressesEdgeSwipeIndicator() const override { return draggingSlider; }
   bool allowsRemoteControl() const override { return true; }
 };

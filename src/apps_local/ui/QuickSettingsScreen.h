@@ -56,6 +56,10 @@ inline const char* label(Shortcut shortcut, bool lightOn = true, bool warmOn = t
       return tr(STR_POWER_OFF);
     case Shortcut::Restart:
       return tr(STR_POWER_RESTART);
+    case Shortcut::KeySound:
+      return tr(STR_KEY_SOUND);
+    case Shortcut::Tilt:
+      return tr(STR_TILT_PAGE_TURN);
     case Shortcut::Count:
       break;
   }
@@ -74,6 +78,9 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
   static constexpr freeink::Icon bluetooth{64, 64, 32, settingsicons::QuickBluetoothBits};
   static constexpr freeink::Icon lock{64, 64, 32, settingsicons::QuickLockBits};
   static constexpr freeink::Icon power{64, 64, 32, settingsicons::QuickPowerBits};
+  static constexpr freeink::Icon keySound{64, 64, 32, settingsicons::QuickKeySoundBits};
+  static constexpr freeink::Icon keySoundOff{64, 64, 32, settingsicons::QuickKeySoundOffBits};
+  static constexpr freeink::Icon tilt{64, 64, 32, settingsicons::QuickTiltBits};
   switch (shortcut) {
     case Shortcut::Dark:
     case Shortcut::Sleep:
@@ -95,6 +102,10 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
       return lock;
     case Shortcut::Off:
       return power;
+    case Shortcut::KeySound:
+      return on ? keySound : keySoundOff;
+    case Shortcut::Tilt:
+      return tilt;
     case Shortcut::Count:
       break;
   }
@@ -119,6 +130,9 @@ struct Model {
   bool wifiConnected = false, charging = false, shadeBackdrop = true;
   bool rotateRight = false;
   bool light = true, temperature = true, night = false, touch = true, touchOn = true, lightOn = true;
+  uint8_t extraShortcuts[4] = {0, 0, 0, 0};
+  uint8_t extraCount = 0;
+  bool keySoundOn = false, tiltOn = false, wifiActive = false;
 };
 struct Work {
   fui::ButtonProps button;
@@ -127,11 +141,13 @@ struct Work {
 };
 struct Layout {
   fui::Rect header, tiles, brightness, warmth;
+  int tileRowHeight = 0, tileRowGap = 0;
   int bottom = 0;
 };
 inline bool hasBluetoothStatus(bluetoothui::State state) {
   return state != bluetoothui::State::Off && state != bluetoothui::State::Unavailable;
 }
+inline int headerBarHeight(const fui::DeviceContext& device, bool bluetooth);
 struct BluetoothSpacing {
   int banner, gap, tilesGap, sectionGap, rowGap, footer;
 };
@@ -140,7 +156,7 @@ inline int headerBarHeight(const fui::DeviceContext& device, bool bluetooth) {
   return chrome::lightHeader || (bluetooth && device.width > device.height) ? 44 : (bluetooth ? 56 : 66);
 }
 inline Layout layout(const fui::DeviceContext& device, bool light, bool temperature, bool touch,
-                     bool bluetooth = false) {
+                     bool bluetooth = false, bool extraRow = false) {
   const auto safe = device.safeRect();
   const bool wide = device.width > device.height;
   const int x = safe.x + 18, width = safe.width - 36;
@@ -158,12 +174,20 @@ inline Layout layout(const fui::DeviceContext& device, bool light, bool temperat
                           : fui::makeRect(x, y + 92 + (bluetooth ? kBluetoothSpacing.rowGap : 12), rowWidth, 92);
       y = temperature ? out.warmth.bottom() : out.brightness.bottom();
     }
-    out.tiles = fui::makeRect(x, y + (bluetooth ? 20 : 14), width, touch ? (bluetooth ? 104 : 96) : 0);
+    const int rowH = bluetooth ? 104 : 96;
+    const int gap = 8;
+    out.tileRowHeight = touch ? rowH : 0;
+    out.tileRowGap = touch && extraRow ? gap : 0;
+    out.tiles = fui::makeRect(x, y + (bluetooth ? 20 : 14), width, touch ? (extraRow ? rowH * 2 + gap : rowH) : 0);
     out.bottom = std::min<int>(safe.bottom(), out.tiles.bottom() + (bluetooth ? kBluetoothSpacing.footer : 46));
     return out;
   }
+  const int rowH = wide ? (bluetooth ? (extraRow ? 112 : 120) : (extraRow ? 118 : 128)) : (extraRow ? 140 : 152);
+  const int gap = wide ? 8 : 10;
+  out.tileRowHeight = touch ? rowH : 0;
+  out.tileRowGap = touch && extraRow ? gap : 0;
   out.tiles = fui::makeRect(x, out.header.bottom() + (bluetooth ? (wide ? 12 : kBluetoothSpacing.tilesGap) : 10), width,
-                            touch ? (wide ? (bluetooth ? 120 : 128) : 152) : 0);
+                            touch ? (extraRow ? rowH * 2 + gap : rowH) : 0);
   int y = out.tiles.bottom() + (touch ? (bluetooth ? (wide ? 16 : kBluetoothSpacing.sectionGap) : 24) : 8);
   if (light) {
     const int rowW = wide && temperature ? (width - 24) / 2 : width;
@@ -260,10 +284,83 @@ void slider(Screen& screen, const Model& model, Work& work, fui::Rect box, bool 
     screen.button(work.button, fui::makeRect(box.x, box.y, 44, 44));
   }
 }
+inline bool isShortcutChecked(Shortcut shortcut, const Model& model) {
+  switch (shortcut) {
+    case Shortcut::Dark:
+      return model.night;
+    case Shortcut::Wifi:
+      return model.wifiActive || model.wifiConnected;
+    case Shortcut::Bluetooth:
+      return hasBluetoothStatus(model.bluetooth);
+    case Shortcut::Light:
+      return model.lightOn;
+    case Shortcut::Warm:
+      return model.warmth > 0;
+    case Shortcut::KeySound:
+      return model.keySoundOn;
+    case Shortcut::Tilt:
+      return model.tiltOn;
+    case Shortcut::Lock:
+      return !model.touchOn;
+    default:
+      return false;
+  }
+}
+inline bool isShortcutIconOn(Shortcut shortcut, const Model& model) {
+  if (shortcut == Shortcut::Warm) return model.warmth > 0;
+  if (shortcut == Shortcut::KeySound) return model.keySoundOn;
+  return model.lightOn;
+}
+template <typename Screen>
+void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tilesRect, int rowY, int rowHeight,
+                 const uint8_t* shortcuts, int count) {
+  const int width = tilesRect.width / 4;
+  const int size = chrome::lightHeader ? 44 : std::min(96, rowHeight - 54);
+  const int iconSize = chrome::lightHeader ? 30 : (size < 68 ? 40 : 48);
+  for (int n = 0; n < count; ++n) {
+    const auto shortcut = static_cast<Shortcut>(shortcuts[n]);
+    const auto box = fui::makeRect(tilesRect.x + width * n + (width - size) / 2, rowY, size, size);
+    work.button = {};
+    work.button.styles = pixelui::buttonStyles();
+    work.button.icon = fui::bitmapFromIcon(icon(shortcut, isShortcutIconOn(shortcut, model), model.rotateRight));
+    work.button.iconSize = iconSize;
+    if (chrome::lightHeader) {
+      work.button.styles = lightui::controlStyles(true);
+      if (shortcut == Shortcut::Light || shortcut == Shortcut::Warm) {
+        auto& styles = work.button.styles;
+        styles.selected.background = styles.focused.background = styles.active.background = lightui::paper;
+        styles.selected.borderWidth = styles.focused.borderWidth = styles.active.borderWidth = 0;
+      }
+    }
+    work.button.state = isShortcutChecked(shortcut, model) ? fui::StateChecked : fui::StateNormal;
+    work.button.inputMask = fui::InputTouch | fui::InputLongPress;
+    work.button.action = Tile;
+    work.button.value = shortcuts[n];
+    work.button.minTouchSize = 0;
+    screen.button(work.button, box);
+    if (shortcut == Shortcut::Bluetooth)
+      std::snprintf(work.label, sizeof(work.label), "%s\n%s", tr(STR_BT_SHORT_NAME),
+                    I18N.get(bluetoothui::shortLabel(model.bluetooth)));
+    else if (chrome::lightHeader)
+      pixelui::copyNatural(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
+    else
+      pixelui::copyCaps(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
+    fui::TextStyle caption;
+    caption.font = chrome::lightHeader ? fui::HEADER_CLOCK_FONT : 3;
+    caption.align = fui::TextAlign::Center;
+    caption.maxLines = 2;
+    const auto captionRect = fui::makeRect(tilesRect.x + n * width, box.bottom() + 6, width, 46);
+    const auto previousClip = screen.target().clipRect();
+    const bool clipped = screen.target().setClipRect(intersect(previousClip, captionRect));
+    screen.target().text(captionRect, work.label, caption);
+    if (clipped) screen.target().setClipRect(previousClip);
+  }
+}
 template <typename Screen>
 void build(Screen& screen, const Model& model, Work& work) {
   const bool bluetooth = hasBluetoothStatus(model.bluetooth);
-  const auto g = layout(screen.device(), model.light, model.temperature, model.touch, bluetooth);
+  const bool extraRow = model.extraCount > 0;
+  const auto g = layout(screen.device(), model.light, model.temperature, model.touch, bluetooth, extraRow);
   const auto bar = fui::makeRect(g.header.x, g.header.y, g.header.width, headerBarHeight(screen.device(), bluetooth));
   fui::SheetProps sheet;
   sheet.radius = 0;
@@ -307,49 +404,11 @@ void build(Screen& screen, const Model& model, Work& work) {
     fittext::draw(screen.target(), banner.inset({4, 12, 4, 12}), work.label, status, 1);
   }
   if (model.touch) {
-    const int width = g.tiles.width / 4;
-    const int size = chrome::lightHeader ? 44 : std::min(96, int(g.tiles.height) - 54);
-    for (int n = 0; n < 4; ++n) {
-      const auto shortcut = static_cast<Shortcut>(model.shortcuts[n]);
-      const auto box = fui::makeRect(g.tiles.x + width * n + (width - size) / 2, g.tiles.y, size, size);
-      work.button = {};
-      work.button.styles = pixelui::buttonStyles();
-      work.button.icon = fui::bitmapFromIcon(
-          icon(shortcut, shortcut == Shortcut::Warm ? model.warmth > 0 : model.lightOn, model.rotateRight));
-      work.button.iconSize = chrome::lightHeader ? 30 : 48;
-      if (chrome::lightHeader) {
-        work.button.styles = lightui::controlStyles(true);
-        auto& styles = work.button.styles;
-        styles.selected.background = styles.focused.background = styles.active.background = lightui::paper;
-        const int border = shortcut == Shortcut::Light || shortcut == Shortcut::Warm ? 0 : 1;
-        styles.selected.borderWidth = styles.focused.borderWidth = styles.active.borderWidth = border;
-      }
-      work.button.state =
-          (shortcut == Shortcut::Dark && model.night) || (shortcut == Shortcut::Wifi && model.wifiConnected) ||
-                  (shortcut == Shortcut::Bluetooth && model.bluetooth == bluetoothui::State::Connected) ||
-                  (shortcut == Shortcut::Light && model.lightOn) || (shortcut == Shortcut::Warm && model.warmth > 0)
-              ? fui::StateChecked
-              : fui::StateNormal;
-      work.button.action = Tile;
-      work.button.value = model.shortcuts[n];
-      work.button.minTouchSize = 0;
-      screen.button(work.button, box);
-      if (shortcut == Shortcut::Bluetooth)
-        std::snprintf(work.label, sizeof(work.label), "%s\n%s", tr(STR_BT_SHORT_NAME),
-                      I18N.get(bluetoothui::shortLabel(model.bluetooth)));
-      else if (chrome::lightHeader)
-        pixelui::copyNatural(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
-      else
-        pixelui::copyCaps(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
-      fui::TextStyle caption;
-      caption.font = chrome::lightHeader ? fui::HEADER_CLOCK_FONT : 3;
-      caption.align = fui::TextAlign::Center;
-      caption.maxLines = 2;
-      const auto captionRect = fui::makeRect(g.tiles.x + n * width, box.bottom() + 6, width, 46);
-      const auto previousClip = screen.target().clipRect();
-      const bool clipped = screen.target().setClipRect(intersect(previousClip, captionRect));
-      screen.target().text(captionRect, work.label, caption);
-      if (clipped) screen.target().setClipRect(previousClip);
+    drawTileRow(screen, model, work, g.tiles, g.tiles.y, g.tileRowHeight, model.shortcuts, 4);
+    if (extraRow) {
+      const int row2Y = g.tiles.y + g.tileRowHeight + g.tileRowGap;
+      const int row2Count = std::min<int>(4, model.extraCount);
+      drawTileRow(screen, model, work, g.tiles, row2Y, g.tileRowHeight, model.extraShortcuts, row2Count);
     }
     if (!chrome::lightHeader)
       screen.target().fill(fui::makeRect(g.tiles.x, g.tiles.bottom() + 10, g.tiles.width, 3),

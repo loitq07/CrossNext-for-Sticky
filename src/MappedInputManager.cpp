@@ -63,6 +63,7 @@ void MappedInputManager::update(const bool deferHomeButtonAction) const {
   // Settle physical release ownership before deriving an action from it.
   // Repeating this for the same frame's edges is idempotent.
   settleReleaseGate();
+  updateEdgeSwipeTracking();
   sideEvent = {};
   const uint8_t readerHeld =
       (gpio.isPressed(HalGPIO::BTN_UP) && !releaseGate.swallowsRelease(HalGPIO::BTN_UP) ? 1u : 0u) |
@@ -411,10 +412,159 @@ MappedInputManager::SwipeDir MappedInputManager::wasSwipe() const {
   }
 }
 
+namespace {
+constexpr int kLiveSwipeMinPx = 60;
+constexpr int kLiveSwipeCancelPx = 36;
+constexpr unsigned long kLiveSwipeWindowMs = 700;
+
+MappedInputManager::EdgeSwipe toEdgeSwipe(const fui::ScreenEdge edge) {
+  switch (edge) {
+    case fui::ScreenEdge::Left:
+      return MappedInputManager::EdgeSwipe::Left;
+    case fui::ScreenEdge::Right:
+      return MappedInputManager::EdgeSwipe::Right;
+    case fui::ScreenEdge::Top:
+      return MappedInputManager::EdgeSwipe::Top;
+    case fui::ScreenEdge::Bottom:
+      return MappedInputManager::EdgeSwipe::Bottom;
+  }
+  return MappedInputManager::EdgeSwipe::None;
+}
+}  // namespace
+
+MappedInputManager::EdgeSwipe MappedInputManager::classifyEdgeSwipeMotion(const int sx, const int sy, const int cx,
+                                                                          const int cy, const bool /*releaseCheck*/) const {
+  const int width = renderer.getScreenWidth();
+  const int height = renderer.getScreenHeight();
+  if (width <= 0 || height <= 0) return EdgeSwipe::None;
+
+  const int dx = cx - sx;
+  const int dy = cy - sy;
+  const int adx = std::abs(dx);
+  const int ady = std::abs(dy);
+
+  if (edgeContext.allowBack) {
+    const int sideBand = static_cast<int>(width * fui::EDGE_SWIPE_SIDE_FRAC);
+    if (sx <= sideBand && dx >= kLiveSwipeMinPx && adx > ady) return EdgeSwipe::Left;
+    if (sx >= width - sideBand && (-dx) >= kLiveSwipeMinPx && adx > ady) return EdgeSwipe::Right;
+  }
+  if (edgeContext.allowHome || edgeContext.allowReaderSettings) {
+    const int bottomBand = static_cast<int>(height * 0.08f);
+    const int minBottom = std::max(kLiveSwipeMinPx, height * 12 / 100);
+    if (sy >= height - bottomBand && (-dy) >= minBottom && ady > adx) return EdgeSwipe::Bottom;
+  }
+  if (edgeContext.allowLightPanel) {
+    const int topBand = static_cast<int>(height * fui::EDGE_SWIPE_TOP_BOTTOM_FRAC);
+    if (sy <= topBand && dy >= kLiveSwipeMinPx && ady > adx) return EdgeSwipe::Top;
+  }
+  return EdgeSwipe::None;
+}
+
+bool MappedInputManager::edgeSwipeRetained(const EdgeSwipe edge, const int sx, const int sy, const int cx,
+                                           const int cy) const {
+  const int height = renderer.getScreenHeight();
+  const int cancelBottom = std::max(kLiveSwipeCancelPx, height * 7 / 100);
+  switch (edge) {
+    case EdgeSwipe::Left:
+      return (cx - sx) >= kLiveSwipeCancelPx;
+    case EdgeSwipe::Right:
+      return (sx - cx) >= kLiveSwipeCancelPx;
+    case EdgeSwipe::Bottom:
+      return (sy - cy) >= cancelBottom;
+    case EdgeSwipe::Top:
+      return (cy - sy) >= kLiveSwipeCancelPx;
+    case EdgeSwipe::None:
+    default:
+      return false;
+  }
+}
+
+void MappedInputManager::updateEdgeSwipeTracking() const {
+  edgeTrack.releasedEdge = EdgeSwipe::None;
+  edgeTrack.releasedAnchorX = 0;
+  edgeTrack.releasedAnchorY = 0;
+  edgeTrack.releasedIndicatorShown = false;
+  edgeTrack.releasedFeedbackGiven = false;
+
+  if (!gpio.hasTouch() || isTouchscreenLocked()) {
+    edgeTrack = {};
+    return;
+  }
+
+  int x = 0;
+  int y = 0;
+  if (wasScreenTouchPressed(x, y)) {
+    edgeTrack.tracking = true;
+    edgeTrack.startX = x;
+    edgeTrack.startY = y;
+    edgeTrack.curX = x;
+    edgeTrack.curY = y;
+    edgeTrack.startMs = millis();
+    edgeTrack.armedEdge = EdgeSwipe::None;
+    edgeTrack.armedBeforeTimeout = false;
+    edgeTrack.indicatorShown = false;
+    edgeTrack.feedbackGiven = false;
+    return;
+  }
+
+  if (edgeTrack.tracking && isScreenTouchHeld(x, y)) {
+    edgeTrack.curX = x;
+    edgeTrack.curY = y;
+    if (edgeTrack.armedEdge == EdgeSwipe::None) {
+      if (millis() - edgeTrack.startMs <= kLiveSwipeWindowMs) {
+        const EdgeSwipe matched =
+            classifyEdgeSwipeMotion(edgeTrack.startX, edgeTrack.startY, edgeTrack.curX, edgeTrack.curY, false);
+        if (matched != EdgeSwipe::None) {
+          edgeTrack.armedEdge = matched;
+          edgeTrack.armedBeforeTimeout = true;
+        }
+      }
+    } else if (!edgeSwipeRetained(edgeTrack.armedEdge, edgeTrack.startX, edgeTrack.startY, edgeTrack.curX,
+                                  edgeTrack.curY)) {
+      edgeTrack.armedEdge = EdgeSwipe::None;
+      edgeTrack.armedBeforeTimeout = false;
+    }
+    return;
+  }
+
+  if (wasScreenTouchReleased()) {
+    if (edgeTrack.tracking && edgeTrack.armedEdge != EdgeSwipe::None && edgeTrack.armedBeforeTimeout) {
+      edgeTrack.releasedEdge = edgeTrack.armedEdge;
+      edgeTrack.releasedAnchorX = edgeTrack.startX;
+      edgeTrack.releasedAnchorY = edgeTrack.startY;
+      edgeTrack.releasedIndicatorShown = edgeTrack.indicatorShown;
+      edgeTrack.releasedFeedbackGiven = edgeTrack.feedbackGiven;
+    } else {
+      int sx = 0;
+      int sy = 0;
+      int ex = 0;
+      int ey = 0;
+      if (decodeSwipe(sx, sy, ex, ey)) {
+        const EdgeSwipe matched = classifyEdgeSwipeMotion(sx, sy, ex, ey, true);
+        if (matched != EdgeSwipe::None) {
+          edgeTrack.releasedEdge = matched;
+          edgeTrack.releasedAnchorX = sx;
+          edgeTrack.releasedAnchorY = sy;
+        }
+      }
+    }
+    edgeTrack.tracking = false;
+    edgeTrack.armedEdge = EdgeSwipe::None;
+    edgeTrack.armedBeforeTimeout = false;
+    edgeTrack.indicatorShown = false;
+    edgeTrack.feedbackGiven = false;
+  }
+}
+
 // Edge classification (which swipe counts as an edge gesture) lives in the
 // SDK; only the MEANING of each edge — back, menu, home, light panel, and the
 // home-key remap — is decided here.
 bool MappedInputManager::wasEdgeSwipe(const freeink::ui::ScreenEdge edge) const {
+  if (edgeTrack.releasedEdge != EdgeSwipe::None) {
+    const bool hit = edgeTrack.releasedEdge == toEdgeSwipe(edge);
+    if (hit) rememberTouchHeldTime();
+    return hit;
+  }
   int sx = 0;
   int sy = 0;
   int ex = 0;
@@ -461,10 +611,13 @@ bool MappedInputManager::wasBackGesture() const {
   // mid-screen horizontal swipes stay available to activities that consume
   // SwipeDir::Left/Right (e.g. percent selection, image viewer).
   if (edgeBackEnabled && (wasEdgeSwipe(fui::ScreenEdge::Left) || wasEdgeSwipe(fui::ScreenEdge::Right))) {
-    static unsigned long lastEdgeSwipeFeedback = 0;
-    if (millis() - lastEdgeSwipeFeedback > 250) {
-      lastEdgeSwipeFeedback = millis();
-      haptic_feedback::touchAction();
+    if (!edgeTrack.releasedFeedbackGiven) {
+      static unsigned long lastEdgeSwipeFeedback = 0;
+      if (millis() - lastEdgeSwipeFeedback > 250) {
+        lastEdgeSwipeFeedback = millis();
+        haptic_feedback::touchAction();
+      }
+      edgeTrack.releasedFeedbackGiven = true;
     }
     return true;
   }
@@ -487,8 +640,7 @@ bool MappedInputManager::wasHomeGesture() const {
 }
 
 bool MappedInputManager::wasLightPanelGesture() const {
-  // On lightless boards the same edge remains available to the reader menu.
-  return Frontlight.present() && wasTopEdgeDownSwipe();
+  return (Frontlight.present() || gpio.hasTouch()) && wasTopEdgeDownSwipe();
 }
 
 #if FREEINK_CAP_TOUCH

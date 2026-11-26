@@ -30,6 +30,7 @@ class ClipSelectionActivity final : public Activity {
   void loop() override;
   void render(RenderLock&&) override;
   bool isReaderActivity() const override { return true; }
+  bool suppressesEdgeSwipeIndicator() const override { return true; }
   bool handleHomeGesture() override;
 
  private:

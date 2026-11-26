@@ -14,6 +14,7 @@
 #include "GfxRenderer.h"
 #include "MappedInputManager.h"
 #include "apps_local/ui/PendingPageTurns.h"
+#include "components/EdgeSwipeIndicator.h"
 #include "util/MenuFontStyle.h"
 #include "util/ScreenshotInfo.h"
 
@@ -95,6 +96,9 @@ class ActivityManager {
   std::atomic<bool> repaintNotified{false};
   std::atomic<bool> renderInFlight{false};
   std::atomic<Activity*> idleWorkOwner{nullptr};
+  EdgeSwipeIndicator edgeSwipeIndicator;
+  MappedInputManager::EdgeSwipeContext buildEdgeSwipeContext() const;
+  void stepEdgeSwipeIndicator();
   void notifyRepaint();
 
   // millis() at the moment a repaint was first asked for, or 0 when none is

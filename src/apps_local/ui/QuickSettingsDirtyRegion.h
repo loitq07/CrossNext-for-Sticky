@@ -18,7 +18,7 @@ inline fui::Rect dirtyRegion(const Model& before, const Model& after, const Layo
     dirty = fui::makeRect(left, top, right - left, bottom - top);
   };
   if (before.light != after.light || before.temperature != after.temperature || before.touch != after.touch ||
-      before.night != after.night)
+      before.night != after.night || (before.extraCount > 0) != (after.extraCount > 0))
     return fui::makeRect(0, 0, width, layout.bottom);
   if (hasBluetoothStatus(before.bluetooth) != hasBluetoothStatus(after.bluetooth))
     return fui::makeRect(0, 0, width, layout.bottom);
@@ -29,8 +29,11 @@ inline fui::Rect dirtyRegion(const Model& before, const Model& after, const Layo
   if (before.warmth != after.warmth || before.lightOn != after.lightOn) add(layout.warmth);
   if (before.lightOn != after.lightOn || (before.warmth == 0) != (after.warmth == 0) ||
       before.bluetooth != after.bluetooth || before.wifiConnected != after.wifiConnected ||
-      before.touchOn != after.touchOn || before.rotateRight != after.rotateRight ||
-      std::memcmp(before.shortcuts, after.shortcuts, sizeof(before.shortcuts)))
+      before.wifiActive != after.wifiActive || before.keySoundOn != after.keySoundOn ||
+      before.tiltOn != after.tiltOn || before.touchOn != after.touchOn ||
+      before.rotateRight != after.rotateRight || before.extraCount != after.extraCount ||
+      std::memcmp(before.shortcuts, after.shortcuts, sizeof(before.shortcuts)) ||
+      std::memcmp(before.extraShortcuts, after.extraShortcuts, sizeof(before.extraShortcuts)))
     add(layout.tiles);
   // Unchanged model can still carry a pressed/released interaction style.
   return dirty.empty() ? fui::makeRect(0, 0, width, layout.bottom) : dirty;

@@ -332,7 +332,7 @@ void SettingsActivity::rebuildSettingsLists() {
                         SettingInfo::Action(StrId::STR_MANAGE_FONTS, SettingAction::DownloadFonts));
   readerSettings.push_back(SettingInfo::Action(StrId::STR_SETTINGS_MANGA, SettingAction::Manga));
   readerSettings.push_back(SettingInfo::Action(StrId::STR_CUSTOMISE_STATUS_BAR, SettingAction::CustomiseStatusBar));
-  if (Frontlight.present())
+  if (Frontlight.present() || BoardConfig::hasTouch())
     displaySettings.push_back(SettingInfo::Action(StrId::STR_QUICK_CUSTOMISE, SettingAction::QuickSettings));
 
   // Stable insertion ordering uses the existing vectors without a sorting allocation.

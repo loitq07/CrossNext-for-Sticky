@@ -93,7 +93,7 @@ class ReaderActivity : public Activity {
   virtual bool canStartRemoteRadio() const { return true; }
   virtual bool inputOverPage() const { return endOfBookMenuActive(); }
   virtual bool readerMenuTapAllowed(int, int) const { return true; }
-  virtual bool hasReadingOverlay() const { return inputOverPage(); }
+  bool hasReadingOverlay() const override { return inputOverPage(); }
   virtual bool isAtEndOfBook() const = 0;
   // Called with the render lock held, after the completion record is durable.
   virtual bool saveFinishedPosition() = 0;
