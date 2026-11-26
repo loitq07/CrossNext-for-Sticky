@@ -33,41 +33,38 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Đồng bộ giao diện CrossNext cho 23 game";
-    rowSubtitles_[0] = "Header chuẩn CDS với pin, đồng hồ, nút bo góc r=6";
+    rowLabels_[0] = "1. Bảng Quick Settings nhiều toggle cho Sticky";
+    rowSubtitles_[0] = "Bật/tắt nhanh Wi-Fi, Bluetooth, Âm phím, Nghiêng lật trang";
 
-    rowLabels_[1] = "2. Thêm 23 game mới từ Pocket Play";
-    rowSubtitles_[1] = "Tải từ App Store: Sokoban, Zork, Suguru, Queens...";
+    rowLabels_[1] = "2. Chỉ báo vuốt cạnh màn hình (kiểu Boox)";
+    rowSubtitles_[1] = "Hiện tai nổi & icon Back/Home/Menu theo vị trí vuốt";
 
-    rowLabels_[2] = "3. Dòng kẻ chấm dưới chữ trong sách";
-    rowSubtitles_[2] = "Bật dòng kẻ trang vở, dễ theo dõi dòng đọc";
+    rowLabels_[2] = "3. Sửa lỗi chạy app ngoài từ App Store";
+    rowSubtitles_[2] = "Liên kết lại Dice & External Apps SDK (-nostartfiles)";
 
-    rowLabels_[3] = "4. App Store: Tab Ngôn ngữ & Tài nguyên";
-    rowSubtitles_[3] = "Tách tab riêng tải gói tiếng Việt và đồ họa";
+    rowLabels_[3] = "4. Book Preparer Desktop & tuỳ biến Sticky";
+    rowSubtitles_[3] = "Đổi nhãn thiết bị sang Sticky, tuỳ chỉnh 4 ô hàng đầu";
 
-    rowLabels_[4] = "5. Điều khiển Bluetooth & Remote";
-    rowSubtitles_[4] = "Ghép remote BLE, gán phím và lật trang";
+    rowLabels_[4] = "5. Nền tảng v2.0.5 (23 game Pocket Play)";
+    rowSubtitles_[4] = "Giao diện CrossNext CDS, dòng kẻ sách & remote BLE";
 
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. CrossNext CDS UI sync for 23 games";
-    rowSubtitles_[0] = "Native header with battery, clock, and r=6 rounded buttons";
+    rowLabels_[0] = "1. Multi-toggle Quick Settings panel on Sticky";
+    rowSubtitles_[0] = "Toggle Wi-Fi, Bluetooth, Key Sound, Tilt Turn & Night Mode";
 
-    rowLabels_[1] = "2. 23 new games from Pocket Play";
-    rowSubtitles_[1] = "Download from App Store: Sokoban, Zork, Suguru...";
+    rowLabels_[1] = "2. Edge swipe visual indicator";
+    rowSubtitles_[1] = "Floating Boox-style pill with Back/Home/Menu/Panel icon";
 
-    rowLabels_[2] = "3. Dotted line guides in reader";
-    rowSubtitles_[2] = "Ruled-paper look, easier to follow reading";
+    rowLabels_[2] = "3. Fixed App Store external app launch";
+    rowSubtitles_[2] = "Updated Dice & External Apps SDK link flags (-nostartfiles)";
 
-    rowLabels_[2] = "3. CrossNext 2.0 foundation";
-    rowSubtitles_[2] = "Reader and library updates from 2.0.3";
+    rowLabels_[3] = "4. Desktop Preparer & Quick Settings customizer";
+    rowSubtitles_[3] = "Sticky sidebar branding and hardware-filtered slots";
 
-    rowLabels_[3] = "4. App Store: Languages & Resources";
-    rowSubtitles_[3] = "Dedicated tabs for language packs and assets";
-
-    rowLabels_[4] = "5. Bluetooth & remotes";
-    rowSubtitles_[4] = "Pair BLE remotes, map keys and turn pages";
+    rowLabels_[4] = "5. CrossNext v2.0.5 base (23 Pocket Play games)";
+    rowSubtitles_[4] = "CDS game UI sync, ruled reading lines & BLE remotes";
 
     rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";

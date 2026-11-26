@@ -52,7 +52,7 @@ inline const StoreItem kStoreItems[] = {
   {
     "minesweeper", "MINESWEEPER", "Dò Mìn",
     "Classic grid minefield", "Trò chơi dò mìn kinh điển",
-    StoreCategory::Games, "/games", "minesweeper.elf", 1912160, "1867.3 KB", true
+    StoreCategory::Games, "/games", "minesweeper.elf", 129092, "126.1 KB", true
   },
   {
     "picross", "PICROSS", "Picross",
@@ -232,117 +232,117 @@ inline const StoreItem kStoreItems[] = {
   {
     "tictactoe", "TIC-TAC-TOE", "Cờ Caro",
     "Classic 3x3 tic-tac-toe", "Trò chơi cờ ca-rô đối kháng kinh điển",
-    StoreCategory::Games, "/games", "tictactoe.elf", 128736, "125.7 KB", true
+    StoreCategory::Games, "/games", "tictactoe.elf", 130316, "127.3 KB", true
   },
   {
     "dungeon", "D&DIAGRAMS", "Mê Cung D&D",
     "64 dungeon logic puzzles", "64 câu đố hầm ngục logic D&D",
-    StoreCategory::Games, "/games", "dungeon.elf", 157024, "153.3 KB", true
+    StoreCategory::Games, "/games", "dungeon.elf", 157364, "153.7 KB", true
   },
   {
     "oneclue", "ONE CLUE", "Ô Chữ Manh Mối",
     "One-clue crossword puzzle", "Ô chữ giải đố qua một manh mối",
-    StoreCategory::Games, "/games", "oneclue.elf", 141832, "138.5 KB", true
+    StoreCategory::Games, "/games", "oneclue.elf", 142164, "138.8 KB", true
   },
   {
     "lightsout", "LIGHTS OUT", "Tắt Đèn",
     "5x5 light toggle logic puzzle", "Giải đố lật ô tắt hết đèn",
-    StoreCategory::Games, "/games", "lightsout.elf", 132856, "129.7 KB", true
+    StoreCategory::Games, "/games", "lightsout.elf", 133400, "130.3 KB", true
   },
   {
     "suguru", "SUGURU", "Suguru",
     "800 regional number logic puzzles", "800 câu đố điền số vùng logic",
-    StoreCategory::Games, "/games", "suguru.elf", 228532, "223.2 KB", true
+    StoreCategory::Games, "/games", "suguru.elf", 230120, "224.7 KB", true
   },
   {
     "sokoban", "SOKOBAN", "Sokoban",
     "Push boxes onto goals (385 levels)", "Đẩy hộp vào đích 385 màn",
-    StoreCategory::Games, "/games", "sokoban.elf", 220064, "214.9 KB", true
+    StoreCategory::Games, "/games", "sokoban.elf", 220816, "215.6 KB", true
   },
   {
     "queens", "QUEENS", "Đặt Hậu",
     "1200 queens and star battle puzzles", "1200 câu đố đặt hậu và ngôi sao",
-    StoreCategory::Games, "/games", "queens.elf", 263916, "257.7 KB", true
+    StoreCategory::Games, "/games", "queens.elf", 265844, "259.6 KB", true
   },
   {
     "symboldice", "SYMBOL DICE", "Xúc Xắc Ký Hiệu",
     "Storytelling symbol dice", "Đổ xúc xắc biểu tượng phiêu lưu kỳ bí",
-    StoreCategory::Games, "/games", "symboldice.elf", 128460, "125.4 KB", true
+    StoreCategory::Games, "/games", "symboldice.elf", 130044, "127.0 KB", true
   },
   {
     "pegsolitaire", "PEG SOLITAIRE", "Nhảy Chốt",
     "Classic jump peg solitaire", "Nhảy chốt bàn cờ đơn cổ điển",
-    StoreCategory::Games, "/games", "pegsolitaire.elf", 133120, "130.0 KB", true
+    StoreCategory::Games, "/games", "pegsolitaire.elf", 133716, "130.6 KB", true
   },
   {
     "textadv", "TEXT ADVENTURES", "Phiêu Lưu Chữ",
     "Interactive fiction with Zork I-III", "Game phiêu lưu nhập vai chữ Zork I, II, III",
-    StoreCategory::Games, "/games", "textadv.elf", 457772, "447.0 KB", true
+    StoreCategory::Games, "/games", "textadv.elf", 461536, "450.7 KB", true
   },
   {
     "wordladder", "WORD LADDER", "Thang Từ",
     "Step-by-step word ladder puzzle", "Biến đổi từ từng bước một chữ cái",
-    StoreCategory::Games, "/games", "wordladder.elf", 272000, "265.6 KB", true
+    StoreCategory::Games, "/games", "wordladder.elf", 276436, "270.0 KB", true
   },
   {
     "diceroller", "DICE ROLLER", "Đổ Xúc Xắc RPG",
     "RPG polyhedral dice roller", "Đổ xúc xắc nhập vai d4 đến d100",
-    StoreCategory::Games, "/games", "diceroller.elf", 127900, "124.9 KB", true
+    StoreCategory::Games, "/games", "diceroller.elf", 129472, "126.4 KB", true
   },
   {
     "nonogram", "NONOGRAM", "Nonogram",
     "600 picture logic puzzles", "Tranh giải đố số ô vuông 600 màn",
-    StoreCategory::Games, "/games", "nonogram.elf", 166076, "162.2 KB", true
+    StoreCategory::Games, "/games", "nonogram.elf", 167672, "163.7 KB", true
   },
   {
     "kakuro", "KAKURO", "Kakuro",
     "600 cross sums number puzzles", "600 câu đố điền số tổng chéo",
-    StoreCategory::Games, "/games", "kakuro.elf", 185208, "180.9 KB", true
+    StoreCategory::Games, "/games", "kakuro.elf", 186856, "182.5 KB", true
   },
   {
     "bingocaller", "BINGO CALLER", "Quay Số Bingo",
     "Electronic bingo number caller", "Máy quay số gọi Bingo tự động",
-    StoreCategory::Games, "/games", "bingocaller.elf", 130128, "127.1 KB", true
+    StoreCategory::Games, "/games", "bingocaller.elf", 132476, "129.4 KB", true
   },
   {
     "islandmaps", "ISLAND MAPS", "Bản Đồ Đảo",
     "Forbidden Island map generator", "Trình tạo bản đồ đảo phiêu lưu",
-    StoreCategory::Games, "/games", "islandmaps.elf", 132008, "128.9 KB", true
+    StoreCategory::Games, "/games", "islandmaps.elf", 133584, "130.5 KB", true
   },
   {
     "thinkalike", "THINK ALIKE", "Đồng Điệu",
     "Party word association game", "Trò chơi liên tưởng từ nhóm",
-    StoreCategory::Games, "/games", "thinkalike.elf", 134296, "131.1 KB", true
+    StoreCategory::Games, "/games", "thinkalike.elf", 135876, "132.7 KB", true
   },
   {
     "authoritytracker", "AUTHORITY TRACKER", "Theo Dõi Điểm",
     "Card game health and authority tracker", "Bộ đếm điểm máu thẻ bài",
-    StoreCategory::Games, "/games", "authoritytracker.elf", 127924, "124.9 KB", true
+    StoreCategory::Games, "/games", "authoritytracker.elf", 129516, "126.5 KB", true
   },
   {
     "gridgambit", "GRID GAMBIT", "Grid Gambit",
     "Tactical 4x4 chess puzzle", "Câu đố chiến thuật cờ vua 4x4",
-    StoreCategory::Games, "/games", "gridgambit.elf", 141884, "138.6 KB", true
+    StoreCategory::Games, "/games", "gridgambit.elf", 142580, "139.2 KB", true
   },
   {
     "chesspuzzles", "CHESS PUZZLES", "Thế Cờ Vua",
     "2398 Lichess tactics puzzles", "2398 câu đố chiến thuật cờ Lichess",
-    StoreCategory::Games, "/games", "chesspuzzles.elf", 451084, "440.5 KB", true
+    StoreCategory::Games, "/games", "chesspuzzles.elf", 453896, "443.3 KB", true
   },
   {
     "polyominopanic", "POLYOMINO PANIC", "Polyomino Panic",
     "Pentomino packing puzzle", "Ghép hình các khối Pentomino",
-    StoreCategory::Games, "/games", "polyominopanic.elf", 132444, "129.3 KB", true
+    StoreCategory::Games, "/games", "polyominopanic.elf", 132888, "129.8 KB", true
   },
   {
     "crowncrest", "CROWN & CREST", "Vương Miện & Huy Hiệu",
     "Dice push-your-luck game", "Đổ xúc xắc tích điểm may rủi",
-    StoreCategory::Games, "/games", "crowncrest.elf", 230328, "224.9 KB", true
+    StoreCategory::Games, "/games", "crowncrest.elf", 230804, "225.4 KB", true
   },
   {
     "lastpiece", "LAST PIECE", "Quân Cờ Cuối",
     "Chess endgame tactical puzzle", "Câu đố tàn cuộc cờ vua độc đáo",
-    StoreCategory::Games, "/games", "lastpiece.elf", 158368, "154.7 KB", true
+    StoreCategory::Games, "/games", "lastpiece.elf", 159916, "156.2 KB", true
   },
   {
     "lang-vi", "VIETNAMESE", "Tiếng Việt",
