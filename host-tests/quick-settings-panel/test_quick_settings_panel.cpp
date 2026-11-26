@@ -94,14 +94,14 @@ struct Canvas {
     return nullptr;
   }
 
-  void checkNoTileOverlap() const {
+  void checkNoTileOverlap(size_t expectedTiles) const {
     CHECK(!interactions.overflowed());
     std::vector<const fui::Interaction*> tiles;
     for (size_t i = 0; i < interactions.count(); ++i) {
       const auto& item = interactions.data()[i];
       if (item.action == quickui::Tile && item.value >= 0) tiles.push_back(&item);
     }
-    CHECK(tiles.size() == 8);
+    CHECK(tiles.size() == expectedTiles);
     for (size_t i = 0; i < tiles.size(); ++i) {
       CHECK(tiles[i]->rect.width > 0 && tiles[i]->rect.height > 0);
       CHECK((tiles[i]->inputMask & fui::InputLongPress) != 0);
@@ -116,17 +116,26 @@ struct Canvas {
 void testResolveStickyDefaults() {
   Frontlight.presentFlag = false;
   Frontlight.tempFlag = false;
+  BoardConfig::sticky = true;
   BoardConfig::homeKey = false;
   BoardConfig::buzzer = true;
-  halTiltSensor.available = true;
+  halTiltSensor.available = true;  // Even if IMU probe passes, Sticky excludes Tilt.
 
   CHECK(!quickui::isShortcutSupported(quickui::Shortcut::Light));
   CHECK(!quickui::isShortcutSupported(quickui::Shortcut::Warm));
   CHECK(!quickui::isShortcutSupported(quickui::Shortcut::Lock));
+  CHECK(!quickui::isShortcutSupported(quickui::Shortcut::Tilt));
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::Wifi));
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::Bluetooth));
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::KeySound));
-  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Tilt));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Dark));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Refresh));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Rotate));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Sleep));
+
+  // Verify Night Mode uses Black/White Contrast icon (synced with Settings), while Sleep keeps Moon.
+  CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Dark)).data == settingsicons::ContrastBits);
+  CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Sleep)).data == settingsicons::QuickMoonBits);
 
   const uint8_t defaults[4] = {
       uint8_t(quickui::Shortcut::Dark),
@@ -138,13 +147,13 @@ void testResolveStickyDefaults() {
   uint8_t row2[4]{};
   const int count = quickui::resolveQuickShortcuts(defaults, row1, row2, 4);
   CHECK(count == 4);
-  CHECK(row1[0] == uint8_t(quickui::Shortcut::Dark));
-  CHECK(row1[1] == uint8_t(quickui::Shortcut::Refresh));
-  CHECK(row1[2] == uint8_t(quickui::Shortcut::Rotate));
-  CHECK(row1[3] == uint8_t(quickui::Shortcut::Wifi));
-  CHECK(row2[0] == uint8_t(quickui::Shortcut::Bluetooth));
-  CHECK(row2[1] == uint8_t(quickui::Shortcut::KeySound));
-  CHECK(row2[2] == uint8_t(quickui::Shortcut::Tilt));
+  CHECK(row1[0] == uint8_t(quickui::Shortcut::Wifi));
+  CHECK(row1[1] == uint8_t(quickui::Shortcut::Bluetooth));
+  CHECK(row1[2] == uint8_t(quickui::Shortcut::KeySound));
+  CHECK(row1[3] == uint8_t(quickui::Shortcut::Dark));
+  CHECK(row2[0] == uint8_t(quickui::Shortcut::Refresh));
+  CHECK(row2[1] == uint8_t(quickui::Shortcut::Screenshot));
+  CHECK(row2[2] == uint8_t(quickui::Shortcut::Rotate));
   CHECK(row2[3] == uint8_t(quickui::Shortcut::Sleep));
 
   uint32_t seen = 0;
@@ -165,13 +174,13 @@ void testTwoRowPanelAndDirtyRegion() {
         m.touch = true;
         m.shadeBackdrop = false;
         m.bluetooth = bt;
-        m.shortcuts[0] = uint8_t(quickui::Shortcut::Dark);
-        m.shortcuts[1] = uint8_t(quickui::Shortcut::Refresh);
-        m.shortcuts[2] = uint8_t(quickui::Shortcut::Rotate);
-        m.shortcuts[3] = uint8_t(quickui::Shortcut::Wifi);
-        m.extraShortcuts[0] = uint8_t(quickui::Shortcut::Bluetooth);
-        m.extraShortcuts[1] = uint8_t(quickui::Shortcut::KeySound);
-        m.extraShortcuts[2] = uint8_t(quickui::Shortcut::Tilt);
+        m.shortcuts[0] = uint8_t(quickui::Shortcut::Wifi);
+        m.shortcuts[1] = uint8_t(quickui::Shortcut::Bluetooth);
+        m.shortcuts[2] = uint8_t(quickui::Shortcut::KeySound);
+        m.shortcuts[3] = uint8_t(quickui::Shortcut::Dark);
+        m.extraShortcuts[0] = uint8_t(quickui::Shortcut::Refresh);
+        m.extraShortcuts[1] = uint8_t(quickui::Shortcut::Screenshot);
+        m.extraShortcuts[2] = uint8_t(quickui::Shortcut::Rotate);
         m.extraShortcuts[3] = uint8_t(quickui::Shortcut::Sleep);
         m.extraCount = 4;
 
@@ -183,18 +192,21 @@ void testTwoRowPanelAndDirtyRegion() {
 
         quickui::Work work;
         quickui::build(c.screen, m, work);
-        c.checkNoTileOverlap();
+        c.checkNoTileOverlap(8);
         CHECK(c.findTile(quickui::Shortcut::Wifi) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Bluetooth) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::KeySound) != nullptr);
-        CHECK(c.findTile(quickui::Shortcut::Tilt) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Dark) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Refresh) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Screenshot) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Rotate) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Sleep) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Tilt) == nullptr);
 
-        for (int toggle = 0; toggle < 3; ++toggle) {
+        for (int toggle = 0; toggle < 2; ++toggle) {
           quickui::Model next = m;
           if (toggle == 0) next.keySoundOn = true;
-          if (toggle == 1) next.tiltOn = true;
-          if (toggle == 2) next.wifiActive = true;
+          if (toggle == 1) next.wifiActive = true;
           const auto dirty = quickui::dirtyRegion(m, next, lay, shape.first);
           CHECK(dirty.x == lay.tiles.x && dirty.y == lay.tiles.y &&
                 dirty.width == lay.tiles.width && dirty.height == lay.tiles.height);

@@ -266,6 +266,11 @@ void FrontlightPanelActivity::runTile(const int idx, const bool longPress) {
       SETTINGS.saveToFile();
       requestUpdate();
       break;
+    case quickui::Shortcut::Screenshot:
+      persistLightSettings();
+      activityManager.requestScreenshot();
+      close();
+      return;
     case quickui::Shortcut::Lock:
       if (!BoardConfig::hasHomeKey()) return;
       SETTINGS.touchScreenLocked = SETTINGS.touchScreenLocked ? 0 : 1;

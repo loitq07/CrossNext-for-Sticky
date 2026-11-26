@@ -60,12 +60,15 @@ inline const char* label(Shortcut shortcut, bool lightOn = true, bool warmOn = t
       return tr(STR_KEY_SOUND);
     case Shortcut::Tilt:
       return tr(STR_TILT_PAGE_TURN);
+    case Shortcut::Screenshot:
+      return tr(STR_SCREENSHOT_BUTTON);
     case Shortcut::Count:
       break;
   }
   return "";
 }
 inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right = false) {
+  static constexpr freeink::Icon contrast{64, 64, 32, settingsicons::ContrastBits};
   static constexpr freeink::Icon moon{64, 64, 32, settingsicons::QuickMoonBits};
   static constexpr freeink::Icon refresh{64, 64, 32, settingsicons::QuickRefreshBits};
   static constexpr freeink::Icon rotate{64, 64, 32, settingsicons::QuickRotateBits};
@@ -81,8 +84,10 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
   static constexpr freeink::Icon keySound{64, 64, 32, settingsicons::QuickKeySoundBits};
   static constexpr freeink::Icon keySoundOff{64, 64, 32, settingsicons::QuickKeySoundOffBits};
   static constexpr freeink::Icon tilt{64, 64, 32, settingsicons::QuickTiltBits};
+  static constexpr freeink::Icon screenshot{64, 64, 32, settingsicons::QuickScreenshotBits};
   switch (shortcut) {
     case Shortcut::Dark:
+      return contrast;
     case Shortcut::Sleep:
       return moon;
     case Shortcut::Refresh:
@@ -106,6 +111,8 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
       return on ? keySound : keySoundOff;
     case Shortcut::Tilt:
       return tilt;
+    case Shortcut::Screenshot:
+      return screenshot;
     case Shortcut::Count:
       break;
   }
@@ -315,11 +322,12 @@ template <typename Screen>
 void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tilesRect, int rowY, int rowHeight,
                  const uint8_t* shortcuts, int count) {
   const int width = tilesRect.width / 4;
+  const int startX = tilesRect.x + (count < 4 ? (tilesRect.width - width * count) / 2 : 0);
   const int size = chrome::lightHeader ? 44 : std::min(96, rowHeight - 54);
   const int iconSize = chrome::lightHeader ? 30 : (size < 68 ? 40 : 48);
   for (int n = 0; n < count; ++n) {
     const auto shortcut = static_cast<Shortcut>(shortcuts[n]);
-    const auto box = fui::makeRect(tilesRect.x + width * n + (width - size) / 2, rowY, size, size);
+    const auto box = fui::makeRect(startX + width * n + (width - size) / 2, rowY, size, size);
     work.button = {};
     work.button.styles = pixelui::buttonStyles();
     work.button.icon = fui::bitmapFromIcon(icon(shortcut, isShortcutIconOn(shortcut, model), model.rotateRight));
@@ -349,7 +357,7 @@ void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tiles
     caption.font = chrome::lightHeader ? fui::HEADER_CLOCK_FONT : 3;
     caption.align = fui::TextAlign::Center;
     caption.maxLines = 2;
-    const auto captionRect = fui::makeRect(tilesRect.x + n * width, box.bottom() + 6, width, 46);
+    const auto captionRect = fui::makeRect(startX + n * width, box.bottom() + 6, width, 46);
     const auto previousClip = screen.target().clipRect();
     const bool clipped = screen.target().setClipRect(intersect(previousClip, captionRect));
     screen.target().text(captionRect, work.label, caption);

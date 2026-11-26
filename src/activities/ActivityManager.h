@@ -95,6 +95,7 @@ class ActivityManager {
   std::atomic<bool> requestedUpdate{false};
   std::atomic<bool> repaintNotified{false};
   std::atomic<bool> renderInFlight{false};
+  std::atomic<bool> pendingScreenshot{false};
   std::atomic<Activity*> idleWorkOwner{nullptr};
   EdgeSwipeIndicator edgeSwipeIndicator;
   MappedInputManager::EdgeSwipeContext buildEdgeSwipeContext() const;
@@ -210,6 +211,8 @@ class ActivityManager {
   // If immediate is true, the update will be triggered immediately.
   // Otherwise, it will be deferred until the end of the current loop iteration.
   void requestUpdate(bool immediate = false);
+  // Schedule a full-frame screenshot right after the next non-panel repaint.
+  void requestScreenshot() { pendingScreenshot.store(true, std::memory_order_release); }
   // Caller holds RenderLock; switching activity or requesting a repaint cancels this work.
   void requestIdleWork(Activity& owner);
   bool idleWorkIsCurrent(const Activity& owner) const {

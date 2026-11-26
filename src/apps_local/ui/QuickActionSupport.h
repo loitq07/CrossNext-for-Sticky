@@ -19,7 +19,7 @@ inline bool isShortcutSupported(Shortcut shortcut) {
     case Shortcut::KeySound:
       return FREEINK_CAP_BUZZER && BoardConfig::hasBuzzer();
     case Shortcut::Tilt:
-      return halTiltSensor.isAvailable();
+      return !BoardConfig::isSticky() && halTiltSensor.isAvailable();
     case Shortcut::Count:
       return false;
     default:
@@ -39,10 +39,12 @@ inline int supportedShortcuts(Shortcut* out, int maxOut) {
 // Resolve a 4-slot user configuration against current board hardware and fill an
 // optional second row with distinct supported toggles/actions.
 inline int resolveQuickShortcuts(const uint8_t configured[kSlots], uint8_t row1[kSlots], uint8_t* row2, int maxRow2) {
+  // Ordered for lightless touch boards (Sticky): Row 1 toggles -> Row 2 actions.
   static constexpr Shortcut kFallbackOrder[] = {
-      Shortcut::Wifi,   Shortcut::Bluetooth, Shortcut::KeySound, Shortcut::Tilt,  Shortcut::Dark,
-      Shortcut::Rotate, Shortcut::Refresh,   Shortcut::Sleep,    Shortcut::Off,   Shortcut::Restart,
-      Shortcut::Light,  Shortcut::Warm,      Shortcut::Lock,
+      Shortcut::Wifi,       Shortcut::Bluetooth, Shortcut::KeySound, Shortcut::Dark,
+      Shortcut::Refresh,    Shortcut::Screenshot, Shortcut::Rotate,  Shortcut::Sleep,
+      Shortcut::Off,        Shortcut::Restart,   Shortcut::Tilt,     Shortcut::Light,
+      Shortcut::Warm,       Shortcut::Lock,
   };
   uint32_t used = 0;
   auto markUsed = [&](Shortcut s) { used |= (1u << uint8_t(s)); };
@@ -57,19 +59,31 @@ inline int resolveQuickShortcuts(const uint8_t configured[kSlots], uint8_t row1[
     return Shortcut::Dark;
   };
 
-  bool valid[kSlots]{};
+  // Legacy default settings carry {Dark, Refresh, Rotate, Light}; on lightless
+  // boards (where Light is unsupported), switch cleanly to the Sticky order
+  // unless the user already customized all 4 slots with supported shortcuts.
+  bool allSupportedAndUnique = true;
+  uint32_t checkUsed = 0;
   for (int i = 0; i < kSlots; ++i) {
-    if (configured[i] < uint8_t(Shortcut::Count)) {
-      const auto s = static_cast<Shortcut>(configured[i]);
-      if (isShortcutSupported(s) && !isUsed(s)) {
-        row1[i] = configured[i];
-        markUsed(s);
-        valid[i] = true;
-      }
+    if (configured[i] >= uint8_t(Shortcut::Count)) {
+      allSupportedAndUnique = false;
+      break;
     }
+    const auto s = static_cast<Shortcut>(configured[i]);
+    if (!isShortcutSupported(s) || (checkUsed & (1u << uint8_t(s)))) {
+      allSupportedAndUnique = false;
+      break;
+    }
+    checkUsed |= (1u << uint8_t(s));
   }
-  for (int i = 0; i < kSlots; ++i) {
-    if (!valid[i]) row1[i] = uint8_t(nextAvailable());
+
+  if (allSupportedAndUnique) {
+    for (int i = 0; i < kSlots; ++i) {
+      row1[i] = configured[i];
+      markUsed(static_cast<Shortcut>(configured[i]));
+    }
+  } else {
+    for (int i = 0; i < kSlots; ++i) row1[i] = uint8_t(nextAvailable());
   }
 
   int row2Count = 0;

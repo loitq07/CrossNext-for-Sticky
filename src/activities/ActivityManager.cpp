@@ -33,6 +33,7 @@
 #include "network/UsbDriveActivity.h"
 #include "plugins/PluginCatalogActivity.h"
 #include "reader/ReaderActivity.h"
+#include "util/ScreenshotUtil.h"
 #include "reader/RemoteTurnGate.h"
 #include "settings/OpdsServerListActivity.h"
 #include "settings/SettingsActivity.h"
@@ -167,9 +168,16 @@ void ActivityManager::renderTaskLoop() {
       paintclock::panelBusy().reset();
       const uint32_t renderingVisit = screenVisit;
       const auto operation = performance::current();
+      const bool takeShotAfterRepaint =
+          currentActivity->name != "FrontlightPanel" && pendingScreenshot.load(std::memory_order_acquire);
       currentActivity->render(std::move(lock));
       if (currentActivity->presentationComplete()) performance::finish(operation, currentActivity.get());
       paintedVisit.store(renderingVisit, std::memory_order_release);
+      if (takeShotAfterRepaint && pendingScreenshot.exchange(false, std::memory_order_acq_rel)) {
+        renderer.waitRefreshComplete();
+        RenderLock screenshotLock;
+        ScreenshotUtil::takeScreenshot(renderer);
+      }
       reportRepaint(currentActivity->name.c_str(), requestedAtMs, repaintStartMs);
       reportStackHeadroom(currentActivity->name.c_str());
     }

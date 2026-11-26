@@ -710,11 +710,12 @@ void Ssd1677Driver::displayGray(EpdBus& bus, const uint8_t* fb, bool turnOff, co
 void Ssd1677Driver::cleanupGrayscaleBuffers(EpdBus& bus, const uint8_t* bw) {
   if (!bw) return;
   setRamArea(bus, 0, 0, _w, _h);
+  // Restore both BW and RED controller planes to the active BW frame: the
+  // grayscale pass overwrote BW with the LSB plane (0x00/inverted background),
+  // so partial displayWindow() updates would otherwise turn the rest of the
+  // page black when running a differential fast refresh.
+  writeRam(bus, CMD_WRITE_RAM_BW, bw, _bufferSize);
   writeRam(bus, CMD_WRITE_RAM_RED, bw, _bufferSize);
-  // The restored BW frame in RED RAM *is* the clean differential baseline for the
-  // next BW page turn, so nothing else is needed — clear the flag (stock parity:
-  // the OEM firmware's grayscale sequence ends exactly this way, RED resync only;
-  // it has no revert waveform at all).
   _inGrayscaleMode = false;
 }
 

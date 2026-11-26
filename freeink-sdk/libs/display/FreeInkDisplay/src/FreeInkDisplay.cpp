@@ -812,7 +812,8 @@ void FreeInkDisplay::displayWindow(uint16_t x, uint16_t y, uint16_t w, uint16_t 
 }
 
 bool FreeInkDisplay::supportsFastWindow() const {
-  return !_refreshPending && _driver && _driver->supportsFastWindow();
+  return !_refreshPending && !_inverted && !_inversionDirty && !_grayPassFailed && _driver &&
+         _driver->supportsFastWindow();
 }
 
 void FreeInkDisplay::displayGrayBuffer(bool turnOffScreen, const unsigned char* lut, bool factoryMode) {

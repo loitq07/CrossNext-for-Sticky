@@ -69,24 +69,11 @@ void drawReaderSettingsIcon(const GfxRenderer& renderer, const int cx, const int
 }
 
 void drawQuickSettingsIcon(const GfxRenderer& renderer, const int cx, const int cy, const int headerLimitY) {
-  // Sun / brightness glyph: core disc + 8 rays.
-  for (int dy = -4; dy <= 4; ++dy) {
-    for (int dx = -4; dx <= 4; ++dx) {
-      if (dx * dx + dy * dy <= 16) {
-        putTone(renderer, cx + dx, cy + dy, false, headerLimitY);
-      }
-    }
-  }
-  fillToneBox(renderer, cx - 1, cy - 8, 2, 3, false, headerLimitY);
-  fillToneBox(renderer, cx - 1, cy + 6, 2, 3, false, headerLimitY);
-  fillToneBox(renderer, cx - 8, cy - 1, 3, 2, false, headerLimitY);
-  fillToneBox(renderer, cx + 6, cy - 1, 3, 2, false, headerLimitY);
-  for (const int sx : {-1, 1}) {
-    for (const int sy : {-1, 1}) {
-      fillToneBox(renderer, cx + sx * 5 - (sx < 0 ? 1 : 0), cy + sy * 5 - (sy < 0 ? 1 : 0), 2, 2, false,
-                  headerLimitY);
-    }
-  }
+  // 2x2 Quick Settings tile grid.
+  fillToneBox(renderer, cx - 7, cy - 7, 6, 6, false, headerLimitY);
+  fillToneBox(renderer, cx + 1, cy - 7, 6, 6, false, headerLimitY);
+  fillToneBox(renderer, cx - 7, cy + 1, 6, 6, false, headerLimitY);
+  fillToneBox(renderer, cx + 1, cy + 1, 6, 6, false, headerLimitY);
 }
 
 void drawIcon(const GfxRenderer& renderer, const EdgeSwipeIndicator::Icon icon, const int cx, const int cy,

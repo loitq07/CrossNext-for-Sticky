@@ -33,17 +33,17 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Bảng Quick Settings nhiều toggle cho Sticky";
-    rowSubtitles_[0] = "Bật/tắt nhanh Wi-Fi, Bluetooth, Âm phím, Nghiêng lật trang";
+    rowLabels_[0] = "1. Bảng Quick Settings 8 nút mới & Chụp màn hình";
+    rowSubtitles_[0] = "H1: Wi-Fi/BT/Âm phím/Tối; H2: Làm mới/Chụp ảnh/Xoay/Ngủ";
 
-    rowLabels_[1] = "2. Chỉ báo vuốt cạnh màn hình (kiểu Boox)";
-    rowSubtitles_[1] = "Hiện tai nổi & icon Back/Home/Menu theo vị trí vuốt";
+    rowLabels_[1] = "2. Đồng bộ icon & bỏ Tilt trên Sticky";
+    rowSubtitles_[1] = "Night Mode dùng icon Trắng/Đen đồng bộ Cài đặt";
 
-    rowLabels_[2] = "3. Sửa lỗi chạy app ngoài từ App Store";
-    rowSubtitles_[2] = "Liên kết lại Dice & External Apps SDK (-nostartfiles)";
+    rowLabels_[2] = "3. Chỉ báo vuốt cạnh & sửa lỗi màn đen đọc sách";
+    rowSubtitles_[2] = "Sửa trang EPUB hóa đen khi kéo cạnh trên lúc bật làm mịn chữ";
 
-    rowLabels_[3] = "4. Book Preparer Desktop & tuỳ biến Sticky";
-    rowSubtitles_[3] = "Đổi nhãn thiết bị sang Sticky, tuỳ chỉnh 4 ô hàng đầu";
+    rowLabels_[3] = "4. Sửa lỗi app ngoài & Book Preparer Sticky";
+    rowSubtitles_[3] = "Liên kết lại Dice SDK (-nostartfiles), sửa nhãn Sticky";
 
     rowLabels_[4] = "5. Nền tảng v2.0.5 (23 game Pocket Play)";
     rowSubtitles_[4] = "Giao diện CrossNext CDS, dòng kẻ sách & remote BLE";
@@ -51,17 +51,17 @@ void WhatsNewActivity::onEnter() {
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. Multi-toggle Quick Settings panel on Sticky";
-    rowSubtitles_[0] = "Toggle Wi-Fi, Bluetooth, Key Sound, Tilt Turn & Night Mode";
+    rowLabels_[0] = "1. Sticky Quick Settings (8 tiles) & Screenshot";
+    rowSubtitles_[0] = "R1: Wi-Fi/BT/KeySound/Dark; R2: Refresh/Shot/Rotate/Sleep";
 
-    rowLabels_[1] = "2. Edge swipe visual indicator";
-    rowSubtitles_[1] = "Floating Boox-style pill with Back/Home/Menu/Panel icon";
+    rowLabels_[1] = "2. Black/White Night Mode icon & no Tilt";
+    rowSubtitles_[1] = "Synced Settings Contrast icon and removed Tilt on Sticky";
 
-    rowLabels_[2] = "3. Fixed App Store external app launch";
-    rowSubtitles_[2] = "Updated Dice & External Apps SDK link flags (-nostartfiles)";
+    rowLabels_[2] = "3. Edge swipe indicator & reader black-page fix";
+    rowSubtitles_[2] = "Fixed AA EPUB page turning black on top-edge swipe";
 
-    rowLabels_[3] = "4. Desktop Preparer & Quick Settings customizer";
-    rowSubtitles_[3] = "Sticky sidebar branding and hardware-filtered slots";
+    rowLabels_[3] = "4. App Store SDK fix & Sticky Desktop branding";
+    rowSubtitles_[3] = "Linked external apps (-nostartfiles) & Sticky sidebar label";
 
     rowLabels_[4] = "5. CrossNext v2.0.5 base (23 Pocket Play games)";
     rowSubtitles_[4] = "CDS game UI sync, ruled reading lines & BLE remotes";
