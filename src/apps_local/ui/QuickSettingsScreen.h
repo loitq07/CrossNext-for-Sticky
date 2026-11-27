@@ -32,7 +32,7 @@ inline void styleConfiguration(fui::ListProps& props, bool checkboxRows = true) 
   props.toggleCheckbox = true;
   props.checkboxCheckmark = true;
 }
-inline const char* label(Shortcut shortcut, bool lightOn = true, bool warmOn = true) {
+inline const char* label(Shortcut shortcut, bool lightOn = true, bool warmOn = true, bool plugins = false) {
   switch (shortcut) {
     case Shortcut::Dark:
       return tr(STR_NIGHT_MODE);
@@ -61,7 +61,33 @@ inline const char* label(Shortcut shortcut, bool lightOn = true, bool warmOn = t
     case Shortcut::Tilt:
       return tr(STR_TILT_PAGE_TURN);
     case Shortcut::Screenshot:
-      return tr(STR_SCREENSHOT_BUTTON);
+      return I18N.getLanguage() == Language::EN ? "Screenshot" : tr(STR_SCREENSHOT_BUTTON);
+    case Shortcut::Files:
+      return tr(STR_BROWSE_FILES);
+    case Shortcut::Library:
+      return tr(STR_MENU_RECENT_BOOKS);
+    case Shortcut::ReadLater:
+      return tr(STR_READ_LATER);
+    case Shortcut::Transfer:
+      return tr(STR_FILE_TRANSFER);
+    case Shortcut::Stats:
+      return tr(STR_READING_STATS_TITLE);
+    case Shortcut::Games:
+      return tr(STR_HOME_GAMES);
+    case Shortcut::Apps:
+      return tr(STR_HOME_APPS);
+    case Shortcut::Services:
+      return plugins ? tr(STR_PLUGINS) : tr(STR_OPDS_BROWSER);
+    case Shortcut::Settings:
+      return tr(STR_SETTINGS_TITLE);
+    case Shortcut::UsbDrive:
+      return tr(STR_USB_DRIVE);
+    case Shortcut::AppStore:
+      return I18N.getLanguage() == Language::VI ? "Cửa hàng ứng dụng" : "App Store";
+    case Shortcut::AppShortcut0:
+    case Shortcut::AppShortcut1:
+    case Shortcut::AppShortcut2:
+    case Shortcut::AppShortcut3:
     case Shortcut::Count:
       break;
   }
@@ -85,6 +111,17 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
   static constexpr freeink::Icon keySoundOff{64, 64, 32, settingsicons::QuickKeySoundOffBits};
   static constexpr freeink::Icon tilt{64, 64, 32, settingsicons::QuickTiltBits};
   static constexpr freeink::Icon screenshot{64, 64, 32, settingsicons::QuickScreenshotBits};
+  static constexpr freeink::Icon files{64, 64, 32, settingsrowart::FolderBits};
+  static constexpr freeink::Icon library{64, 64, 32, settingsicons::BooksBits};
+  static constexpr freeink::Icon readLater{64, 64, 32, settingsicons::BookZapBits};
+  static constexpr freeink::Icon transfer{64, 64, 32, settingsicons::SyncBits};
+  static constexpr freeink::Icon stats{64, 64, 32, settingsicons::StatsBits};
+  static constexpr freeink::Icon games{64, 64, 32, settingsicons::PuzzleBits};
+  static constexpr freeink::Icon apps{64, 64, 32, settingsrowart::GridBits};
+  static constexpr freeink::Icon services{64, 64, 32, settingsrowart::GlobeBits};
+  static constexpr freeink::Icon settings{64, 64, 32, settingsrowart::GearBits};
+  static constexpr freeink::Icon usbDrive{64, 64, 32, settingsrowart::SdBits};
+  static constexpr freeink::Icon store{64, 64, 32, settingsicons::ExtensionsBits};
   switch (shortcut) {
     case Shortcut::Dark:
       return contrast;
@@ -113,6 +150,32 @@ inline const freeink::Icon& icon(Shortcut shortcut, bool on = true, bool right =
       return tilt;
     case Shortcut::Screenshot:
       return screenshot;
+    case Shortcut::Files:
+      return files;
+    case Shortcut::Library:
+      return library;
+    case Shortcut::ReadLater:
+      return readLater;
+    case Shortcut::Transfer:
+      return transfer;
+    case Shortcut::Stats:
+      return stats;
+    case Shortcut::Games:
+      return games;
+    case Shortcut::Apps:
+      return apps;
+    case Shortcut::Services:
+      return services;
+    case Shortcut::Settings:
+      return settings;
+    case Shortcut::UsbDrive:
+      return usbDrive;
+    case Shortcut::AppStore:
+    case Shortcut::AppShortcut0:
+    case Shortcut::AppShortcut1:
+    case Shortcut::AppShortcut2:
+    case Shortcut::AppShortcut3:
+      return store;
     case Shortcut::Count:
       break;
   }
@@ -130,6 +193,10 @@ enum : fui::ActionId {
   WifiSettings
 };
 struct Model {
+  struct CustomTile {
+    const char* label = nullptr;
+    const freeink::Icon* icon = nullptr;
+  };
   char time[8] = "--:--";
   int brightness = 60, warmth = 50, battery = 100;
   uint8_t shortcuts[4] = {0, 1, 2, 3};
@@ -137,9 +204,12 @@ struct Model {
   bool wifiConnected = false, charging = false, shadeBackdrop = true;
   bool rotateRight = false;
   bool light = true, temperature = true, night = false, touch = true, touchOn = true, lightOn = true;
-  uint8_t extraShortcuts[4] = {0, 0, 0, 0};
+  uint8_t row1Count = 4;
+  uint8_t extraShortcuts[8] = {0};
   uint8_t extraCount = 0;
-  bool keySoundOn = false, tiltOn = false, wifiActive = false;
+  CustomTile appShortcuts[kAppShortcutCount]{};
+  bool keySoundOn = false, tiltOn = false, wifiActive = false, plugins = false;
+  int tileRows() const { return !touch ? 0 : (1 + (extraCount + 3) / 4); }
 };
 struct Work {
   fui::ButtonProps button;
@@ -162,8 +232,10 @@ inline constexpr BluetoothSpacing kBluetoothSpacing{56, 8, 16, 24, 24, 54};
 inline int headerBarHeight(const fui::DeviceContext& device, bool bluetooth) {
   return chrome::lightHeader || (bluetooth && device.width > device.height) ? 44 : (bluetooth ? 56 : 66);
 }
-inline Layout layout(const fui::DeviceContext& device, bool light, bool temperature, bool touch,
-                     bool bluetooth = false, bool extraRow = false) {
+inline Layout layoutForRows(const fui::DeviceContext& device, bool light, bool temperature, bool touch,
+                            bool bluetooth = false, int tileRows = 1) {
+  if (tileRows < 1) tileRows = 1;
+  if (tileRows > 3) tileRows = 3;
   const auto safe = device.safeRect();
   const bool wide = device.width > device.height;
   const int x = safe.x + 18, width = safe.width - 36;
@@ -181,31 +253,46 @@ inline Layout layout(const fui::DeviceContext& device, bool light, bool temperat
                           : fui::makeRect(x, y + 92 + (bluetooth ? kBluetoothSpacing.rowGap : 12), rowWidth, 92);
       y = temperature ? out.warmth.bottom() : out.brightness.bottom();
     }
-    const int rowH = bluetooth ? 104 : 96;
-    const int gap = 8;
+    const int rowH = tileRows >= 3 ? (wide ? 78 : 88) : (bluetooth ? 104 : 96);
+    const int gap = tileRows >= 3 ? 4 : 8;
     out.tileRowHeight = touch ? rowH : 0;
-    out.tileRowGap = touch && extraRow ? gap : 0;
-    out.tiles = fui::makeRect(x, y + (bluetooth ? 20 : 14), width, touch ? (extraRow ? rowH * 2 + gap : rowH) : 0);
+    out.tileRowGap = touch && tileRows > 1 ? gap : 0;
+    out.tiles =
+        fui::makeRect(x, y + (bluetooth ? (tileRows >= 3 && wide ? 12 : 20) : 14), width,
+                      touch ? (rowH * tileRows + gap * (tileRows - 1)) : 0);
     out.bottom = std::min<int>(safe.bottom(), out.tiles.bottom() + (bluetooth ? kBluetoothSpacing.footer : 46));
     return out;
   }
-  const int rowH = wide ? (bluetooth ? (extraRow ? 112 : 120) : (extraRow ? 118 : 128)) : (extraRow ? 140 : 152);
-  const int gap = wide ? 8 : 10;
+  int rowH = 0;
+  int gap = wide ? 8 : 10;
+  if (tileRows == 1) {
+    rowH = wide ? (bluetooth ? 120 : 128) : 152;
+  } else if (tileRows == 2) {
+    rowH = wide ? (bluetooth ? 112 : 118) : 140;
+  } else {
+    gap = wide ? 4 : (light ? 6 : 8);
+    rowH = wide ? (light ? 54 : 92) : (light ? 96 : 132);
+  }
   out.tileRowHeight = touch ? rowH : 0;
-  out.tileRowGap = touch && extraRow ? gap : 0;
+  out.tileRowGap = touch && tileRows > 1 ? gap : 0;
   out.tiles = fui::makeRect(x, out.header.bottom() + (bluetooth ? (wide ? 12 : kBluetoothSpacing.tilesGap) : 10), width,
-                            touch ? (extraRow ? rowH * 2 + gap : rowH) : 0);
+                            touch ? (rowH * tileRows + gap * (tileRows - 1)) : 0);
   int y = out.tiles.bottom() + (touch ? (bluetooth ? (wide ? 16 : kBluetoothSpacing.sectionGap) : 24) : 8);
   if (light) {
     const int rowW = wide && temperature ? (width - 24) / 2 : width;
-    out.brightness = fui::makeRect(x, y, rowW, 120);
+    const int sliderH = (wide && tileRows >= 3) ? 114 : 120;
+    out.brightness = fui::makeRect(x, y, rowW, sliderH);
     if (temperature)
-      out.warmth = wide ? fui::makeRect(x + rowW + 24, y, rowW, 120)
-                        : fui::makeRect(x, y + 120 + (bluetooth ? kBluetoothSpacing.rowGap : 16), rowW, 120);
+      out.warmth = wide ? fui::makeRect(x + rowW + 24, y, rowW, sliderH)
+                        : fui::makeRect(x, y + sliderH + (bluetooth ? kBluetoothSpacing.rowGap : 16), rowW, sliderH);
     y = temperature ? out.warmth.bottom() : out.brightness.bottom();
   }
   out.bottom = std::min<int>(safe.bottom(), y + (bluetooth ? kBluetoothSpacing.footer : 54));
   return out;
+}
+inline Layout layout(const fui::DeviceContext& device, bool light, bool temperature, bool touch,
+                     bool bluetooth = false, bool extraRow = false) {
+  return layoutForRows(device, light, temperature, touch, bluetooth, extraRow ? 2 : 1);
 }
 template <typename Screen>
 void button(Screen& screen, Work& work, fui::Rect rect, const char* label, fui::ActionId action, int value = 0) {
@@ -323,14 +410,23 @@ void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tiles
                  const uint8_t* shortcuts, int count) {
   const int width = tilesRect.width / 4;
   const int startX = tilesRect.x + (count < 4 ? (tilesRect.width - width * count) / 2 : 0);
-  const int size = chrome::lightHeader ? 44 : std::min(96, rowHeight - 54);
-  const int iconSize = chrome::lightHeader ? 30 : (size < 68 ? 40 : 48);
+  const int size =
+      chrome::lightHeader ? (rowHeight < 92 ? 38 : 44)
+                          : std::min(96, std::max(36, rowHeight - (rowHeight < 105 ? 46 : 54)));
+  const int iconSize = chrome::lightHeader ? (size < 44 ? 26 : 30) : (size < 54 ? 32 : size < 68 ? 40 : 48);
+  const int captionGap = rowHeight < 105 ? 4 : 6;
+  const int captionH = rowHeight < 105 ? 40 : 46;
   for (int n = 0; n < count; ++n) {
     const auto shortcut = static_cast<Shortcut>(shortcuts[n]);
     const auto box = fui::makeRect(startX + width * n + (width - size) / 2, rowY, size, size);
+    const int appIdx = static_cast<int>(shortcut) - static_cast<int>(Shortcut::AppShortcut0);
+    const auto* custom = (appIdx >= 0 && appIdx < kAppShortcutCount) ? &model.appShortcuts[appIdx] : nullptr;
     work.button = {};
     work.button.styles = pixelui::buttonStyles();
-    work.button.icon = fui::bitmapFromIcon(icon(shortcut, isShortcutIconOn(shortcut, model), model.rotateRight));
+    const auto& tileIcon = (custom && custom->icon)
+                               ? *custom->icon
+                               : icon(shortcut, isShortcutIconOn(shortcut, model), model.rotateRight);
+    work.button.icon = fui::bitmapFromIcon(tileIcon);
     work.button.iconSize = iconSize;
     if (chrome::lightHeader) {
       work.button.styles = lightui::controlStyles(true);
@@ -346,18 +442,17 @@ void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tiles
     work.button.value = shortcuts[n];
     work.button.minTouchSize = 0;
     screen.button(work.button, box);
-    if (shortcut == Shortcut::Bluetooth)
-      std::snprintf(work.label, sizeof(work.label), "%s\n%s", tr(STR_BT_SHORT_NAME),
-                    I18N.get(bluetoothui::shortLabel(model.bluetooth)));
-    else if (chrome::lightHeader)
-      pixelui::copyNatural(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
+    const char* rawLabel =
+        (custom && custom->label) ? custom->label : label(shortcut, model.lightOn, model.warmth > 0, model.plugins);
+    if (chrome::lightHeader)
+      pixelui::copyNatural(work.label, sizeof(work.label), rawLabel);
     else
-      pixelui::copyCaps(work.label, sizeof(work.label), label(shortcut, model.lightOn, model.warmth > 0));
+      pixelui::copyCaps(work.label, sizeof(work.label), rawLabel);
     fui::TextStyle caption;
     caption.font = chrome::lightHeader ? fui::HEADER_CLOCK_FONT : 3;
     caption.align = fui::TextAlign::Center;
     caption.maxLines = 2;
-    const auto captionRect = fui::makeRect(startX + n * width, box.bottom() + 6, width, 46);
+    const auto captionRect = fui::makeRect(startX + n * width, box.bottom() + captionGap, width, captionH);
     const auto previousClip = screen.target().clipRect();
     const bool clipped = screen.target().setClipRect(intersect(previousClip, captionRect));
     screen.target().text(captionRect, work.label, caption);
@@ -367,8 +462,8 @@ void drawTileRow(Screen& screen, const Model& model, Work& work, fui::Rect tiles
 template <typename Screen>
 void build(Screen& screen, const Model& model, Work& work) {
   const bool bluetooth = hasBluetoothStatus(model.bluetooth);
-  const bool extraRow = model.extraCount > 0;
-  const auto g = layout(screen.device(), model.light, model.temperature, model.touch, bluetooth, extraRow);
+  const int tileRows = std::max(1, model.tileRows());
+  const auto g = layoutForRows(screen.device(), model.light, model.temperature, model.touch, bluetooth, tileRows);
   const auto bar = fui::makeRect(g.header.x, g.header.y, g.header.width, headerBarHeight(screen.device(), bluetooth));
   fui::SheetProps sheet;
   sheet.radius = 0;
@@ -412,11 +507,17 @@ void build(Screen& screen, const Model& model, Work& work) {
     fittext::draw(screen.target(), banner.inset({4, 12, 4, 12}), work.label, status, 1);
   }
   if (model.touch) {
-    drawTileRow(screen, model, work, g.tiles, g.tiles.y, g.tileRowHeight, model.shortcuts, 4);
-    if (extraRow) {
+    const int row1Count = std::min<int>(4, model.row1Count);
+    if (row1Count > 0) drawTileRow(screen, model, work, g.tiles, g.tiles.y, g.tileRowHeight, model.shortcuts, row1Count);
+    if (model.extraCount > 0) {
       const int row2Y = g.tiles.y + g.tileRowHeight + g.tileRowGap;
       const int row2Count = std::min<int>(4, model.extraCount);
       drawTileRow(screen, model, work, g.tiles, row2Y, g.tileRowHeight, model.extraShortcuts, row2Count);
+    }
+    if (model.extraCount > 4) {
+      const int row3Y = g.tiles.y + 2 * (g.tileRowHeight + g.tileRowGap);
+      const int row3Count = std::min<int>(4, int(model.extraCount) - 4);
+      drawTileRow(screen, model, work, g.tiles, row3Y, g.tileRowHeight, model.extraShortcuts + 4, row3Count);
     }
     if (!chrome::lightHeader)
       screen.target().fill(fui::makeRect(g.tiles.x, g.tiles.bottom() + 10, g.tiles.width, 3),

@@ -11,6 +11,7 @@
 
 #include "../../src/apps_local/ui/PixelMenu.h"
 #include "../../src/apps_local/ui/QuickActionSupport.h"
+#include "../../src/apps_local/ui/QuickMenuCore.h"
 #include "../../src/apps_local/ui/QuickSettingsDirtyRegion.h"
 #include "../../src/apps_local/ui/QuickSettingsScreen.h"
 #include "../../src/apps_local/ui/ToyboxScreen.h"
@@ -132,10 +133,33 @@ void testResolveStickyDefaults() {
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::Refresh));
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::Rotate));
   CHECK(quickui::isShortcutSupported(quickui::Shortcut::Sleep));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Files));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Library));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::ReadLater));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Transfer));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Stats));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Games));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Apps));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Services));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::Settings));
+  CHECK(quickui::isShortcutSupported(quickui::Shortcut::AppStore));
+
+  // Verify Bluetooth and Screenshot labels do not regress to "BluetoothOff" / "TAKE SCREENSHOT".
+  I18N.setLanguage(Language::EN);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Bluetooth), tr(STR_BT_SHORT_NAME)) == 0);
+  CHECK(std::strstr(quickui::label(quickui::Shortcut::Bluetooth), "Off") == nullptr);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Screenshot), "Screenshot") == 0);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Stats), tr(STR_READING_STATS_TITLE)) == 0);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Transfer), tr(STR_FILE_TRANSFER)) == 0);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::ReadLater), tr(STR_READ_LATER)) == 0);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Services, true, true, true), tr(STR_PLUGINS)) == 0);
+  CHECK(std::strcmp(quickui::label(quickui::Shortcut::Services, true, true, false), tr(STR_OPDS_BROWSER)) == 0);
 
   // Verify Night Mode uses Black/White Contrast icon (synced with Settings), while Sleep keeps Moon.
   CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Dark)).data == settingsicons::ContrastBits);
   CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Sleep)).data == settingsicons::QuickMoonBits);
+  CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Files)).data == settingsrowart::FolderBits);
+  CHECK(fui::bitmapFromIcon(quickui::icon(quickui::Shortcut::Settings)).data == settingsrowart::GearBits);
 
   const uint8_t defaults[4] = {
       uint8_t(quickui::Shortcut::Dark),
@@ -162,7 +186,74 @@ void testResolveStickyDefaults() {
   CHECK(__builtin_popcount(seen) == 8);
 }
 
-void testTwoRowPanelAndDirtyRegion() {
+void testQuickMenuCoreAndEncode() {
+  Frontlight.presentFlag = false;
+  Frontlight.tempFlag = false;
+  BoardConfig::sticky = true;
+  BoardConfig::homeKey = false;
+  BoardConfig::buzzer = true;
+  halTiltSensor.available = true;
+
+  const uint32_t mask = quickui::supportedShortcutMask();
+  const uint8_t legacy[4] = {0, 1, 2, 3};
+  quickmenu::Config cfg = quickmenu::defaultConfig(false, legacy, mask);
+  quickui::Shortcut vis[quickmenu::kMaxVisible]{};
+  CHECK(quickmenu::collectVisible(cfg, mask, vis, quickmenu::kMaxVisible) == 8);
+  CHECK(vis[0] == quickui::Shortcut::Wifi);
+  CHECK(vis[1] == quickui::Shortcut::Bluetooth);
+  CHECK(vis[2] == quickui::Shortcut::KeySound);
+  CHECK(vis[3] == quickui::Shortcut::Dark);
+  CHECK(vis[4] == quickui::Shortcut::Refresh);
+  CHECK(vis[5] == quickui::Shortcut::Screenshot);
+  CHECK(vis[6] == quickui::Shortcut::Rotate);
+  CHECK(vis[7] == quickui::Shortcut::Sleep);
+
+  // Add 4 Home/launcher items up to max 12 (3 rows x 4 columns).
+  CHECK(quickmenu::setVisible(cfg, quickui::Shortcut::Files, true, mask));
+  CHECK(quickmenu::setVisible(cfg, quickui::Shortcut::Library, true, mask));
+  CHECK(quickmenu::setVisible(cfg, quickui::Shortcut::Transfer, true, mask));
+  CHECK(quickmenu::setVisible(cfg, quickui::Shortcut::Settings, true, mask));
+  CHECK(quickmenu::visibleCount(cfg, mask) == 12);
+
+  // Reject a 13th visible item.
+  CHECK(!quickmenu::setVisible(cfg, quickui::Shortcut::Stats, true, mask));
+  CHECK(quickmenu::visibleCount(cfg, mask) == 12);
+
+  // Hide one, add a Shelf app shortcut, and move it upward across rows.
+  CHECK(quickmenu::setVisible(cfg, quickui::Shortcut::Sleep, false, mask));
+  CHECK(quickmenu::visibleCount(cfg, mask) == 11);
+  const quickui::Shortcut app0 = quickmenu::addAppShortcut(cfg, 1, "CHESS", mask);
+  CHECK(app0 == quickui::Shortcut::AppShortcut0);
+  CHECK(quickmenu::visibleCount(cfg, mask) == 12);
+  CHECK(quickmenu::findAppShortcut(cfg, 1, "CHESS") == app0);
+  const int beforeIdx = quickmenu::indexOf(cfg, app0, mask);
+  CHECK(beforeIdx == 11);
+  CHECK(quickmenu::move(cfg, app0, -1, mask));
+  CHECK(quickmenu::indexOf(cfg, app0, mask) == 10);
+
+  // Binary encode/decode roundtrip + tamper detection.
+  uint8_t bytes[quickmenu::kSaveBytes]{};
+  quickmenu::encode(cfg, 7, bytes);
+  quickmenu::Config decoded{};
+  uint32_t gen = 0;
+  CHECK(quickmenu::decode(bytes, decoded, gen));
+  CHECK(gen == 7);
+  CHECK(quickmenu::visibleCount(decoded, mask) == 12);
+  CHECK(quickmenu::at(decoded, 10, mask) == app0);
+  CHECK(std::strcmp(decoded.shortcuts[0].title, "CHESS") == 0);
+  bytes[20] ^= 0x5Au;
+  CHECK(!quickmenu::decode(bytes, decoded, gen));
+
+  // Removing app shortcut drops count to 11; never allow 0 visible items.
+  quickmenu::removeAppShortcut(decoded, app0);
+  CHECK(quickmenu::visibleCount(decoded, mask) == 11);
+  for (int i = 0; i < quickmenu::kCount; ++i) {
+    quickmenu::setVisible(decoded, static_cast<quickui::Shortcut>(i), false, mask);
+  }
+  CHECK(quickmenu::visibleCount(decoded, mask) == 1);
+}
+
+void testThreeRowPanelAndDirtyRegion() {
   I18N.setLanguage(Language::EN);
   for (bool lightHeader : {false, true}) {
     chrome::lightHeader = lightHeader;
@@ -178,21 +269,28 @@ void testTwoRowPanelAndDirtyRegion() {
         m.shortcuts[1] = uint8_t(quickui::Shortcut::Bluetooth);
         m.shortcuts[2] = uint8_t(quickui::Shortcut::KeySound);
         m.shortcuts[3] = uint8_t(quickui::Shortcut::Dark);
+        m.row1Count = 4;
         m.extraShortcuts[0] = uint8_t(quickui::Shortcut::Refresh);
         m.extraShortcuts[1] = uint8_t(quickui::Shortcut::Screenshot);
         m.extraShortcuts[2] = uint8_t(quickui::Shortcut::Rotate);
         m.extraShortcuts[3] = uint8_t(quickui::Shortcut::Sleep);
-        m.extraCount = 4;
+        m.extraShortcuts[4] = uint8_t(quickui::Shortcut::Files);
+        m.extraShortcuts[5] = uint8_t(quickui::Shortcut::Library);
+        m.extraShortcuts[6] = uint8_t(quickui::Shortcut::Transfer);
+        m.extraShortcuts[7] = uint8_t(quickui::Shortcut::AppShortcut0);
+        m.extraCount = 8;
+        m.appShortcuts[0].label = "CHESS";
 
         Canvas c(shape.first, shape.second);
-        const auto lay = quickui::layout(c.device, m.light, m.temperature, m.touch,
-                                         quickui::hasBluetoothStatus(m.bluetooth), m.extraCount > 0);
+        const auto lay = quickui::layoutForRows(c.device, m.light, m.temperature, m.touch,
+                                                quickui::hasBluetoothStatus(m.bluetooth), m.tileRows());
+        CHECK(m.tileRows() == 3);
         CHECK(lay.bottom <= shape.second);
         CHECK(lay.tiles.bottom() <= lay.bottom);
 
         quickui::Work work;
         quickui::build(c.screen, m, work);
-        c.checkNoTileOverlap(8);
+        c.checkNoTileOverlap(12);
         CHECK(c.findTile(quickui::Shortcut::Wifi) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Bluetooth) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::KeySound) != nullptr);
@@ -201,6 +299,10 @@ void testTwoRowPanelAndDirtyRegion() {
         CHECK(c.findTile(quickui::Shortcut::Screenshot) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Rotate) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Sleep) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Files) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Library) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::Transfer) != nullptr);
+        CHECK(c.findTile(quickui::Shortcut::AppShortcut0) != nullptr);
         CHECK(c.findTile(quickui::Shortcut::Tilt) == nullptr);
 
         for (int toggle = 0; toggle < 2; ++toggle) {
@@ -224,9 +326,9 @@ void testTwoRowPanelAndDirtyRegion() {
           CHECK(partial.pixels != c.pixels);
         }
 
-        quickui::Model oneRow = m;
-        oneRow.extraCount = 0;
-        const auto fullDirty = quickui::dirtyRegion(m, oneRow, lay, shape.first);
+        quickui::Model twoRows = m;
+        twoRows.extraCount = 4;
+        const auto fullDirty = quickui::dirtyRegion(m, twoRows, lay, shape.first);
         CHECK(fullDirty.y == 0 && fullDirty.bottom() == lay.bottom);
       }
     }
@@ -236,7 +338,8 @@ void testTwoRowPanelAndDirtyRegion() {
 
 int main() {
   testResolveStickyDefaults();
-  testTwoRowPanelAndDirtyRegion();
+  testQuickMenuCoreAndEncode();
+  testThreeRowPanelAndDirtyRegion();
   std::printf("quick-settings-panel: %d checks, %d failures\n", checks, failures);
   return failures == 0 ? 0 : 1;
 }

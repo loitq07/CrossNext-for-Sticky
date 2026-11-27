@@ -24,9 +24,14 @@
 #include "../reader/ReaderUtils.h"
 #include "CrossPointSettings.h"
 #include "MappedInputManager.h"
+#include "OpdsServerStore.h"
 #include "WifiCredentialStore.h"
 #include "activities/settings/BleSettingsActivity.h"
+#include "apps_local/Shelf.h"
+#include "apps_local/appstore/AppStoreActivity.h"
 #include "apps_local/power/PowerMenuActivity.h"
+#include "apps_local/reading/ReadingStatsActivity.h"
+#include "apps_local/tools/QuickMenuStore.h"
 #include "apps_local/ui/PixelMenuTheme.h"
 #include "apps_local/ui/QuickActionSupport.h"
 #include "apps_local/ui/QuickSettingsDirtyRegion.h"
@@ -294,6 +299,75 @@ void FrontlightPanelActivity::runTile(const int idx, const bool longPress) {
       powermenu::request(powermenu::Action::Restart);
       close();
       return;
+    case quickui::Shortcut::Files:
+      persistLightSettings();
+      activityManager.goToFileBrowser();
+      return;
+    case quickui::Shortcut::Library:
+      persistLightSettings();
+      activityManager.goToLibrary();
+      return;
+    case quickui::Shortcut::ReadLater:
+      persistLightSettings();
+      activityManager.goToReadLater();
+      return;
+    case quickui::Shortcut::Transfer:
+      persistLightSettings();
+      activityManager.goToFileTransfer();
+      return;
+    case quickui::Shortcut::Stats:
+      persistLightSettings();
+      if (auto act = makeUniqueNoThrow<ReadingStatsActivity>(renderer, mappedInput))
+        activityManager.replaceActivity(std::move(act));
+      return;
+    case quickui::Shortcut::Games:
+      persistLightSettings();
+      shelf::openFolder(0, renderer, mappedInput);
+      return;
+    case quickui::Shortcut::Apps:
+      persistLightSettings();
+      shelf::openFolder(1, renderer, mappedInput);
+      return;
+    case quickui::Shortcut::Services:
+      persistLightSettings();
+      if (SETTINGS.pluginsEnabled || !OPDS_STORE.hasServers()) {
+        if (!SETTINGS.pluginsEnabled) {
+          SETTINGS.pluginsEnabled = 1;
+          SETTINGS.saveToFile();
+        }
+        activityManager.goToPlugins(OPDS_STORE.hasServers());
+      } else {
+        activityManager.goToBrowser();
+      }
+      return;
+    case quickui::Shortcut::Settings:
+      persistLightSettings();
+      activityManager.goToSettings();
+      return;
+    case quickui::Shortcut::UsbDrive:
+      persistLightSettings();
+      activityManager.goToUsbDrive();
+      return;
+    case quickui::Shortcut::AppStore:
+      persistLightSettings();
+      if (auto act = AppStoreActivity::create(renderer, mappedInput)) activityManager.replaceActivity(std::move(act));
+      return;
+    case quickui::Shortcut::AppShortcut0:
+    case quickui::Shortcut::AppShortcut1:
+    case quickui::Shortcut::AppShortcut2:
+    case quickui::Shortcut::AppShortcut3: {
+      const auto* entry = quickmenu::appShortcut(quickmenu::config(), static_cast<quickui::Shortcut>(idx));
+      if (!entry || !entry->title[0] || entry->folder >= shelf::folderCount()) return;
+      const auto& folder = shelf::folders()[entry->folder];
+      for (int n = 0; n < folder.count; ++n) {
+        if (!std::strcmp(folder.items[n].title, entry->title)) {
+          persistLightSettings();
+          shelf::openItem(entry->folder, n, renderer, mappedInput, shelf::LaunchOrigin::Home);
+          return;
+        }
+      }
+      return;
+    }
     case quickui::Shortcut::Count:
       break;
   }
@@ -568,9 +642,29 @@ void FrontlightPanelActivity::preparePanelModel() {
   } else {
     shownMinute = -1;
   }
-  model.extraCount = static_cast<uint8_t>(quickui::resolveQuickShortcuts(
-      SETTINGS.quickActions, model.shortcuts, Frontlight.present() ? nullptr : model.extraShortcuts,
-      Frontlight.present() ? 0 : 4));
+  const auto& qm = quickmenu::config();
+  quickui::Shortcut visible[quickui::kMaxItems]{};
+  int count = quickmenu::collectVisible(qm, quickui::supportedShortcutMask(), visible, quickui::kMaxItems);
+  if (count <= 0) {
+    visible[0] = quickui::Shortcut::Dark;
+    count = 1;
+  }
+  model.row1Count = static_cast<uint8_t>(std::min(4, count));
+  for (int i = 0; i < model.row1Count; ++i) model.shortcuts[i] = static_cast<uint8_t>(visible[i]);
+  model.extraCount = static_cast<uint8_t>(std::max(0, count - 4));
+  for (int i = 0; i < model.extraCount; ++i) model.extraShortcuts[i] = static_cast<uint8_t>(visible[4 + i]);
+  for (int n = 0; n < quickui::kAppShortcutCount; ++n) {
+    const auto* entry = quickmenu::appShortcut(qm, static_cast<quickui::Shortcut>(quickmenu::kBaseCount + n));
+    if (!entry || !entry->title[0] || entry->folder >= shelf::folderCount()) continue;
+    const auto& folder = shelf::folders()[entry->folder];
+    for (int k = 0; k < folder.count; ++k) {
+      if (!std::strcmp(folder.items[k].title, entry->title)) {
+        model.appShortcuts[n] = {shelf::label(entry->title), folder.items[k].icon};
+        break;
+      }
+    }
+  }
+  model.plugins = SETTINGS.pluginsEnabled || !OPDS_STORE.hasServers();
   model.bluetooth = bluetoothState;
   model.wifiConnected = wifiConnected;
   model.wifiActive = wifiActive;
@@ -600,8 +694,9 @@ void FrontlightPanelActivity::buildPanelScreen(UiScreen& screen) {
 void FrontlightPanelActivity::render(RenderLock&&) {
   preparePanelModel();
   const auto device = uiTarget.deviceContext();
-  const auto layout = quickui::layout(device, panelModel.light, panelModel.temperature, panelModel.touch,
-                                      quickui::hasBluetoothStatus(panelModel.bluetooth), panelModel.extraCount > 0);
+  const auto layout = quickui::layoutForRows(device, panelModel.light, panelModel.temperature, panelModel.touch,
+                                             quickui::hasBluetoothStatus(panelModel.bluetooth),
+                                             std::max(1, panelModel.tileRows()));
   const bool full = !backdropPainted || cleanRefreshPending || paintedWidth != device.width ||
                     paintedHeight != device.height || paintedOrientation != uint8_t(renderer.getOrientation()) ||
                     paintedLightHeader != chrome::lightHeader || panelBottom != layout.bottom;

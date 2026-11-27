@@ -33,38 +33,38 @@ void WhatsNewActivity::onEnter() {
   const bool isVi = isViText();
 
   if (isVi) {
-    rowLabels_[0] = "1. Đủ 38 ngôn ngữ trên App Store";
-    rowSubtitles_[0] = "Tải trực tiếp gói ngôn ngữ (UK, ES, JA, FR, DE...) và font giao diện";
+    rowLabels_[0] = "1. Tùy biến Quick Settings (tối đa 3 hàng / 12 mục)";
+    rowSubtitles_[0] = "Cài đặt > Hiển thị > Quick Settings: ẩn/hiện, xếp vị trí";
 
-    rowLabels_[1] = "2. Bảng Quick Settings 8 nút mới & Chụp màn hình";
-    rowSubtitles_[1] = "H1: Wi-Fi/BT/Âm phím/Tối; H2: Làm mới/Chụp ảnh/Xoay/Ngủ";
+    rowLabels_[1] = "2. Chuyển mục Home Menu & +Game/+App lên Quick Settings";
+    rowSubtitles_[1] = "Files, Thư viện, Reading Stats, Transfer, Read Later, Plugins";
 
-    rowLabels_[2] = "3. Đồng bộ icon & bỏ Tilt trên Sticky";
-    rowSubtitles_[2] = "Night Mode dùng icon Trắng/Đen đồng bộ Cài đặt";
+    rowLabels_[2] = "3. Sửa nhãn BLUETOOTH, Screenshot & icon Night Mode";
+    rowSubtitles_[2] = "Hiển thị BLUETOOTH/Screenshot chuẩn, đồng bộ icon Trắng/Đen";
 
-    rowLabels_[3] = "4. Chỉ báo vuốt cạnh & sửa lỗi màn đen đọc sách";
-    rowSubtitles_[3] = "Sửa trang EPUB hóa đen khi kéo cạnh trên lúc bật làm mịn chữ";
+    rowLabels_[3] = "4. Đủ 38 ngôn ngữ trên App Store & chỉ báo vuốt cạnh";
+    rowSubtitles_[3] = "Tải gói ngôn ngữ trên App Store, sửa màn đen đọc sách AA";
 
-    rowLabels_[4] = "5. Sửa lỗi app ngoài & Book Preparer Sticky";
-    rowSubtitles_[4] = "Liên kết lại Dice SDK (-nostartfiles), sửa nhãn Sticky";
+    rowLabels_[4] = "5. Hỗ trợ mở thẳng Plugins/Game/App từ bảng kéo xuống";
+    rowSubtitles_[4] = "Thêm lối tắt +Add Game / +Add App ngay trong Quick Settings";
 
     rowLabels_[5] = "Đóng & tiếp tục sử dụng";
     rowSubtitles_[5] = "Chạm hoặc bấm Confirm để vào trang chủ";
   } else {
-    rowLabels_[0] = "1. All 38 interface languages on App Store";
-    rowSubtitles_[0] = "Download any CrossNext language pack (UK, ES, JA, FR, DE...)";
+    rowLabels_[0] = "1. Customizable Quick Settings (up to 3 rows / 12 tiles)";
+    rowSubtitles_[0] = "Settings > Display > Quick Settings: show/hide and reorder";
 
-    rowLabels_[1] = "2. Sticky Quick Settings (8 tiles) & Screenshot";
-    rowSubtitles_[1] = "R1: Wi-Fi/BT/KeySound/Dark; R2: Refresh/Shot/Rotate/Sleep";
+    rowLabels_[1] = "2. Move Home items & Game/App shortcuts to Quick Settings";
+    rowSubtitles_[1] = "Reading Stats, File Transfer, Read Later, Plugins, +Add Game/App";
 
-    rowLabels_[2] = "3. Black/White Night Mode icon & no Tilt";
-    rowSubtitles_[2] = "Synced Settings Contrast icon and removed Tilt on Sticky";
+    rowLabels_[2] = "3. Clean BLUETOOTH & Screenshot captions";
+    rowSubtitles_[2] = "Fixed BluetoothOff/TAKE SCREENSHOT labels & Contrast icon";
 
-    rowLabels_[3] = "4. Edge swipe indicator & reader black-page fix";
-    rowSubtitles_[3] = "Fixed AA EPUB page turning black on top-edge swipe";
+    rowLabels_[3] = "4. All 38 App Store languages & edge-swipe indicator";
+    rowSubtitles_[3] = "Full language packs, Boox-style swipe tab, AA EPUB black fix";
 
-    rowLabels_[4] = "5. App Store SDK fix & Sticky Desktop branding";
-    rowSubtitles_[4] = "Linked external apps (-nostartfiles) & Sticky sidebar label";
+    rowLabels_[4] = "5. Direct launch for pinned Games, Apps & Plugins";
+    rowSubtitles_[4] = "Add up to 4 pinned Game/App tiles to Quick Settings";
 
     rowLabels_[5] = "Done & continue";
     rowSubtitles_[5] = "Tap or press Confirm to enter Home screen";

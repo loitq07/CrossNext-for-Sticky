@@ -20,11 +20,25 @@ inline bool isShortcutSupported(Shortcut shortcut) {
       return FREEINK_CAP_BUZZER && BoardConfig::hasBuzzer();
     case Shortcut::Tilt:
       return !BoardConfig::isSticky() && halTiltSensor.isAvailable();
+    case Shortcut::UsbDrive:
+#if defined(FREEINK_CAP_USB_MSC) && !FREEINK_CAP_USB_MSC
+      return false;
+#else
+      return true;
+#endif
     case Shortcut::Count:
       return false;
     default:
       return true;
   }
+}
+
+inline uint32_t supportedShortcutMask() {
+  uint32_t mask = 0;
+  for (int i = 0; i < int(Shortcut::Count); ++i) {
+    if (isShortcutSupported(static_cast<Shortcut>(i))) mask |= (1u << i);
+  }
+  return mask;
 }
 
 inline int supportedShortcuts(Shortcut* out, int maxOut) {
@@ -39,7 +53,6 @@ inline int supportedShortcuts(Shortcut* out, int maxOut) {
 // Resolve a 4-slot user configuration against current board hardware and fill an
 // optional second row with distinct supported toggles/actions.
 inline int resolveQuickShortcuts(const uint8_t configured[kSlots], uint8_t row1[kSlots], uint8_t* row2, int maxRow2) {
-  // Ordered for lightless touch boards (Sticky): Row 1 toggles -> Row 2 actions.
   static constexpr Shortcut kFallbackOrder[] = {
       Shortcut::Wifi,       Shortcut::Bluetooth, Shortcut::KeySound, Shortcut::Dark,
       Shortcut::Refresh,    Shortcut::Screenshot, Shortcut::Rotate,  Shortcut::Sleep,
@@ -59,9 +72,6 @@ inline int resolveQuickShortcuts(const uint8_t configured[kSlots], uint8_t row1[
     return Shortcut::Dark;
   };
 
-  // Legacy default settings carry {Dark, Refresh, Rotate, Light}; on lightless
-  // boards (where Light is unsupported), switch cleanly to the Sticky order
-  // unless the user already customized all 4 slots with supported shortcuts.
   bool allSupportedAndUnique = true;
   uint32_t checkUsed = 0;
   for (int i = 0; i < kSlots; ++i) {
