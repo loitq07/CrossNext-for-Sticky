@@ -175,8 +175,15 @@ void ActivityManager::renderTaskLoop() {
       paintedVisit.store(renderingVisit, std::memory_order_release);
       if (takeShotAfterRepaint && pendingScreenshot.exchange(false, std::memory_order_acq_rel)) {
         renderer.waitRefreshComplete();
-        RenderLock screenshotLock;
-        ScreenshotUtil::takeScreenshot(renderer);
+        // `lock` normally still owns the non-recursive renderingMutex here because
+        // render() takes RenderLock&& by reference; taking another RenderLock while
+        // `lock` is held deadlocks the render task.
+        if (lock.ownsLock()) {
+          ScreenshotUtil::takeScreenshot(renderer);
+        } else {
+          RenderLock screenshotLock;
+          ScreenshotUtil::takeScreenshot(renderer);
+        }
       }
       reportRepaint(currentActivity->name.c_str(), requestedAtMs, repaintStartMs);
       reportStackHeadroom(currentActivity->name.c_str());

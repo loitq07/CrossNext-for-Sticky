@@ -28,26 +28,15 @@ its 8 MB slot; the pack costs that much PSRAM instead, once, when it is used.
 
 ## Getting the pack onto the card
 
-The App Store lists **Tiếng Việt** (`lang-vi`, `/languages/vi.cplang`). It is
-published with the native modules of each firmware build, under
-`appstore:modules/<abi>/languages/vi.cplang`, because a pack's keys follow the
-firmware's string table. It counts as an outdated item, and so joins the
-first-Home "update apps" prompt after every firmware update, whenever the saved
-language uses it and `/.crosspoint/vi.cplang.abi` does not name the running
-build. After the download the language switches on if it was waiting for it.
+The App Store's **Languages** tab lists **Tiếng Việt** (`lang-vi`, `/languages/vi.cplang`) along with all 37 other upstream interface languages (including Spanish `es.cplang`, since only English is built into Sticky's flash). They are published with the native modules of each firmware build, under `appstore:modules/<abi>/languages/<bcp47>.cplang`, because a pack's keys follow the firmware's string table. An installed pack that matches the saved language counts as an outdated item, and so joins the first-Home "update apps" prompt after every firmware update whenever `/.crosspoint/<bcp47>.cplang.abi` does not name the running build. After the download the language switches on if it was waiting for it.
 
-Offline, copy a `vi.cplang` built for the same firmware into `/languages/` and
-restart.
+Offline, copy `<bcp47>.cplang` built for the same firmware into `/languages/` and select it in Settings → System → Language (or restart).
 
 ## Building packs
 
 ```sh
-python tools_local/sticky_language_packs.py            # -> ../output/modules/languages/vi.cplang
-python tools_local/sticky_language_packs.py OUT --langs vi,es
+python tools_local/sticky_language_packs.py            # -> ../output/modules/languages/*.cplang (all non-English packs)
+python tools_local/sticky_language_packs.py OUT --langs vi,uk
 ```
 
-`tools_local/native_modules/release.py` runs it before the firmware build, so
-`--publish` pushes the pack with the modules. Edit wording in
-`lib/I18n/translations/vietnamese.yaml`; never edit a `.cplang` by hand.
-Upstream's `tools_local/language_packs.py` (CSV template, `build`, `bundle`) is
-kept verbatim for community translations.
+`tools_local/native_modules/release.py` runs it before the firmware build, so `--publish` pushes all packs with the modules. Edit wording in `lib/I18n/translations/*.yaml`; never edit a `.cplang` by hand. Upstream's `tools_local/language_packs.py` (CSV template, `build`, `bundle`) is kept verbatim for community translations.

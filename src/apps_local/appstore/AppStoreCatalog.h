@@ -349,6 +349,191 @@ inline const StoreItem kStoreItems[] = {
     "Vietnamese interface language", "Gói ngôn ngữ giao diện tiếng Việt",
     StoreCategory::Languages, "/languages", "vi.cplang", 426214, "416.2 KB", true, true
   },
+  {
+    "lang-ar", "ARABIC", "Tiếng Ả Rập",
+    "Arabic interface language", "Gói ngôn ngữ giao diện tiếng Ả Rập",
+    StoreCategory::Languages, "/languages", "ar.cplang", 451724, "441.1 KB", true, true
+  },
+  {
+    "lang-az", "AZERBAIJANI", "Tiếng Azerbaijan",
+    "Azerbaijani interface language", "Gói ngôn ngữ giao diện tiếng Azerbaijan",
+    StoreCategory::Languages, "/languages", "az.cplang", 380250, "371.3 KB", true, true
+  },
+  {
+    "lang-be", "BELARUSIAN", "Tiếng Belarus",
+    "Belarusian interface language", "Gói ngôn ngữ giao diện tiếng Belarus",
+    StoreCategory::Languages, "/languages", "be.cplang", 529681, "517.3 KB", true, true
+  },
+  {
+    "lang-bs", "BOSNIAN", "Tiếng Bosnia",
+    "Bosnian interface language", "Gói ngôn ngữ giao diện tiếng Bosnia",
+    StoreCategory::Languages, "/languages", "bs.cplang", 339447, "331.5 KB", true, true
+  },
+  {
+    "lang-bg", "BULGARIAN", "Tiếng Bulgaria",
+    "Bulgarian interface language", "Gói ngôn ngữ giao diện tiếng Bulgaria",
+    StoreCategory::Languages, "/languages", "bg.cplang", 549400, "536.5 KB", true, true
+  },
+  {
+    "lang-ca", "CATALAN", "Tiếng Catalunya",
+    "Catalan interface language", "Gói ngôn ngữ giao diện tiếng Catalunya",
+    StoreCategory::Languages, "/languages", "ca.cplang", 360520, "352.1 KB", true, true
+  },
+  {
+    "lang-zh-cn", "CHINESE (SIMPLIFIED)", "Tiếng Trung (Giản thể)",
+    "Simplified Chinese interface language", "Gói ngôn ngữ giao diện tiếng Trung giản thể",
+    StoreCategory::Languages, "/languages", "zh-CN.cplang", 321155, "313.6 KB", true, true
+  },
+  {
+    "lang-zh-tw", "CHINESE (TRADITIONAL)", "Tiếng Trung (Phồn thể)",
+    "Traditional Chinese interface language", "Gói ngôn ngữ giao diện tiếng Trung phồn thể",
+    StoreCategory::Languages, "/languages", "zh-TW.cplang", 321297, "313.8 KB", true, true
+  },
+  {
+    "lang-cs", "CZECH", "Tiếng Séc",
+    "Czech interface language", "Gói ngôn ngữ giao diện tiếng Séc",
+    StoreCategory::Languages, "/languages", "cs.cplang", 353835, "345.5 KB", true, true
+  },
+  {
+    "lang-da", "DANISH", "Tiếng Đan Mạch",
+    "Danish interface language", "Gói ngôn ngữ giao diện tiếng Đan Mạch",
+    StoreCategory::Languages, "/languages", "da.cplang", 338768, "330.8 KB", true, true
+  },
+  {
+    "lang-nl", "DUTCH", "Tiếng Hà Lan",
+    "Dutch interface language", "Gói ngôn ngữ giao diện tiếng Hà Lan",
+    StoreCategory::Languages, "/languages", "nl.cplang", 358812, "350.4 KB", true, true
+  },
+  {
+    "lang-fi", "FINNISH", "Tiếng Phần Lan",
+    "Finnish interface language", "Gói ngôn ngữ giao diện tiếng Phần Lan",
+    StoreCategory::Languages, "/languages", "fi.cplang", 348519, "340.4 KB", true, true
+  },
+  {
+    "lang-fr", "FRENCH", "Tiếng Pháp",
+    "French interface language", "Gói ngôn ngữ giao diện tiếng Pháp",
+    StoreCategory::Languages, "/languages", "fr.cplang", 378138, "369.3 KB", true, true
+  },
+  {
+    "lang-de", "GERMAN", "Tiếng Đức",
+    "German interface language", "Gói ngôn ngữ giao diện tiếng Đức",
+    StoreCategory::Languages, "/languages", "de.cplang", 386309, "377.3 KB", true, true
+  },
+  {
+    "lang-he", "HEBREW", "Tiếng Do Thái",
+    "Hebrew interface language", "Gói ngôn ngữ giao diện tiếng Do Thái",
+    StoreCategory::Languages, "/languages", "he.cplang", 420498, "410.6 KB", true, true
+  },
+  {
+    "lang-hu", "HUNGARIAN", "Tiếng Hungary",
+    "Hungarian interface language", "Gói ngôn ngữ giao diện tiếng Hungary",
+    StoreCategory::Languages, "/languages", "hu.cplang", 377538, "368.7 KB", true, true
+  },
+  {
+    "lang-id", "INDONESIAN", "Tiếng Indonesia",
+    "Indonesian interface language", "Gói ngôn ngữ giao diện tiếng Indonesia",
+    StoreCategory::Languages, "/languages", "id.cplang", 356458, "348.1 KB", true, true
+  },
+  {
+    "lang-it", "ITALIAN", "Tiếng Ý",
+    "Italian interface language", "Gói ngôn ngữ giao diện tiếng Ý",
+    StoreCategory::Languages, "/languages", "it.cplang", 365940, "357.4 KB", true, true
+  },
+  {
+    "lang-ja", "JAPANESE", "Tiếng Nhật",
+    "Japanese interface language", "Gói ngôn ngữ giao diện tiếng Nhật",
+    StoreCategory::Languages, "/languages", "ja.cplang", 427972, "417.9 KB", true, true
+  },
+  {
+    "lang-kk", "KAZAKH", "Tiếng Kazakh",
+    "Kazakh interface language", "Gói ngôn ngữ giao diện tiếng Kazakh",
+    StoreCategory::Languages, "/languages", "kk.cplang", 542438, "529.7 KB", true, true
+  },
+  {
+    "lang-lt", "LITHUANIAN", "Tiếng Litva",
+    "Lithuanian interface language", "Gói ngôn ngữ giao diện tiếng Litva",
+    StoreCategory::Languages, "/languages", "lt.cplang", 363269, "354.8 KB", true, true
+  },
+  {
+    "lang-nb", "NORWEGIAN", "Tiếng Na Uy",
+    "Norwegian interface language", "Gói ngôn ngữ giao diện tiếng Na Uy",
+    StoreCategory::Languages, "/languages", "nb.cplang", 336570, "328.7 KB", true, true
+  },
+  {
+    "lang-ook", "ORANGUTAN", "Tiếng Đười ươi (Ook)",
+    "Ook interface language", "Gói ngôn ngữ giao diện tiếng Đười ươi",
+    StoreCategory::Languages, "/languages", "ook.cplang", 9115, "8.9 KB", true, true
+  },
+  {
+    "lang-fa", "PERSIAN", "Tiếng Ba Tư",
+    "Persian interface language", "Gói ngôn ngữ giao diện tiếng Ba Tư",
+    StoreCategory::Languages, "/languages", "fa.cplang", 492059, "480.5 KB", true, true
+  },
+  {
+    "lang-pl", "POLISH", "Tiếng Ba Lan",
+    "Polish interface language", "Gói ngôn ngữ giao diện tiếng Ba Lan",
+    StoreCategory::Languages, "/languages", "pl.cplang", 357794, "349.4 KB", true, true
+  },
+  {
+    "lang-pt-br", "PORTUGUESE (BRAZIL)", "Tiếng Bồ Đào Nha (Brazil)",
+    "Brazilian Portuguese interface language", "Gói ngôn ngữ tiếng Bồ Đào Nha (Brazil)",
+    StoreCategory::Languages, "/languages", "pt-BR.cplang", 357331, "349.0 KB", true, true
+  },
+  {
+    "lang-pt-pt", "PORTUGUESE (PORTUGAL)", "Tiếng Bồ Đào Nha (Bồ Đào Nha)",
+    "European Portuguese interface language", "Gói ngôn ngữ tiếng Bồ Đào Nha (Bồ Đào Nha)",
+    StoreCategory::Languages, "/languages", "pt-PT.cplang", 357979, "349.6 KB", true, true
+  },
+  {
+    "lang-ro", "ROMANIAN", "Tiếng Romania",
+    "Romanian interface language", "Gói ngôn ngữ giao diện tiếng Romania",
+    StoreCategory::Languages, "/languages", "ro.cplang", 367363, "358.8 KB", true, true
+  },
+  {
+    "lang-ru", "RUSSIAN", "Tiếng Nga",
+    "Russian interface language", "Gói ngôn ngữ giao diện tiếng Nga",
+    StoreCategory::Languages, "/languages", "ru.cplang", 534648, "522.1 KB", true, true
+  },
+  {
+    "lang-sk", "SLOVAK", "Tiếng Slovakia",
+    "Slovak interface language", "Gói ngôn ngữ giao diện tiếng Slovakia",
+    StoreCategory::Languages, "/languages", "sk.cplang", 355738, "347.4 KB", true, true
+  },
+  {
+    "lang-sl", "SLOVENIAN", "Tiếng Slovenia",
+    "Slovenian interface language", "Gói ngôn ngữ giao diện tiếng Slovenia",
+    StoreCategory::Languages, "/languages", "sl.cplang", 336936, "329.0 KB", true, true
+  },
+  {
+    "lang-es", "SPANISH", "Tiếng Tây Ban Nha",
+    "Spanish interface language", "Gói ngôn ngữ giao diện tiếng Tây Ban Nha",
+    StoreCategory::Languages, "/languages", "es.cplang", 372346, "363.6 KB", true, true
+  },
+  {
+    "lang-sv", "SWEDISH", "Tiếng Thụy Điển",
+    "Swedish interface language", "Gói ngôn ngữ giao diện tiếng Thụy Điển",
+    StoreCategory::Languages, "/languages", "sv.cplang", 346141, "338.0 KB", true, true
+  },
+  {
+    "lang-th", "THAI", "Tiếng Thái",
+    "Thai interface language", "Gói ngôn ngữ giao diện tiếng Thái",
+    StoreCategory::Languages, "/languages", "th.cplang", 682956, "666.9 KB", true, true
+  },
+  {
+    "lang-tr", "TURKISH", "Tiếng Thổ Nhĩ Kỳ",
+    "Turkish interface language", "Gói ngôn ngữ giao diện tiếng Thổ Nhĩ Kỳ",
+    StoreCategory::Languages, "/languages", "tr.cplang", 364814, "356.3 KB", true, true
+  },
+  {
+    "lang-uk", "UKRAINIAN", "Tiếng Ukraina",
+    "Ukrainian interface language", "Gói ngôn ngữ giao diện tiếng Ukraina",
+    StoreCategory::Languages, "/languages", "uk.cplang", 523158, "510.9 KB", true, true
+  },
+  {
+    "lang-ca-valencia", "VALENCIAN", "Tiếng Valencia",
+    "Valencian interface language", "Gói ngôn ngữ giao diện tiếng Valencia",
+    StoreCategory::Languages, "/languages", "ca-valencia.cplang", 360498, "352.0 KB", true, true
+  },
   // Resource packs (ResourcePacks.generated.h). Sizes are the whole pack.
   {
     "res-pet", "PET RESOURCES", "Tài nguyên Thú cưng",

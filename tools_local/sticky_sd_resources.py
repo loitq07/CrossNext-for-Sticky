@@ -9,17 +9,19 @@ That artwork is built from masters this repository does not carry, so the pack
 is assembled from upstream CrossNext's published resources, pinned by version
 and SHA-256 below. Kept from it:
 
-- apps/          PET (pet-v2), Reading Quest (reading-adventure-v2), The Intercept
-- fonts/         reader fonts, minus the large CJK families
+- apps/                PET (pet-v2), Reading Quest (reading-adventure-v2), The Intercept
+- fonts/               reader fonts, minus the large CJK families
+- languages/fonts/     UI fallback fonts for non-Latin scripts (Arabic, Hebrew, Thai, CJK)
+- languages/keyboards/ extra microSD keyboard layouts
 - licenses, notices and SOURCES.json, which their licences require
 
 Left out on purpose:
 
-- languages/     packs are tied to one firmware's string table; Sticky ships its
-                 own per build (vi.cplang), and upstream's would replace it with
-                 one that no longer matches.
-- dictionaries/  237 MB of English/European dictionaries, none Vietnamese. The
-                 README points to the upstream archive for anyone who wants them.
+- languages/*.cplang   packs are tied to one firmware's string table; Sticky ships its
+                       own per build, and the App Store installs them per ABI.
+- languages/wordle/    large Wordle word banks
+- dictionaries/        237 MB of English/European dictionaries, none Vietnamese. The
+                       README points to the upstream archive for anyone who wants them.
 
 Before changing UPSTREAM, check the art packs still match the firmware: the
 PET loader refuses a pack whose image count differs (petui::*_COUNT).
@@ -36,7 +38,7 @@ UPSTREAM_URL = ("https://github.com/manuelx900/CrossNext/releases/download/"
                 f"{UPSTREAM_VERSION}/CrossNext-Resources.zip")
 UPSTREAM_SHA256 = "a830be351ed9d4c24126e76a7e85c452f09d34aa4cd551c64b6c1ef815a1ad2a"
 
-KEEP_PREFIXES = ("apps/", "fonts/", "licenses/")
+KEEP_PREFIXES = ("apps/", "fonts/", "languages/fonts/", "languages/keyboards/", "licenses/")
 KEEP_FILES = ("THIRD-PARTY-NOTICES.txt", "SOURCES.json")
 DROP_FONTS = ("fonts/Noto Serif JP/", "fonts/Noto Serif SC/", "fonts/Noto Serif TC/")
 REQUIRED = (
@@ -45,6 +47,7 @@ REQUIRED = (
     "apps/reading-adventure-v2/graphics.bin", "apps/reading-adventure-v2/story.bin",
     "apps/intercept/graphics.bin",
     "fonts/Noto Serif/Noto Serif_14.cpfont",
+    "languages/fonts/Interface_10.cpfont",
 )
 
 README = f"""CROSSNEXT FOR SEEED RETERMINAL STICKY - MICROSD RESOURCES
@@ -52,34 +55,40 @@ README = f"""CROSSNEXT FOR SEEED RETERMINAL STICKY - MICROSD RESOURCES
 
 TIENG VIET
 ----------
-Giai nen file ZIP nay va chep thu muc "apps" va "fonts" vao THU MUC GOC cua the
-nho microSD (ket qua la /apps/... va /fonts/... tren the), roi khoi dong lai Sticky.
+Giai nen file ZIP nay va chep thu muc "apps", "fonts" va "languages" vao THU MUC
+GOC cua the nho microSD (ket qua la /apps/..., /fonts/..., /languages/fonts/...,
+/languages/keyboards/... tren the), roi khoi dong lai Sticky.
 
 - apps/pet-v2, apps/reading-adventure-v2, apps/intercept: hinh anh cho Thu cung
   (PET), Reading Quest va The Intercept. Thieu thu muc nay, cac app bao thieu
   tai nguyen.
 - fonts/: phong chu doc sach, gom Noto Serif (tu ban 2.0 khong con nam trong
   firmware). Thieu thu muc nay, sach chi hien bang phong chu giao dien.
+- languages/fonts/ & languages/keyboards/: phong chu giao dien bo sung cho
+  tieng A Rap, Do Thai, Thai, Nhat, Trung va ban phim mo rong.
 - Neu the da co thu muc apps/fonts cu, hay THAY THE (khong tron) thu muc cu.
+  Voi "languages", giu lai cac file *.cplang da cai qua App Store (khong can
+  chep file *.cplang tu goi CrossNext goc).
   Giu nguyen sach va thu muc /.crosspoint (tien do, cai dat, du lieu luu).
-- KHONG chep thu muc "languages" tu goi CrossNext goc: goi ngon ngu cua Sticky
-  (vi.cplang) di kem tung ban firmware hoac cai qua App Store.
 - Tu dien (dictionaries) khong kem theo. Neu can, lay tu goi goc:
   {UPSTREAM_URL}
 
 ENGLISH
 -------
-Extract this ZIP and copy the "apps" and "fonts" folders to the ROOT of the
-microSD card (giving /apps/... and /fonts/... on the card), then restart.
+Extract this ZIP and copy the "apps", "fonts" and "languages" folders to the
+ROOT of the microSD card (giving /apps/..., /fonts/..., /languages/fonts/...,
+/languages/keyboards/... on the card), then restart.
 
 - apps/: artwork for PET, Reading Quest and The Intercept. Without it those apps
   report missing resources.
 - fonts/: reader fonts, including Noto Serif (no longer built into the firmware
   since 2.0). Without it books render in the interface font.
-- Replace, do not merge, existing bundled apps/fonts folders. Keep your books and
-  /.crosspoint (progress, settings, saves).
-- Do NOT copy "languages" from the upstream CrossNext package: Sticky's language
-  pack (vi.cplang) ships with each firmware build or installs from the App Store.
+- languages/fonts/ & languages/keyboards/: UI fallback fonts for non-Latin
+  scripts (Arabic, Hebrew, Thai, Japanese, Chinese) and extra keyboard layouts.
+- Replace, do not merge, existing bundled apps/fonts folders. Keep your books,
+  installed *.cplang packs, and /.crosspoint (progress, settings, saves).
+- Do NOT copy *.cplang files from the upstream CrossNext package: Sticky's
+  language packs install from the App Store per firmware build.
 - Dictionaries are not included; get them from the upstream archive above.
 
 Keep THIRD-PARTY-NOTICES.txt, SOURCES.json and licenses/ with the files.

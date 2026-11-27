@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build the Sticky's microSD interface language packs (upstream 2.0 .cplang).
 
-  python tools_local/sticky_language_packs.py [OUTPUT_DIR] [--langs vi,...]
+  python tools_local/sticky_language_packs.py [OUTPUT_DIR] [--langs all|vi,...]
 
 The Sticky firmware keeps only English in flash (custom_i18n_builtin_langs in
 platformio.ini). Every other language is compiled here from its repository
@@ -11,7 +11,7 @@ firmware never uses left out, strings equal to English left to the fallback).
 
 The default OUTPUT_DIR is ../output/modules/languages: release.py publishes
 that folder with the native modules under appstore:modules/<abi>/languages/,
-where the App Store's language-pack item fetches it from.
+where the App Store's language-pack items fetch them from.
 """
 import argparse
 import importlib.util
@@ -30,11 +30,14 @@ spec.loader.exec_module(packs)
 def build(out: Path, langs):
     out.mkdir(parents=True, exist_ok=True)
     active = packs.i18n.find_used_string_keys([str(ROOT / "src"), str(ROOT / "lib")])
+    build_all = langs is None or langs == ["all"]
     built = []
     for path in sorted((ROOT / "lib/I18n/translations").glob("*.yaml")):
         values = packs.i18n.parse_yaml_file(str(path))
         code = values.get("_bcp47", "")
-        if code not in langs:
+        if code == "en":
+            continue
+        if not build_all and code not in langs:
             continue
         strings = {k: v for k, v in values.items() if k.startswith("STR_")}
         # Keys the English source no longer has are dropped with a warning
@@ -48,18 +51,20 @@ def build(out: Path, langs):
         entries = struct.unpack_from("<I", blob, 12)[0]
         print(f"{target}: {len(blob)} bytes, {entries} translations")
         built.append(target)
-    missing = set(langs) - {p.stem for p in built}
-    if missing:
-        sys.exit(f"no translation source for: {', '.join(sorted(missing))}")
+    if not build_all:
+        missing = set(langs) - {p.stem for p in built}
+        if missing:
+            sys.exit(f"no translation source for: {', '.join(sorted(missing))}")
     return built
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("output", nargs="?", type=Path, default=DEFAULT_OUT)
-    parser.add_argument("--langs", default="vi", help="comma-separated BCP 47 codes (default: vi)")
+    parser.add_argument("--langs", default="all", help="comma-separated BCP 47 codes or 'all' (default: all)")
     args = parser.parse_args()
-    build(args.output, [code.strip() for code in args.langs.split(",") if code.strip()])
+    selected = None if args.langs.strip().lower() == "all" else [c.strip() for c in args.langs.split(",") if c.strip()]
+    build(args.output, selected)
 
 
 if __name__ == "__main__":

@@ -398,8 +398,8 @@ void AppStoreActivity::activateIndex(const int index) {
 
 void AppStoreActivity::showItemActions(const int catalogIndex) {
   selectedCatalogIndex = catalogIndex;
-  if (kStoreItems[catalogIndex].resources) {
-    // Nothing to open: the app that uses the pack is on the shelf.
+  if (kStoreItems[catalogIndex].resources || kStoreItems[catalogIndex].languagePack) {
+    // Nothing to open: resource packs serve shelf apps and language packs are selected in Settings.
     static const char* const kResVi[] = {"Tải lại", "Xoá", "Huỷ"};
     static const char* const kResEn[] = {"Download again", "Delete", "Cancel"};
     optionPopup.show(displayName(kStoreItems[catalogIndex]), isVi() ? kResVi : kResEn, 3, 2,
@@ -450,7 +450,10 @@ void AppStoreActivity::runPendingAction() {
       static const char* const kVi[] = {"Xoá", "Huỷ"};
       static const char* const kEn[] = {"Delete", "Cancel"};
       char msg[128];
-      snprintf(msg, sizeof(msg), isVi() ? "Xoá %s khỏi thẻ nhớ?" : "Remove %s from the SD card?", displayName(item));      optionPopup.showMessage(isVi() ? "Xoá ứng dụng" : "Delete app", msg, isVi() ? kVi : kEn, 2, 1,
+      snprintf(msg, sizeof(msg), isVi() ? "Xoá %s khỏi thẻ nhớ?" : "Remove %s from the SD card?", displayName(item));
+      const char* title = item.languagePack ? (isVi() ? "Xoá ngôn ngữ" : "Delete language")
+                                            : (isVi() ? "Xoá ứng dụng" : "Delete app");
+      optionPopup.showMessage(title, msg, isVi() ? kVi : kEn, 2, 1,
                               [this](const int choice) {
                                 if (choice == 0) pendingAction = PendingAction::Delete;
                               });
@@ -468,7 +471,10 @@ void AppStoreActivity::runPendingAction() {
         break;
       }
       Storage.remove(getInstalledPath(item).c_str());
-      shelf::refreshApps();
+      if (item.languagePack)
+        Storage.remove(languagePackStampPath(item).c_str());
+      else
+        shelf::refreshApps();
       rebuildRows();
       requestUpdate();
       break;
